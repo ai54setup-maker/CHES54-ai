@@ -506,3 +506,7 @@ button { font: inherit; color: inherit; }
 .mc-line { display: block; color: var(--muted); font-size: 0.85rem; margin-top: 2px; }
 .mc-key { color: var(--accent); font-weight: 600; }
 .move-card .toolbar { margin-top: 4px; }
+
+/* Spiegazioni */
+.mc-explain { margin: 2px 0 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 4px; font-size: 0.92rem; }
+.mc-explain li::marker { color: var(--muted); }

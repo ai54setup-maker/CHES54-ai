@@ -8,6 +8,7 @@ import { winPercent } from './winpct.js';
 import { moveAccuracy, gameAccuracy, meanAccuracy } from './accuracy.js';
 import { classifyMove, CLASSIFICATIONS } from './classify.js';
 import { keyMoments } from './key-moments.js';
+import { explainMove } from './explain.js';
 
 /**
  * @typedef {import('./classify.js').PositionEval} PositionEval
@@ -26,6 +27,7 @@ import { keyMoments } from './key-moments.js';
  * @property {number} winLoss           perdita di win% (≥ 0)
  * @property {number} accuracy          0–100
  * @property {string} classification
+ * @property {import('./explain.js').Explanation[]} explanations  fatti dimostrati dalle linee del motore
  */
 
 /**
@@ -78,6 +80,7 @@ export async function analyzeGame(game, engine, opts = {}) {
       winLoss: c.winLoss,
       accuracy: moveAccuracy(c.winBefore, c.winAfter),
       classification: c.classification,
+      explanations: explainMove({ ply, before, after, classification: c.classification }),
     };
   });
 

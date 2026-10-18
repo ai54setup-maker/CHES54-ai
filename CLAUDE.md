@@ -25,7 +25,7 @@ Se una formula o un'informazione non è verificabile, dichiaralo invece di inven
 | 1 | Motore: UCI + MultiPV configurabile, worker, normalizzazione punteggi, cache | ✅ completata |
 | 2 | Analisi partita: PGN, win%, classificazione, accuracy, aperture, momenti chiave | ✅ completata |
 | 3 | UI di revisione: grafico, barra, linee, icone, riepilogo, "ritenta" | ✅ completata |
-| 4 | Spiegazioni basate solo sulle linee del motore | da fare |
+| 4 | Spiegazioni basate solo sulle linee del motore | ✅ completata |
 | 5 | Test (perft, PGN), prestazioni, licenze, README | da fare |
 
 Esperienza principale scelta: **revisione partita (PGN → analisi) + scacchiera di analisi libera**.
@@ -39,7 +39,7 @@ Esperienza principale scelta: **revisione partita (PGN → analisi) + scacchiera
 - Test: `node --test` (runner incluso in Node ≥ 18; qui Node 24).
 
 ## Architettura
-### Attuale (dopo la fase 3)
+### Attuale (dopo la fase 4)
 ```
 src/config/engine.js      N linee, profondità (preset), movetime, hash, dimensione cache
 src/config/ui.js          frecce, mosse per linea, profondità della revisione, URL esempio, prefisso localStorage
@@ -58,6 +58,9 @@ src/analysis/openings.js  OpeningBook: identify(fensAfter) → { bookPlies, open
 src/analysis/key-moments.js  semimosse con la variazione di win% più grande
 src/analysis/game-analyzer.js  analyzeGame(game, engine, { book, settings, onProgress })
 src/analysis/retry.js     retryCandidates(), evaluateAttempt(): "ritenta la mossa" con le stesse regole della revisione
+src/analysis/material.js  materialBalance, materialAlongLine (materiale a fine scambio lungo una variante)
+src/analysis/explain.js   explainMove(): fatti strutturati dimostrati dalle linee del motore (nessun testo)
+src/ui/explanations.js    formatExplanation(): testo italiano + variante citata (usato anche da analyze-pgn)
 scripts/analyze-pgn.mjs   analisi di un PGN da terminale (stesso codice dell'app)
 scripts/build-openings.mjs  data/openings/source/*.tsv → data/openings/openings.json
 data/openings/            dataset lichess-org/chess-openings (CC0), fonte e commit in source/SOURCE.md
@@ -167,6 +170,28 @@ Tutti i valori sono in `src/config/analysis.js`.
 | Nome apertura | posizione con nome più avanzata raggiunta nelle prime 40 semimosse (anche per trasposizione) | Nostro |
 | Momenti chiave | fino a 5 semimosse con \|Δ win% Bianco\| ≥ 10, mostrate in ordine di gioco | Nostro |
 | Ordine delle categorie | Book → errori → Brilliant → Great → Best → Excellent → Good | Nostro |
+
+### Spiegazioni (fase 4)
+Fatti ricavati SOLO da due varianti di Stockfish: **R** = mossa giocata + linea migliore della posizione dopo;
+**B** = linea migliore della posizione prima. Ogni fatto contiene la variante citata (`line: { fen, pv }`).
+Parametri in `explanations` di `src/config/analysis.js`. Solo per Inaccuracy/Mistake/Blunder, più Brilliant e Great.
+| Fatto | Condizione |
+|---|---|
+| allowsMate | dopo la mossa l'avversario ha matto forzato in n (prima no); variante = mossa + 2n−1 semimosse |
+| missesMate | prima chi muove aveva matto in n, dopo no; variante = B |
+| allowsFork | perdita di materiale lungo R e la prima risposta in R porta un pezzo ad attaccare ≥ 2 pezzi (re o valore ≥ 3) |
+| hangs | perdita ≥ valore del pezzo mosso e la prima cattura avversaria in R prende proprio quel pezzo |
+| losesMaterial | perdita lungo R (con elenco delle catture avversarie) |
+| missesMaterial | la mossa non perde materiale ma B ne guadagna di più; gain = differenza tra le due linee |
+| sacrifice | Brilliant: materiale ceduto (stessa misura della classificazione) |
+| onlyMove | Great: seconda linea MultiPV con il suo punteggio |
+- **Misura del materiale** (`materialAlongLine`): si gioca la mossa + almeno 4 semimosse della linea, poi si continua
+  finché la mossa successiva è una cattura (max 10). Perdita = materiale prima − dopo, confrontata con la stessa
+  misura lungo B (si attribuisce alla mossa solo la differenza ≥ 1 pedone).
+- **Se la variante finisce a metà di uno scambio** (ultima mossa una cattura, nessun seguito) la misura non è
+  affidabile: nessun fatto sul materiale. Se nessun fatto è dimostrabile non si mostra nulla (in "ritenta" si
+  mostra solo la risposta del motore).
+- Massimo 2 fatti per mossa, in quest'ordine: matti, poi materiale.
 
 ### Decisioni valutate e scartate
 - **Perdita calcolata con il punteggio della linea MultiPV della mossa giocata** (stessa ricerca della

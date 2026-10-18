@@ -7,6 +7,9 @@ import { Chess } from '../../lib/chess.js';
 import { ANALYSIS_CONFIG } from '../config/analysis.js';
 import { toPov } from '../engine/score.js';
 import { winPercent, winPercentFor } from './winpct.js';
+import { materialBalance } from './material.js';
+
+export { materialBalance };
 
 export const CLASSIFICATIONS = Object.freeze([
   'brilliant', 'great', 'best', 'excellent', 'good', 'book', 'inaccuracy', 'mistake', 'blunder',
@@ -70,14 +73,6 @@ export function errorLevel(before, after, winLoss) {
   return null;
 }
 
-/** Materiale di un colore meno quello dell'avversario, in pedoni. */
-export function materialBalance(chess, color) {
-  let sum = 0;
-  for (const p of chess.board().flat()) {
-    if (p) sum += (p.color === color ? 1 : -1) * ANALYSIS_CONFIG.materialValues[p.type];
-  }
-  return sum;
-}
 
 /**
  * Materiale ceduto da chi muove: si gioca la mossa e poi la linea migliore del motore

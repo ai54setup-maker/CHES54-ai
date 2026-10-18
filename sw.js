@@ -1,6 +1,6 @@
 // Service worker: salva l'app (motore compreso) per usarla anche offline.
 // Cambia VERSION quando aggiorni i file, così i telefoni scaricano la nuova versione.
-const VERSION = 'ches54-v3';
+const VERSION = 'ches54-v4';
 const FILES = [
   './',
   'index.html',
@@ -11,9 +11,9 @@ const FILES = [
     'engine/engine.js', 'engine/uci-parser.js', 'engine/score.js', 'engine/cache.js',
     'analysis/winpct.js', 'analysis/pgn.js', 'analysis/game-model.js', 'analysis/accuracy.js',
     'analysis/classify.js', 'analysis/openings.js', 'analysis/key-moments.js',
-    'analysis/game-analyzer.js', 'analysis/retry.js',
+    'analysis/game-analyzer.js', 'analysis/retry.js', 'analysis/material.js', 'analysis/explain.js',
     'ui/app.js', 'ui/board.js', 'ui/notation.js', 'ui/classification.js', 'ui/evalbar.js',
-    'ui/eval-graph.js', 'ui/engine-lines.js', 'ui/move-list.js', 'ui/summary.js',
+    'ui/eval-graph.js', 'ui/engine-lines.js', 'ui/move-list.js', 'ui/summary.js', 'ui/explanations.js',
   ].map((f) => `src/${f}`),
   'lib/chess.js',
   'engine/stockfish.js',

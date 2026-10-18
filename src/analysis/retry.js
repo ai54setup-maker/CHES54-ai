@@ -6,6 +6,7 @@ import { ANALYSIS_CONFIG } from '../config/analysis.js';
 import { playOn, endingOf } from './game-model.js';
 import { classifyMove } from './classify.js';
 import { positionEval, terminalEval } from './game-analyzer.js';
+import { explainMove } from './explain.js';
 
 /** Categorie su cui ha senso proporre "ritenta". */
 export const RETRY_CLASSIFICATIONS = Object.freeze(['inaccuracy', 'mistake', 'blunder']);
@@ -60,5 +61,6 @@ export async function evaluateAttempt({ analysis, index, move, engine }) {
     winLoss: c.winLoss,
     isBest: c.isBest,
     improved: c.winLoss < original.winLoss,
+    explanations: explainMove({ ply, before: original.before, after, classification: c.classification }),
   };
 }

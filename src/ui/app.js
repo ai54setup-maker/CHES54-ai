@@ -21,6 +21,8 @@ import { renderEngineLines, renderEngineMessage } from './engine-lines.js';
 import { renderMoveList } from './move-list.js';
 import { renderSummary } from './summary.js';
 import { CLASS_INFO, classIcon } from './classification.js';
+import { formatExplanation } from './explanations.js';
+import { explainMove } from '../analysis/explain.js';
 
 const $ = (id) => document.getElementById(id);
 const COLOR_NAME = { w: 'Bianco', b: 'Nero' };
@@ -399,6 +401,16 @@ function evalText(pe) {
   return formatScore(pe.score);
 }
 
+/** Spiegazioni di una mossa, ciascuna con la variante del motore che la dimostra. */
+function explanationsHtml(facts) {
+  if (!facts?.length) return '';
+  const items = facts.map((f) => {
+    const { text, line } = formatExplanation(f);
+    return `<li>${text}<span class="mc-line">Variante: ${line}</span></li>`;
+  });
+  return `<ul class="mc-explain">${items.join('')}</ul>`;
+}
+
 function renderReviewCards() {
   if (!reviewDone()) return;
   const a = state.review.analysis;
@@ -428,6 +440,7 @@ function renderReviewCards() {
     html += `<p class="mc-best">Migliore: <b>${toItalian(m.bestSan)}</b> (${formatScore(m.before.lines[0].score)})
       <span class="mc-line">${numberedLine(m.ply.fenBefore, m.before.lines[0].pv, UI_CONFIG.lineMoves)}</span></p>`;
   }
+  html += explanationsHtml(m.explanations ?? explainMove(m));
   if (m.isBest && RETRY_CLASSIFICATIONS.includes(m.classification)) html += `<p class="hint">${UNSTABLE_NOTE}</p>`;
   const key = a.keyMoments.find((k) => k.index === i - 1);
   if (key) html += `<p class="mc-key">Momento chiave: win% del Bianco ${key.swing > 0 ? '+' : '−'}${fmt1(Math.abs(key.swing))}</p>`;
@@ -524,8 +537,10 @@ function renderRetryCard(el, a) {
     else if (att.isBest || ['brilliant', 'great', 'best'].includes(att.classification)) msg = 'esatto, è la mossa migliore secondo il motore!';
     else if (att.classification === 'excellent') msg = `mossa eccellente (${loss}), quasi come la migliore.`;
     else msg = `buona mossa (${loss}), ma c'era di meglio.`;
-    const reply = isError && att.after.lines[0]
-      ? `<p class="mc-best">Il motore risponde: <span class="mc-line">${numberedLine(att.ply.fenAfter, att.after.lines[0].pv, UI_CONFIG.lineMoves)}</span></p>` : '';
+    let reply = isError ? explanationsHtml(att.explanations) : '';
+    if (isError && !reply && att.after.lines[0]) {
+      reply = `<p class="mc-best">Il motore risponde: <span class="mc-line">${numberedLine(att.ply.fenAfter, att.after.lines[0].pv, UI_CONFIG.lineMoves)}</span></p>`;
+    }
     el.innerHTML = head + `<p class="mc-feedback">${classIcon(att.classification)} <b>${toItalian(att.ply.san)}</b>: ${msg}</p>` + reply
       + buttons([B.again, B.solution, B.next, B.exit]);
   }

@@ -15,6 +15,7 @@ import { gameFromPgn } from '../src/analysis/game-model.js';
 import { OpeningBook } from '../src/analysis/openings.js';
 import { analyzeGame } from '../src/analysis/game-analyzer.js';
 import { formatScore } from '../src/engine/score.js';
+import { formatExplanation } from '../src/ui/explanations.js';
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -70,6 +71,10 @@ function print(a) {
     const evalAfter = m.after.terminal === 'checkmate' ? '#' : formatScore(m.after.score);
     const best = m.isBest ? '' : `  (migliore: ${m.bestSan})`;
     console.log(`${num.padStart(5)} ${p.san.padEnd(8)} ${m.classification.padEnd(10)} prec ${m.accuracy.toFixed(0).padStart(3)}  perdita ${m.winLoss.toFixed(1).padStart(5)}  eval ${evalAfter}${best}`);
+    for (const e of m.explanations) {
+      const { text, line } = formatExplanation(e);
+      console.log(`        ↳ ${text}  [${line}]`);
+    }
   }
   console.log('');
   for (const [color, name] of [['w', 'Bianco'], ['b', 'Nero']]) {

@@ -57,7 +57,17 @@ export const ANALYSIS_CONFIG = Object.freeze({
     }),
   }),
 
-  // Valori dei pezzi in pedoni, usati solo per riconoscere i sacrifici.
+  // Spiegazioni (fase 4): fatti ricavati dalle linee del motore (src/analysis/explain.js).
+  explanations: Object.freeze({
+    minMaterial: 1, // differenza minima di materiale (in pedoni) per parlare di materiale perso/vinto
+    materialPlies: 4, // semimosse della linea del motore da giocare dopo la mossa prima di misurare
+    maxPlies: 10, // limite, se lo scambio continua (catture consecutive)
+    forkMinValue: 3, // bersagli di una forchetta: pezzi da 3 in su, o il re
+    linePlies: 6, // semimosse della variante citata
+    maxPerMove: 2, // spiegazioni mostrate al massimo per mossa
+  }),
+
+  // Valori dei pezzi in pedoni, usati per sacrifici e spiegazioni.
   materialValues: Object.freeze({ p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 }),
 
   // Impostazioni del motore per l'analisi della partita intera.
