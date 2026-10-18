@@ -149,6 +149,7 @@ function parseMovetext(text) {
     const san = token.replace(/^\d+\.+/, '');
     if (!san) continue;
     if (/^[!?]+$/.test(san)) continue; // annotazione staccata dalla mossa
+    if (/^e\.?p\.?$/i.test(san)) continue; // vecchia notazione dell'en passant: "exd6 e.p."
     if (san === '--' || san === 'Z0') throw new PgnError('Le mosse nulle ("--") non sono supportate');
     moves.push({ san: cleanSan(san), comment: '', clock: null, nags: [] });
   }

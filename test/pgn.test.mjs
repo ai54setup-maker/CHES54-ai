@@ -97,3 +97,32 @@ test('errori chiari', () => {
 test('comandi nei commenti', () => {
   assert.deepEqual(parseComment('[%clk 1:02:03] Bella mossa [%eval #-3]'), { comment: 'Bella mossa', clock: 3723 });
 });
+
+test('casi limite: promozioni, sottopromozione, arrocco lungo con scacco, notazioni alternative', () => {
+  // Promozione con cattura e scacco, sottopromozione a cavallo
+  const g = gameFromPgn('[FEN "r3k3/1P6/8/8/8/8/6p1/4K2R w K - 0 1"]\n\n1. bxa8=Q+ Ke7 2. Qb7+ Kf6 3. Rh6+ Kg5 4. Rh2 g1=N *');
+  assert.deepEqual(g.plies.map((p) => p.uci), ['b7a8q', 'e8e7', 'a8b7', 'e7f6', 'h1h6', 'f6g5', 'h6h2', 'g2g1n']);
+  // Arrocco lungo che dà scacco
+  const ooo = gameFromPgn('[FEN "3k4/8/8/8/8/8/8/R3K3 w Q - 0 1"]\n\n1. O-O-O+ Ke7 *');
+  assert.equal(ooo.plies[0].san, 'O-O-O+');
+  assert.equal(ooo.plies[0].uci, 'e1c1');
+  // En passant scritto con "e.p." e notazione lunga
+  const ep = gameFromPgn('1. e4 Nf6 2. e5 d5 3. exd6 e.p. Ng8 4. Ng1-f3 *');
+  assert.deepEqual(ep.plies.map((p) => p.san), ['e4', 'Nf6', 'e5', 'd5', 'exd6', 'Ng8', 'Nf3']);
+});
+
+test('casi limite: commento iniziale, varianti con numeri, NAG dopo varianti, risultato con commento', () => {
+  const p = parsePgn('[Event "x"]\n\n{Partita di prova} 1. e4 (1. d4 d5 (1... Nf6) 2. c4) $14 1... e5 {Bianco abbandona} 0-1');
+  assert.equal(p.preComment, 'Partita di prova');
+  assert.deepEqual(p.moves.map((m) => m.san), ['e4', 'e5']);
+  assert.deepEqual(p.moves[0].nags, [14]);
+  assert.equal(p.moves[1].comment, 'Bianco abbandona');
+  assert.equal(p.result, '0-1');
+});
+
+test('intestazioni con virgolette; partita senza mosse; varianti non supportate', () => {
+  assert.equal(parsePgn('[White "O\\"Brien"]\n\n*').headers.White, 'O"Brien');
+  assert.equal(gameFromPgn('[White "A"]\n\n*').plies.length, 0);
+  assert.throws(() => gameFromPgn('[Variant "Chess960"]\n[FEN "bqnb1rkr/pp3ppp/3ppn2/2p5/5P2/P2P4/NPP1P1PP/BQ1BNRKR w HFhf - 2 9"]\n\n9. g3 *'), /Variante non supportata: Chess960/);
+  assert.equal(gameFromPgn('[Variant "From Position"]\n[FEN "4k3/8/8/8/8/8/8/4K2R w K - 0 1"]\n\n1. O-O *').plies[0].uci, 'e1g1');
+});

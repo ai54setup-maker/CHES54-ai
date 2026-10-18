@@ -7,7 +7,9 @@
   "scripts": {
     "start": "python3 server.py",
     "test": "node --test \"test/*.test.mjs\"",
+    "test:ui": "node scripts/ui-test/run.mjs",
     "analyze": "node scripts/analyze-pgn.mjs",
+    "bench": "node scripts/bench.mjs",
     "build:openings": "node scripts/build-openings.mjs"
   }
 }

@@ -32,6 +32,8 @@ import { parsePgn, PgnError } from './pgn.js';
  *           come finisce la posizione finale secondo le regole (null = partita non conclusa sulla scacchiera)
  */
 
+const SUPPORTED_VARIANTS = ['standard', 'from position'];
+
 /**
  * Costruisce la partita da un testo PGN, verificando la legalità di ogni mossa.
  * @param {string} pgnText
@@ -40,6 +42,10 @@ import { parsePgn, PgnError } from './pgn.js';
 export function gameFromPgn(pgnText) {
   const parsed = parsePgn(pgnText);
   const { headers } = parsed;
+  // Solo scacchi standard: altre varianti (Chess960, Crazyhouse…) hanno regole diverse.
+  if (headers.Variant && !SUPPORTED_VARIANTS.includes(headers.Variant.toLowerCase())) {
+    throw new PgnError(`Variante non supportata: ${headers.Variant}. Sono supportati solo gli scacchi standard.`);
+  }
   let startFen = DEFAULT_POSITION;
   if (headers.FEN) {
     const v = validateFen(headers.FEN);
