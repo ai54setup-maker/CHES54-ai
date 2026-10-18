@@ -15,8 +15,8 @@ Se una formula o un'informazione non è verificabile, dichiaralo invece di inven
   problemi aperti / proposta fase successiva) e attendere conferma.
 - Prima di modifiche grandi o distruttive: mostrare il piano e chiedere conferma.
 - Aggiornare questo file a ogni fase (architettura, comandi, formule, soglie).
-- Il progetto è in `~/ches54-ai` (repo git, branch `main`). `~/Desktop/ches54-ai` è una copia
-  vecchia ("CHES55"): ignorarla.
+- Il progetto è in `~/Desktop/ches54-ai` (repo git, branch `main`); spostato lì dall'utente il 2026-10-18,
+  al posto della vecchia copia "CHES55" che non esiste più.
 
 ## Stato delle fasi
 | Fase | Contenuto | Stato |
