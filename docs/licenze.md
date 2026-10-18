@@ -108,7 +108,7 @@ Per questo l'app è pensata per partite concluse. Se aggiungi l'importazione, im
 
 ## 5. Lista di controllo prima di pubblicare
 
-- [ ] Inserire il nome del titolare del copyright e il link al repository in `src/config/ui.js`.
+- [x] Inserire il nome del titolare del copyright e il link al repository in `src/config/ui.js`.
 - [ ] Pubblicare il repository (pubblico) con `LICENSE`, `THIRD-PARTY-NOTICES.md` e questo file.
 - [ ] Fare un fork di nmrugg/stockfish.js (tag `v17.1.0`) e aggiornare il link in `engine/README.md` e in `src/config/ui.js`.
 - [ ] Decidere se cambiare il colore della categoria "Brillante".

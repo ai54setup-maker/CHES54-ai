@@ -28,8 +28,8 @@ export const UI_CONFIG = Object.freeze({
   // Finestra "Informazioni e licenze" (avvisi legali richiesti dalla GPLv3, sezione 5(d)).
   about: Object.freeze({
     version: '2.0.0',
-    copyright: 'Copyright © 2026 gli autori di CHES54.ai', // DA COMPLETARE: nome del titolare
-    sourceUrl: null, // DA COMPLETARE: link al repository pubblico (es. https://github.com/…/ches54-ai)
+    copyright: 'Copyright © 2026 ai54setup-maker', // titolare (nome utente GitHub; sostituibile con il nome reale)
+    sourceUrl: 'https://github.com/ai54setup-maker/CHES54.ai', // repository pubblico con il codice sorgente
     stockfishSourceUrl: 'https://github.com/nmrugg/stockfish.js/tree/v17.1.0', // meglio un tuo fork, vedi docs/licenze.md
   }),
   storagePrefix: 'ches54:',
