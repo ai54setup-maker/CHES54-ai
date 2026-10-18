@@ -266,7 +266,8 @@ button { font: inherit; color: inherit; }
 
 .segmented {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -322,7 +323,6 @@ button { font: inherit; color: inherit; }
 }
 .sugg-score.pos { color: var(--accent); }
 .sugg-score.neg { color: var(--danger); }
-.sugg-why { grid-column: 2 / 4; font-size: 0.9rem; }
 .sugg-line { grid-column: 2 / 4; font-size: 0.8rem; color: var(--muted); }
 .sugg.placeholder { cursor: default; color: var(--muted); display: block; }
 

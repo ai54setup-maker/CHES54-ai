@@ -2,11 +2,12 @@
 
 import { Chess, validateFen } from '../lib/chess.js';
 import { Board } from './board.js';
-import { Engine } from './engine.js';
+import { Engine, AnalysisCancelled } from '../src/engine/engine.js';
+import { ENGINE_CONFIG } from '../src/config/engine.js';
+import { toPov } from '../src/engine/score.js';
+import { winPercent } from '../src/analysis/winpct.js';
 import { toItalian, uciLineToSan, parseUserMove } from './notation.js';
-import { explainMove } from './explain.js';
 
-const MULTIPV = 5;
 const ARROW_STYLE = [
   { color: '#22c55e', width: 0.2, opacity: 0.92 },
   { color: '#60a5fa', width: 0.13, opacity: 0.7 },
@@ -27,11 +28,16 @@ const store = {
 // ---------- stato ----------
 const chess = new Chess();
 let myColor = 'w';
-let depth = Number(store.get('depth', 16));
+const DEPTHS = ENGINE_CONFIG.depthPresets.map((p) => p.depth);
+let depth = Number(store.get('depth', ENGINE_CONFIG.defaultDepth));
+if (!DEPTHS.includes(depth)) depth = ENGINE_CONFIG.defaultDepth;
+let multiPv = Number(store.get('multipv', ENGINE_CONFIG.multiPv));
+if (!ENGINE_CONFIG.multiPvOptions.includes(multiPv)) multiPv = ENGINE_CONFIG.multiPv;
 let lines = [];          // linee del motore per la posizione attuale
 let highlighted = null;  // indice della mossa suggerita evidenziata
 let engine = null;
 let engineFailed = false;
+let lastResult = null;   // ultimo risultato del motore (per profondità e cache)
 
 // ---------- scacchiera ----------
 const board = new Board($('board'), {
@@ -52,36 +58,43 @@ const board = new Board($('board'), {
 // ---------- motore ----------
 function startEngine() {
   try {
-    engine = new Engine('engine/stockfish.js');
-    engine.onReady = () => analyze();
-    engine.onError = () => {
-      engineFailed = true;
-      renderSuggestions();
-    };
+    engine = Engine.inWorker();
+    engine.ready.catch(onEngineError);
   } catch {
     engineFailed = true;
   }
 }
 
+function onEngineError() {
+  engineFailed = true;
+  renderSuggestions();
+}
+
 function analyze() {
   lines = [];
+  lastResult = null;
   highlighted = null;
   board.setArrows([]);
+  engine?.cancelAll();
   if (!engine || chess.isGameOver()) {
-    engine?.stop();
     renderSuggestions();
     updateEvalBar();
     return;
   }
   renderSuggestions(true);
   const fen = chess.fen();
-  engine.analyze(fen, { depth, multipv: MULTIPV }, (newLines, done) => {
-    if (fen !== chess.fen()) return; // risultato di una posizione vecchia
-    lines = newLines;
-    renderSuggestions(false, done);
-    updateArrows();
-    updateEvalBar();
-  });
+  engine.analyze(fen, { depth, multiPv, onUpdate: (r) => showAnalysis(fen, r) })
+    .then((r) => showAnalysis(fen, r))
+    .catch((err) => { if (!(err instanceof AnalysisCancelled)) onEngineError(); });
+}
+
+function showAnalysis(fen, result) {
+  if (fen !== chess.fen()) return; // risultato di una posizione vecchia
+  lines = result.lines;
+  lastResult = result;
+  renderSuggestions(false, result.done);
+  updateArrows();
+  updateEvalBar();
 }
 
 // ---------- mosse ----------
@@ -114,9 +127,8 @@ function refresh(animate) {
 
 // ---------- rendering ----------
 function scoreForMe(l) {
-  // Il motore restituisce il punteggio dal punto di vista di chi muove: lo giro verso l'utente.
-  const sign = chess.turn() === myColor ? 1 : -1;
-  return { cp: l.cp == null ? null : l.cp * sign, mate: l.mate == null ? null : l.mate * sign };
+  // Il motore dà punteggi dal punto di vista del Bianco: li giro verso l'utente.
+  return toPov(l.score, myColor);
 }
 
 function formatScore({ cp, mate }) {
@@ -189,11 +201,11 @@ function renderSuggestions(loading = false, done = false) {
   }
   if (loading || !lines.length) {
     ol.innerHTML = '<li class="sugg placeholder">Analisi in corso…</li>';
-    info.textContent = engine?.ready ? '' : 'avvio motore…';
+    info.textContent = engine?.isReady ? '' : 'avvio motore…';
     return;
   }
 
-  info.textContent = `profondità ${lines[0].depth}/${depth}${done ? ' ✓' : '…'}`;
+  info.textContent = `profondità ${lastResult.depth}/${depth}${done ? ' ✓' : '…'}${lastResult.fromCache ? ' · cache' : ''}`;
   const fen = chess.fen();
   lines.forEach((l, i) => {
     const score = scoreForMe(l);
@@ -207,11 +219,9 @@ function renderSuggestions(loading = false, done = false) {
       <span class="sugg-rank">${i === 0 ? '⭐' : i + 1}</span>
       <span class="sugg-move"></span>
       <span class="sugg-score ${pos ? 'pos' : neg ? 'neg' : ''}"></span>
-      <span class="sugg-why"></span>
       <span class="sugg-line"></span>`;
     li.querySelector('.sugg-move').textContent = san[0];
     li.querySelector('.sugg-score').textContent = formatScore(score);
-    li.querySelector('.sugg-why').textContent = explainMove(fen, l.pv[0], { cp: l.cp, mate: l.mate });
     li.querySelector('.sugg-line').textContent = 'Linea: ' + san.join(' ');
     li.addEventListener('click', () => {
       const u = l.pv[0];
@@ -228,9 +238,9 @@ function markHighlighted() {
 }
 
 function updateArrows() {
-  const arrows = lines.slice(0, MULTIPV).map((l, i) => {
+  const arrows = lines.map((l, i) => {
     const u = l.pv[0];
-    const style = ARROW_STYLE[i];
+    const style = ARROW_STYLE[Math.min(i, ARROW_STYLE.length - 1)];
     const hl = highlighted === i;
     return {
       from: u.slice(0, 2),
@@ -249,26 +259,22 @@ function updateEvalBar() {
   const label = $('evalbar-label');
   // La parte chiara/scura in basso corrisponde al colore in basso sulla scacchiera.
   bar.classList.toggle('flipped', board.orientation === 'b');
-  let whiteCp = 0, whiteMate = null;
+  let whitePct = 50;
+  let text = '0.0';
   if (chess.isCheckmate()) {
-    whiteCp = chess.turn() === 'w' ? -Infinity : Infinity;
+    whitePct = chess.turn() === 'w' ? 0 : 100;
+    text = '#';
   } else if (lines.length) {
-    const s = chess.turn() === 'w' ? 1 : -1;
-    const l = lines[0];
-    if (l.mate != null) {
-      whiteMate = l.mate * s;
-      whiteCp = whiteMate > 0 ? Infinity : -Infinity;
-    } else whiteCp = l.cp * s;
+    const score = lines[0].score; // punto di vista del Bianco
+    whitePct = winPercent(score);
+    const mine = toPov(score, myColor);
+    text = mine.mate != null
+      ? 'M' + Math.abs(mine.mate)
+      : (Math.round(mine.cp / 10) / 10 || 0).toFixed(1); // evita "-0.0"
   }
-  const whitePct = !Number.isFinite(whiteCp)
-    ? (whiteCp > 0 ? 100 : 0)
-    : 50 + 50 * (2 / (1 + Math.exp(-0.004 * whiteCp)) - 1);
   const bottomIsWhite = board.orientation === 'w';
   fill.style.height = (bottomIsWhite ? whitePct : 100 - whitePct) + '%';
-  const meSign = myColor === 'w' ? 1 : -1;
-  if (chess.isCheckmate()) label.textContent = '#';
-  else if (whiteMate != null) label.textContent = 'M' + Math.abs(whiteMate);
-  else label.textContent = (Math.round(whiteCp * meSign / 10) / 10 || 0).toFixed(1); // evita "-0.0"
+  label.textContent = text;
 }
 
 function renderHistory() {
@@ -461,14 +467,29 @@ $('io-copy-fen').onclick = () => copyText(chess.fen());
 $('io-copy-pgn').onclick = () => copyText(pgnWithHeader());
 $('io-load').onclick = loadFromIO;
 
-document.querySelectorAll('#depth-control button').forEach((b) => {
-  b.classList.toggle('active', Number(b.dataset.depth) === depth);
-  b.onclick = () => {
-    depth = Number(b.dataset.depth);
-    store.set('depth', depth);
-    document.querySelectorAll('#depth-control button').forEach((x) => x.classList.toggle('active', x === b));
-    analyze();
-  };
+// Pulsanti di profondità e numero di linee, generati dalla configurazione del motore.
+function buildSegmented(el, options, current, onPick) {
+  el.replaceChildren();
+  for (const opt of options) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = opt.label;
+    b.classList.toggle('active', opt.value === current);
+    b.onclick = () => {
+      [...el.children].forEach((x) => x.classList.toggle('active', x === b));
+      onPick(opt.value);
+      analyze();
+    };
+    el.append(b);
+  }
+}
+buildSegmented($('depth-control'), ENGINE_CONFIG.depthPresets.map((p) => ({ label: p.label, value: p.depth })), depth, (v) => {
+  depth = v;
+  store.set('depth', v);
+});
+buildSegmented($('lines-control'), ENGINE_CONFIG.multiPvOptions.map((n) => ({ label: `${n} ${n === 1 ? 'linea' : 'linee'}`, value: n })), multiPv, (v) => {
+  multiPv = v;
+  store.set('multipv', v);
 });
 
 $('btn-theme').onclick = () => {

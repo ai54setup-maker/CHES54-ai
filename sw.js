@@ -1,6 +1,6 @@
 // Service worker: salva l'app (motore compreso) per usarla anche offline.
 // Cambia VERSION quando aggiorni i file, così i telefoni scaricano la nuova versione.
-const VERSION = 'ches54-v1';
+const VERSION = 'ches54-v2';
 const FILES = [
   './',
   'index.html',
@@ -8,9 +8,14 @@ const FILES = [
   'manifest.webmanifest',
   'js/app.js',
   'js/board.js',
-  'js/engine.js',
-  'js/explain.js',
   'js/notation.js',
+  'src/config/engine.js',
+  'src/config/analysis.js',
+  'src/engine/engine.js',
+  'src/engine/uci-parser.js',
+  'src/engine/score.js',
+  'src/engine/cache.js',
+  'src/analysis/winpct.js',
   'lib/chess.js',
   'engine/stockfish.js',
   'engine/stockfish.wasm',

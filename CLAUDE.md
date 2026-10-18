@@ -22,7 +22,7 @@ Se una formula o un'informazione non è verificabile, dichiaralo invece di inven
 | Fase | Contenuto | Stato |
 |---|---|---|
 | 0 | Audit, piano, git, CLAUDE.md | ✅ completata |
-| 1 | Motore: UCI + MultiPV configurabile, worker, normalizzazione punteggi, cache | da fare |
+| 1 | Motore: UCI + MultiPV configurabile, worker, normalizzazione punteggi, cache | ✅ completata |
 | 2 | Analisi partita: PGN, win%, classificazione, accuracy, aperture, momenti chiave | da fare |
 | 3 | UI di revisione: grafico, barra, linee, icone, riepilogo, "ritenta" | da fare |
 | 4 | Spiegazioni basate solo sulle linee del motore | da fare |
@@ -39,14 +39,33 @@ Esperienza principale scelta: **revisione partita (PGN → analisi) + scacchiera
 - Test: `node --test` (runner incluso in Node ≥ 18; qui Node 24).
 
 ## Architettura
-### Attuale (prima della fase 1)
+### Attuale (dopo la fase 1)
 ```
-js/app.js       stato + UI + barra valutazione + storico (tutto insieme)
+src/config/engine.js      N linee, profondità (preset), movetime, hash, dimensione cache
+src/config/analysis.js    coefficiente win%
+src/engine/uci-parser.js  parsing puro di "info …" e "bestmove …"
+src/engine/score.js       toWhitePov / toPov / formatScore ("M3", "-M5", "+0.35")
+src/engine/cache.js       AnalysisCache (LRU, chiave = primi 4 campi FEN)
+src/engine/engine.js      class Engine(transport): analyze(fen, opts) → Promise, coda, cancelAll()
+src/engine/node-transport.js  Stockfish in processo figlio (solo Node: test/strumenti)
+src/analysis/winpct.js    win% da cp/matto
+js/app.js       UI (da spostare in src/ui/ in fase 3)
 js/board.js     scacchiera (drag, tocco, frecce, animazioni) — riutilizzabile
-js/engine.js    worker UCI, MultiPV, callback
 js/notation.js  notazione italiana, parsing input utente
-js/explain.js   ⚠ spiegazioni euristiche NON basate sul motore → da sostituire in fase 4
 ```
+`js/explain.js` (spiegazioni euristiche non basate sul motore) è stato rimosso in fase 1;
+le spiegazioni torneranno in fase 4, derivate solo dalle linee del motore.
+
+### API del motore (src/engine/engine.js)
+- `Engine.inWorker()` nel browser; `new Engine(nodeTransport(path))` in Node.
+- `engine.analyze(fen, { depth, multiPv, movetimeMs, onUpdate })` → `Promise<AnalysisResult>`.
+  Default dalla config; `go depth D [movetime T]` (si ferma al primo limite raggiunto).
+- Risultato: `{ fen, sideToMove, depth, multiPv, request, lines[{multipv, depth, score, pv}], bestMove, done, fromCache }`.
+  `score` è già dal punto di vista del Bianco. Posizione senza mosse legali → `lines: []`, `bestMove: null`.
+- Righe con `lowerbound`/`upperbound` vengono scartate. `onUpdate` scatta quando tutte le linee hanno la stessa profondità.
+- `cancelAll()` rifiuta coda e ricerca in corso con `AnalysisCancelled`; i risultati annullati non entrano in cache.
+- Cache: riuso se linee ≥ richieste e (profondità raggiunta ≥ richiesta, oppure richiesta originale
+  almeno altrettanto esigente per profondità e tempo). Un risultato peggiore non sostituisce uno migliore.
 
 ### Target (approvata)
 ```
@@ -75,8 +94,10 @@ Regole di dipendenza: `engine/` non conosce la UI; `analysis/` lavora solo su da
 ## Comandi
 ```bash
 npm start              # = python3 server.py → http://localhost:5454
-npm test               # test della logica (Node)
+npm test               # node --test "test/*.test.mjs" (include integrazione con Stockfish vero, ~1 s)
+node --test test/engine.integration.test.mjs   # solo test con il motore reale
 ```
+`engine/package.json` (`"type": "commonjs"`) serve solo a far girare `engine/stockfish.js` in Node.
 Non aprire `index.html` da `file://`: il worker di Stockfish richiede http.
 
 ## Formule e soglie
@@ -84,7 +105,7 @@ Stato: ✅ implementata e testata · 📝 pianificata · ❓ da verificare sul s
 
 | Cosa | Formula / valore | Stato |
 |---|---|---|
-| Win% | `50 + 50 * (2 / (1 + exp(-0.00368208 * cp)) - 1)` | 📝 (oggi la barra usa 0.004 → da correggere) |
+| Win% | `50 + 50 * (2 / (1 + exp(-0.00368208 * cp)) - 1)`; matto = 100 / 0 | ✅ `src/analysis/winpct.js` (barra di valutazione) |
 | Clamp cp prima della win% | ±1000 (?) | ❓ |
 | Accuracy per mossa | `103.1668 * exp(-0.04354 * perdita_win%) - 3.1669`, limitata a [0, 100] | 📝 |
 | Accuracy partita | media semplice (richiesta); Lichess usa media pesata per volatilità + armonica | 📝 / ❓ |
