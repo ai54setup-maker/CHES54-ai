@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Server locale di CHES54.ai: serve i file dell'app sul computer e sulla rete Wi-Fi."""
+import errno
 import http.server
 import os
 import socket
@@ -45,7 +46,21 @@ class Server(socketserver.ThreadingMixIn, http.server.HTTPServer):
     allow_reuse_address = True
 
 
-with Server(("0.0.0.0", PORT), Handler) as httpd:
+try:
+    httpd = Server(("0.0.0.0", PORT), Handler)
+except OSError as e:
+    if e.errno not in (errno.EADDRINUSE, 10048):
+        raise
+    # La porta è occupata: di solito è CHES54.ai già avviato in un'altra finestra.
+    print(f"\n  ♟  La porta {PORT} è già in uso: CHES54.ai è probabilmente già aperto.")
+    print(f"  Apro http://localhost:{PORT} nel browser.")
+    print(f"  Se la pagina non si carica, chiudi l'altro programma o usa un'altra porta:")
+    print(f"      python3 server.py {PORT + 1}\n", flush=True)
+    if "--no-browser" not in sys.argv:
+        webbrowser.open(f"http://localhost:{PORT}")
+    sys.exit(0)
+
+with httpd:
     ip = lan_ip()
     print("\n  ♟  CHES54.ai è in esecuzione!\n")
     print(f"  Sul computer:   http://localhost:{PORT}")
