@@ -26,7 +26,7 @@ Se una formula o un'informazione non è verificabile, dichiaralo invece di inven
 | 2 | Analisi partita: PGN, win%, classificazione, accuracy, aperture, momenti chiave | ✅ completata |
 | 3 | UI di revisione: grafico, barra, linee, icone, riepilogo, "ritenta" | ✅ completata |
 | 4 | Spiegazioni basate solo sulle linee del motore | ✅ completata |
-| 5 | Test (perft, PGN), prestazioni, licenze, README | da fare |
+| 5 | Test (perft, PGN), prestazioni, licenze, README | ✅ completata |
 
 Esperienza principale scelta: **revisione partita (PGN → analisi) + scacchiera di analisi libera**.
 
@@ -143,7 +143,11 @@ npm test               # node --test "test/*.test.mjs" (include integrazione con
 node --test test/engine.integration.test.mjs   # solo test con il motore reale
 npm run analyze -- partita.pgn [--depth 14] [--multipv 2] [--movetime 500] [--game N] [--json]
 npm run build:openings # rigenera data/openings/openings.json dopo aver aggiornato i .tsv
+npm run test:ui        # test dell'interfaccia in Chromium headless (scripts/ui-test/, CHROME_PATH se non trovato)
+npm run bench          # tempi di analisi (default: data/examples/kasparov-topalov-1999.pgn)
 ```
+Richiede Node ≥ 22 (WebSocket integrato per test:ui; glob in `node --test`).
+Prima di chiudere una modifica all'interfaccia: `npm test` e `npm run test:ui` devono passare.
 `engine/package.json` (`"type": "commonjs"`) serve solo a far girare `engine/stockfish.js` in Node.
 Non aprire `index.html` da `file://`: il worker di Stockfish richiede http.
 
@@ -200,3 +204,14 @@ Parametri in `explanations` di `src/config/analysis.js`. Solo per Inaccuracy/Mis
   posizione dopo trova il matto in 2: con quella regola diventava "Best". Scartata (fase 3).
   Al suo posto l'interfaccia segnala il caso "prima scelta del motore ma classificata come errore"
   come valutazione instabile, suggerendo più profondità.
+
+## Qualità, prestazioni, licenze (fase 5)
+- Test: perft su 6 posizioni di riferimento (chessprogramming.org) con controllo incrociato via `go perft` di
+  Stockfish; casi limite PGN (e.p., sottopromozione, arrocco con scacco, varianti non supportate → errore chiaro).
+- Prestazioni (Apple M2 Pro, 88 posizioni, single-thread): profondità 14 + MultiPV 2 = 6,3 s (browser 6,6 s);
+  MultiPV 2 raddoppia il tempo; profondità 18 = 31,5 s. La precisione varia sensibilmente con la profondità.
+- Componenti e provenienza verificati per hash: `engine/` = npm stockfish@17.1.0 build lite-single-03e3232
+  (sorgente: nmrugg/stockfish.js tag v17.1.0); `lib/chess.js` = npm chess.js@1.4.0 dist/esm (senza sourceMappingURL).
+- Licenze: tutto GPLv3; obblighi e rischi in `docs/licenze.md`; avvisi legali nella finestra "Informazioni e licenze"
+  (`UI_CONFIG.about`: copyright e sourceUrl DA COMPLETARE da parte dell'utente).
+- Non copiare grafica, palette o suoni di Chess.com/Lichess; icone e testi originali.
