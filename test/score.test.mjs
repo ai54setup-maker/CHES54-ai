@@ -41,6 +41,8 @@ test('win% (formula di Lichess)', () => {
   assert.ok(Math.abs(winPercentFromCp(100) - 59.10) < 0.01);
   // Simmetria: win%(cp) + win%(-cp) = 100
   for (const cp of [37, 250, 900]) assert.ok(Math.abs(winPercentFromCp(cp) + winPercentFromCp(-cp) - 100) < 1e-9);
-  assert.equal(winPercent({ cp: null, mate: 4 }), 100);
-  assert.equal(winPercent({ cp: null, mate: -1 }), 0);
+  // Lichess: cp limitati a ±1000; un matto vale come ±1000 cp
+  assert.equal(winPercentFromCp(5000), winPercentFromCp(1000));
+  assert.ok(Math.abs(winPercent({ cp: null, mate: 4 }) - 97.54) < 0.01);
+  assert.ok(Math.abs(winPercent({ cp: null, mate: -1 }) - 2.46) < 0.01);
 });

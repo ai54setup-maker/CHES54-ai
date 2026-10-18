@@ -23,7 +23,7 @@ Se una formula o un'informazione non è verificabile, dichiaralo invece di inven
 |---|---|---|
 | 0 | Audit, piano, git, CLAUDE.md | ✅ completata |
 | 1 | Motore: UCI + MultiPV configurabile, worker, normalizzazione punteggi, cache | ✅ completata |
-| 2 | Analisi partita: PGN, win%, classificazione, accuracy, aperture, momenti chiave | da fare |
+| 2 | Analisi partita: PGN, win%, classificazione, accuracy, aperture, momenti chiave | ✅ completata |
 | 3 | UI di revisione: grafico, barra, linee, icone, riepilogo, "ritenta" | da fare |
 | 4 | Spiegazioni basate solo sulle linee del motore | da fare |
 | 5 | Test (perft, PGN), prestazioni, licenze, README | da fare |
@@ -39,16 +39,26 @@ Esperienza principale scelta: **revisione partita (PGN → analisi) + scacchiera
 - Test: `node --test` (runner incluso in Node ≥ 18; qui Node 24).
 
 ## Architettura
-### Attuale (dopo la fase 1)
+### Attuale (dopo la fase 2)
 ```
 src/config/engine.js      N linee, profondità (preset), movetime, hash, dimensione cache
-src/config/analysis.js    coefficiente win%
+src/config/analysis.js    win%, accuracy, soglie di classificazione, Great/Brilliant, analisi partita, aperture
 src/engine/uci-parser.js  parsing puro di "info …" e "bestmove …"
 src/engine/score.js       toWhitePov / toPov / formatScore ("M3", "-M5", "+0.35")
 src/engine/cache.js       AnalysisCache (LRU, chiave = primi 4 campi FEN)
 src/engine/engine.js      class Engine(transport): analyze(fen, opts) → Promise, coda, cancelAll()
 src/engine/node-transport.js  Stockfish in processo figlio (solo Node: test/strumenti)
-src/analysis/winpct.js    win% da cp/matto
+src/analysis/winpct.js    win% da cp/matto (cp limitati a ±1000)
+src/analysis/pgn.js       parser PGN proprio (intestazioni, commenti multipli, varianti, NAG, [%clk], più partite)
+src/analysis/game-model.js  gameFromPgn(): semimosse con FEN prima/dopo, UCI, legalità via chess.js, fine partita
+src/analysis/accuracy.js  moveAccuracy, gameAccuracy (Lichess), meanAccuracy
+src/analysis/classify.js  classifyMove, errorLevel (regole Lichess), Great/Brilliant (nostre)
+src/analysis/openings.js  OpeningBook: identify(fensAfter) → { bookPlies, opening }
+src/analysis/key-moments.js  semimosse con la variazione di win% più grande
+src/analysis/game-analyzer.js  analyzeGame(game, engine, { book, settings, onProgress })
+scripts/analyze-pgn.mjs   analisi di un PGN da terminale (stesso codice dell'app)
+scripts/build-openings.mjs  data/openings/source/*.tsv → data/openings/openings.json
+data/openings/            dataset lichess-org/chess-openings (CC0), fonte e commit in source/SOURCE.md
 js/app.js       UI (da spostare in src/ui/ in fase 3)
 js/board.js     scacchiera (drag, tocco, frecce, animazioni) — riutilizzabile
 js/notation.js  notazione italiana, parsing input utente
@@ -80,6 +90,15 @@ test/          *.test.mjs eseguiti con node --test
 Regole di dipendenza: `engine/` non conosce la UI; `analysis/` lavora solo su dati (testabile in Node);
 `ui/` non contiene logica scacchistica né formule.
 
+### Analisi della partita (src/analysis/game-analyzer.js)
+- Valuta con il motore la posizione iniziale e quella dopo ogni semimossa (impostazioni in
+  `gameAnalysis`, MultiPV 2 per riconoscere le Great). La posizione finale, se è matto o patta
+  secondo le regole (anche ripetizione e 50 mosse), non va al motore: `terminalEval()`.
+- Per ogni mossa: valutazione prima (= miglior gioco nella posizione prima) e dopo (= analisi della
+  posizione dopo), mossa migliore (UCI e SAN), perdita di win% di chi muove (≥ 0), precisione, categoria.
+- Per giocatore: `accuracy` (formula partita di Lichess), `meanAccuracy` (media semplice), conteggi per categoria.
+- Limite noto: il motore riceve solo la FEN, quindi non "vede" le ripetizioni nelle posizioni intermedie.
+
 ## Convenzioni di codice
 - Nessun numero "magico": soglie, coefficienti, profondità, MultiPV, hash → `src/config/`.
 - Punteggi: rappresentazione unica `{ cp: number|null, mate: number|null }` **dal punto di vista del Bianco**.
@@ -96,19 +115,32 @@ Regole di dipendenza: `engine/` non conosce la UI; `analysis/` lavora solo su da
 npm start              # = python3 server.py → http://localhost:5454
 npm test               # node --test "test/*.test.mjs" (include integrazione con Stockfish vero, ~1 s)
 node --test test/engine.integration.test.mjs   # solo test con il motore reale
+npm run analyze -- partita.pgn [--depth 14] [--multipv 2] [--movetime 500] [--game N] [--json]
+npm run build:openings # rigenera data/openings/openings.json dopo aver aggiornato i .tsv
 ```
 `engine/package.json` (`"type": "commonjs"`) serve solo a far girare `engine/stockfish.js` in Node.
 Non aprire `index.html` da `file://`: il worker di Stockfish richiede http.
 
 ## Formule e soglie
-Stato: ✅ implementata e testata · 📝 pianificata · ❓ da verificare sul sorgente di Lichess (lila).
+Stato: ✅ implementata e testata. "Lichess" = verificato sul sorgente il 2026-10-18:
+lila `cd2656d` (analyse/AccuracyPercent.scala, tree/Advice.scala), scalachess `4666581` (eval.scala: WinPercent),
+scalalib `dc09240` (Maths). "Nostro" = scelta di questo progetto (Chess.com non pubblica le sue regole).
+Tutti i valori sono in `src/config/analysis.js`.
 
-| Cosa | Formula / valore | Stato |
+| Cosa | Formula / valore | Fonte |
 |---|---|---|
-| Win% | `50 + 50 * (2 / (1 + exp(-0.00368208 * cp)) - 1)`; matto = 100 / 0 | ✅ `src/analysis/winpct.js` (barra di valutazione) |
-| Clamp cp prima della win% | ±1000 (?) | ❓ |
-| Accuracy per mossa | `103.1668 * exp(-0.04354 * perdita_win%) - 3.1669`, limitata a [0, 100] | 📝 |
-| Accuracy partita | media semplice (richiesta); Lichess usa media pesata per volatilità + armonica | 📝 / ❓ |
-| Soglie Inaccuracy / Mistake / Blunder | 10 / 20 / 30 punti di win% (indicazione utente). Lichess usa 0.1/0.2/0.3 su scala winning chances [-1, 1], cioè forse 5/10/15 punti | ❓ |
-| Brilliant / Great | euristica propria, da definire e documentare qui in fase 2 | 📝 |
-| Book | posizione presente nel dataset lichess-org/chess-openings | 📝 |
+| Win% | `50 + 50 * (2 / (1 + exp(-0.00368208 * cp)) - 1)`, con cp limitati a ±1000 | Lichess ✅ |
+| Win% di un matto | come ±1000 cp → 97.54 / 2.46 (la barra di valutazione mostra comunque 100/0) | Lichess ✅ |
+| Perdita | `max(0, win%_prima - win%_dopo)` dal punto di vista di chi muove | Lichess ✅ |
+| Accuracy mossa | `103.1668100711649 * exp(-0.04354415386753951 * perdita) - 3.166924740191411 + 1`, in [0, 100]; 100 se la win% non scende. Il `+1` è il "bonus di incertezza" di Lichess, assente nella formula data inizialmente | Lichess ✅ |
+| Accuracy partita | `(media pesata + media armonica) / 2` per colore. Finestra = mosse/10 in [2, 8]; peso = dev. std. (popolazione) della win% nella finestra, in [0.5, 12]; armonica con valori ≥ 1. Calcolata anche la media semplice (`meanAccuracy`) | Lichess ✅ |
+| Inaccuracy / Mistake / Blunder | perdita ≥ **5 / 10 / 15** punti di win%. Lichess usa 0.1/0.2/0.3 di "winning chances" su scala [-1, 1] = 5/10/15 punti su 0–100 (non 10/20/30) | Lichess ✅ |
+| Errori con matto | si applicano solo se prima o dopo c'è un matto. **Matto subito** (da cp a matto contro): Blunder; Mistake se prima < -700 cp; Inaccuracy se < -999. **Matto perso** (da matto a favore a cp o matto contro): Blunder; Mistake se dopo > +700; Inaccuracy se > +999. Matto più lento ma forzato: nessun errore | Lichess ✅ |
+| Best | mossa giocata = prima linea del motore | Nostro |
+| Excellent / Good | perdita < 2 → Excellent; altrimenti (sotto la soglia Inaccuracy) Good | Nostro |
+| Great | mossa migliore + 2ª linea peggiore di ≥ 10 punti di win%. Esclusi: ricatture sulla casa appena catturata; posizioni in cui chi muove aveva già un matto forzato | Nostro |
+| Brilliant | mossa migliore o perdita < 2 + **sacrificio** ≥ 2 pedoni + win% dopo ≥ 40 + win% prima ≤ 95 (salvo che il sacrificio porti a matto forzato). Sacrificio = materiale (p1 c3 a3 t5 d9) prima meno il materiale dopo la mossa e le prime 4 semimosse della linea del motore, misurato dopo ogni risposta dell'avversario e prendendo il caso migliore per chi muove (uno scambio in corso non conta). Se il motore indica che conviene non accettare il sacrificio, non è Brilliant | Nostro |
+| Book | posizione dopo la mossa presente nel dataset (linee con nome **e** posizioni intermedie), solo per semimosse consecutive dall'inizio | Nostro, dati lichess-org/chess-openings |
+| Nome apertura | posizione con nome più avanzata raggiunta nelle prime 40 semimosse (anche per trasposizione) | Nostro |
+| Momenti chiave | fino a 5 semimosse con \|Δ win% Bianco\| ≥ 10, mostrate in ordine di gioco | Nostro |
+| Ordine delle categorie | Book → errori → Brilliant → Great → Best → Excellent → Good | Nostro |

@@ -6,6 +6,8 @@
   "description": "CHES54.ai – analisi scacchistica con Stockfish nel browser",
   "scripts": {
     "start": "python3 server.py",
-    "test": "node --test \"test/*.test.mjs\""
+    "test": "node --test \"test/*.test.mjs\"",
+    "analyze": "node scripts/analyze-pgn.mjs",
+    "build:openings": "node scripts/build-openings.mjs"
   }
 }

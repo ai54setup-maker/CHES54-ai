@@ -266,7 +266,8 @@ function updateEvalBar() {
     text = '#';
   } else if (lines.length) {
     const score = lines[0].score; // punto di vista del Bianco
-    whitePct = winPercent(score);
+    // Con un matto forzato la barra si riempie del tutto (winPercent lo vale ≈ 97.5%, come Lichess).
+    whitePct = score.mate != null ? (score.mate > 0 ? 100 : 0) : winPercent(score);
     const mine = toPov(score, myColor);
     text = mine.mate != null
       ? 'M' + Math.abs(mine.mate)
