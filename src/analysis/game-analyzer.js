@@ -42,6 +42,8 @@ export async function analyzeGame(game, engine, opts = {}) {
   const fens = [game.startFen, ...game.plies.map((p) => p.fenAfter)];
   let done = 0;
   const progress = () => opts.onProgress?.(++done, fens.length);
+  // Memoria del motore vuota: la stessa partita con le stesse impostazioni dà lo stesso risultato.
+  await engine.newGame();
 
   // Tutte le posizioni vanno in coda al motore; le ripetizioni sono servite dalla cache.
   const positions = await Promise.all(fens.map((fen, i) => {
@@ -50,7 +52,7 @@ export async function analyzeGame(game, engine, opts = {}) {
       progress();
       return Promise.resolve(terminalEval(fen, game.ending));
     }
-    return engine.analyze(fen, settings).then((r) => {
+    return engine.analyze(fen, { ...settings, exactCache: true }).then((r) => {
       progress();
       return positionEval(r);
     });

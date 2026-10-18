@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Chess } from '../lib/chess.js';
-import { parseUserMove, toItalian, uciLineToSan } from '../js/notation.js';
+import { parseUserMove, toItalian, uciLineToSan, numberedLine } from '../src/ui/notation.js';
 
 test('mosse scritte dall\'utente in italiano, inglese e coordinate', () => {
   const c = new Chess();
@@ -16,4 +16,12 @@ test('mosse scritte dall\'utente in italiano, inglese e coordinate', () => {
 test('notazione italiana', () => {
   assert.equal(toItalian('exd8=Q+'), 'exd8=D+');
   assert.deepEqual(uciLineToSan(new Chess().fen(), ['g1f3', 'b8c6']), ['Cf3', 'Cc6']);
+});
+
+test('linea numerata', () => {
+  const start = new Chess().fen();
+  assert.equal(numberedLine(start, ['e2e4', 'e7e5', 'g1f3']), '1. e4 e5 2. Cf3');
+  const afterE4 = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
+  assert.equal(numberedLine(afterE4, ['e7e5', 'g1f3', 'b8c6']), '1… e5 2. Cf3 Cc6');
+  assert.equal(numberedLine(start, ['e2e4', 'e7e5', 'g1f3'], 2), '1. e4 e5');
 });

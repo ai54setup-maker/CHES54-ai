@@ -1,7 +1,7 @@
 // Notazione italiana (R = Re, D = Donna, T = Torre, A = Alfiere, C = Cavallo)
 // e lettura delle mosse scritte dall'utente.
 
-import { Chess } from '../lib/chess.js';
+import { Chess } from '../../lib/chess.js';
 
 const EN_TO_IT = { K: 'R', Q: 'D', R: 'T', B: 'A', N: 'C' };
 const IT_TO_EN = { R: 'K', D: 'Q', T: 'R', A: 'B', C: 'N' };
@@ -24,6 +24,25 @@ export function uciLineToSan(fen, uciMoves, max = 99) {
     }
   }
   return out;
+}
+
+/**
+ * Linea del motore in SAN italiana con i numeri di mossa: "13. Txd7 Txd7 14. Td1",
+ * oppure "9… b5 10. Cxb5" se la linea parte con una mossa del Nero.
+ */
+export function numberedLine(fen, uciMoves, max = 99) {
+  const sans = uciLineToSan(fen, uciMoves, max);
+  const [, turn, , , , full] = fen.split(' ');
+  let num = Number(full) || 1;
+  let white = turn !== 'b';
+  const parts = [];
+  sans.forEach((san, i) => {
+    if (white) parts.push(`${num}. ${san}`);
+    else parts.push(i === 0 ? `${num}… ${san}` : san);
+    if (!white) num++;
+    white = !white;
+  });
+  return parts.join(' ');
 }
 
 const strip = (s) => s.replace(/[+#!?]/g, '');

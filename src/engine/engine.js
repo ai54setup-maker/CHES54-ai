@@ -107,8 +107,9 @@ export class Engine {
   /**
    * Analizza una posizione. Le richieste vengono eseguite in ordine.
    * @param {string} fen
-   * @param {{ depth?: number|null, multiPv?: number, movetimeMs?: number|null,
+   * @param {{ depth?: number|null, multiPv?: number, movetimeMs?: number|null, exactCache?: boolean,
    *           onUpdate?: (partial: AnalysisResult) => void }} [opts]
+   *        exactCache: dalla cache solo risultati con le stesse identiche impostazioni
    * @returns {Promise<AnalysisResult>}
    */
   analyze(fen, opts = {}) {
@@ -126,11 +127,26 @@ export class Engine {
     } catch (err) {
       return Promise.reject(err);
     }
-    const cached = this.cache.get(fen, req);
+    const cacheOpts = { exact: !!opts.exactCache };
+    const cached = this.cache.get(fen, req, cacheOpts);
     if (cached) return Promise.resolve({ ...cached, fromCache: true });
 
     return new Promise((resolve, reject) => {
-      this.queue.push({ fen, req, onUpdate: opts.onUpdate, resolve, reject, lines: new Map(), cancelled: false });
+      this.queue.push({ fen, req, cacheOpts, onUpdate: opts.onUpdate, resolve, reject, lines: new Map(), cancelled: false });
+      this.pump();
+    });
+  }
+
+  /**
+   * Svuota la memoria del motore (tabella delle trasposizioni) con "ucinewgame".
+   * Da chiamare prima di analizzare una partita: così lo stesso input dà lo stesso risultato,
+   * indipendentemente dalle posizioni analizzate prima. Viene eseguito in coda, dopo le richieste già inviate.
+   * @returns {Promise<void>}
+   */
+  newGame() {
+    if (this.error) return Promise.reject(this.error);
+    return new Promise((resolve, reject) => {
+      this.queue.push({ kind: 'command', cmds: ['ucinewgame'], resolve, reject });
       this.pump();
     });
   }
@@ -138,7 +154,7 @@ export class Engine {
   /** Annulla tutte le richieste in coda e ferma la ricerca in corso. */
   cancelAll() {
     for (const job of this.queue.splice(0)) job.reject(new AnalysisCancelled());
-    if (this.job && !this.job.cancelled) {
+    if (this.job && !this.job.cancelled && this.job.kind !== 'command') {
       this.job.cancelled = true;
       this.transport.send('stop');
     }
@@ -156,8 +172,14 @@ export class Engine {
     if (!this.isReady || this.job) return;
     while (this.queue.length) {
       const job = this.queue.shift();
+      if (job.kind === 'command') {
+        this.job = job;
+        for (const cmd of job.cmds) this.transport.send(cmd);
+        this.transport.send('isready'); // il motore risponde "readyok" quando ha finito
+        return;
+      }
       // Una richiesta precedente in coda potrebbe aver già analizzato la stessa posizione.
-      const cached = this.cache.get(job.fen, job.req);
+      const cached = this.cache.get(job.fen, job.req, job.cacheOpts);
       if (cached) {
         job.resolve({ ...cached, fromCache: true });
         continue;
@@ -185,6 +207,11 @@ export class Engine {
         this.isReady = true;
         this.resolveReady();
         this.pump();
+      } else if (this.job?.kind === 'command') {
+        const job = this.job;
+        this.job = null;
+        job.resolve();
+        this.pump();
       }
       return;
     }
@@ -207,7 +234,7 @@ export class Engine {
     }
 
     const job = this.job;
-    if (!job || job.cancelled) return;
+    if (!job || job.cancelled || job.kind === 'command') return;
     const info = parseInfoLine(line);
     if (!isCompleteLine(info)) return;
     job.lines.set(info.multipv, {

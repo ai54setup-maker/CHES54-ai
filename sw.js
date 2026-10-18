@@ -1,24 +1,25 @@
 // Service worker: salva l'app (motore compreso) per usarla anche offline.
 // Cambia VERSION quando aggiorni i file, così i telefoni scaricano la nuova versione.
-const VERSION = 'ches54-v2';
+const VERSION = 'ches54-v3';
 const FILES = [
   './',
   'index.html',
   'style.css',
   'manifest.webmanifest',
-  'js/app.js',
-  'js/board.js',
-  'js/notation.js',
-  'src/config/engine.js',
-  'src/config/analysis.js',
-  'src/engine/engine.js',
-  'src/engine/uci-parser.js',
-  'src/engine/score.js',
-  'src/engine/cache.js',
-  'src/analysis/winpct.js',
+  ...[
+    'config/engine.js', 'config/analysis.js', 'config/ui.js',
+    'engine/engine.js', 'engine/uci-parser.js', 'engine/score.js', 'engine/cache.js',
+    'analysis/winpct.js', 'analysis/pgn.js', 'analysis/game-model.js', 'analysis/accuracy.js',
+    'analysis/classify.js', 'analysis/openings.js', 'analysis/key-moments.js',
+    'analysis/game-analyzer.js', 'analysis/retry.js',
+    'ui/app.js', 'ui/board.js', 'ui/notation.js', 'ui/classification.js', 'ui/evalbar.js',
+    'ui/eval-graph.js', 'ui/engine-lines.js', 'ui/move-list.js', 'ui/summary.js',
+  ].map((f) => `src/${f}`),
   'lib/chess.js',
   'engine/stockfish.js',
   'engine/stockfish.wasm',
+  'data/openings/openings.json',
+  'data/examples/opera-game.pgn',
   'icons/icon.svg',
   'icons/icon-192.png',
   'icons/icon-512.png',

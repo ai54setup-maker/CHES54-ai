@@ -16,6 +16,21 @@
   --dot: rgba(20, 22, 27, 0.32);
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
   --radius: 14px;
+  /* Categorie delle mosse */
+  --cls-brilliant: #1fb3aa;
+  --cls-great: #4a86e8;
+  --cls-best: #3aa64a;
+  --cls-excellent: #67b75a;
+  --cls-good: #8a9e7a;
+  --cls-book: #a7825c;
+  --cls-inaccuracy: #e0a91c;
+  --cls-mistake: #ec7f22;
+  --cls-blunder: #e0444a;
+  /* Grafico della valutazione */
+  --graph-white: #eceef2;
+  --graph-black: #3a3f4b;
+  --graph-line: #9aa3b2;
+  --graph-cursor: #3ddc84;
 }
 
 :root[data-theme="light"] {
@@ -31,9 +46,16 @@
   --sq-light: #f0e6d2;
   --sq-dark: #b58863;
   --shadow: 0 8px 24px rgba(20, 30, 50, 0.12);
+  --graph-white: #ffffff;
+  --graph-black: #5b6170;
+  --graph-line: #5d6675;
+  --graph-cursor: #19a35a;
 }
 
 * { box-sizing: border-box; }
+
+/* L'attributo hidden vince sempre sul display dei componenti (es. .move-input è flex) */
+[hidden] { display: none !important; }
 
 html, body {
   margin: 0;
@@ -218,17 +240,6 @@ button { font: inherit; color: inherit; }
 /* ---------- Panel ---------- */
 .panel { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 
-.status {
-  font-weight: 700;
-  font-size: 1.05rem;
-  padding: 12px 14px;
-  border-radius: var(--radius);
-  background: var(--card);
-  border: 1px solid var(--line);
-}
-.status.mine { border-color: var(--accent); }
-.status.over { border-color: var(--danger); }
-
 .move-input { display: flex; gap: 8px; }
 .move-input input {
   flex: 1;
@@ -296,52 +307,6 @@ button { font: inherit; color: inherit; }
 .depth-info { color: var(--muted); font-size: 0.8rem; white-space: nowrap; }
 .hint { color: var(--muted); font-size: 0.8rem; margin: 8px 0 0; }
 
-.suggestions { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.sugg {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 4px 10px;
-  align-items: center;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-}
-.sugg:hover, .sugg.hl { border-color: var(--accent); }
-.sugg.best { background: color-mix(in srgb, var(--accent) 12%, transparent); border-color: var(--accent); }
-.sugg-rank { font-weight: 800; color: var(--muted); width: 1.6em; }
-.sugg.best .sugg-rank { color: var(--accent); }
-.sugg-move { font-weight: 800; font-size: 1.1rem; }
-.sugg-score {
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: var(--bg);
-  font-size: 0.9rem;
-}
-.sugg-score.pos { color: var(--accent); }
-.sugg-score.neg { color: var(--danger); }
-.sugg-line { grid-column: 2 / 4; font-size: 0.8rem; color: var(--muted); }
-.sugg.placeholder { cursor: default; color: var(--muted); display: block; }
-
-.history {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 4px 10px;
-  font-variant-numeric: tabular-nums;
-  max-height: 220px;
-  overflow-y: auto;
-}
-.history li { display: grid; grid-template-columns: 2.2em 1fr 1fr; font-size: 0.92rem; }
-.history .num { color: var(--muted); }
-.history .last { color: var(--accent); font-weight: 700; }
-.history:empty::after { content: "Nessuna mossa ancora."; color: var(--muted); font-size: 0.9rem; }
-
 .footnote { color: var(--muted); font-size: 0.75rem; text-align: center; margin: 4px 0 calc(8px + env(safe-area-inset-bottom)); }
 
 /* ---------- Dialogs ---------- */
@@ -371,19 +336,6 @@ button { font: inherit; color: inherit; }
 }
 .dialog .toolbar { margin-top: 14px; }
 
-.color-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.color-btn {
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 16px 8px;
-  border-radius: 14px;
-  border: 2px solid var(--line);
-  background: var(--card);
-  cursor: pointer;
-  font-weight: 700;
-}
-.color-btn:hover { border-color: var(--accent); }
-.color-btn img { width: 64px; height: 64px; }
-
 .promo-choice { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
 .promo-choice button {
   aspect-ratio: 1;
@@ -412,3 +364,145 @@ button { font: inherit; color: inherit; }
   z-index: 100;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- Schede (Revisione / Analisi) ---------- */
+.tabs { display: flex; gap: 4px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 3px; }
+.tabs button {
+  border: 0; background: transparent; padding: 7px 12px; border-radius: 9px;
+  font-weight: 700; color: var(--muted); cursor: pointer;
+}
+.tabs button.active { background: var(--accent); color: #0b1a10; }
+@media (max-width: 420px) { .logo small { display: none; } .tabs button { padding: 7px 9px; } }
+
+/* ---------- Navigazione e grafico ---------- */
+.navbar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-left: 30px; }
+.navbar .btn { padding: 8px 0; font-size: 1rem; }
+.graph-card { padding: 8px; margin-left: 30px; }
+.graph { position: relative; height: 92px; border-radius: 8px; overflow: hidden; cursor: pointer; touch-action: none; border: 1px solid var(--line); }
+.graph:focus-visible { outline: 2px solid var(--accent); }
+.graph svg { display: block; width: 100%; height: 100%; }
+.graph-black { fill: var(--graph-black); }
+.graph-white { fill: var(--graph-white); }
+.graph-mid { stroke: var(--graph-line); stroke-width: 1; stroke-dasharray: 3 3; }
+.graph-line { stroke: var(--graph-line); stroke-width: 1.2; }
+.graph-cursor { stroke: var(--graph-cursor); stroke-width: 2; }
+.graph-dot {
+  position: absolute; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%;
+  border: 1.5px solid var(--card); pointer-events: none;
+}
+
+/* ---------- Icone delle categorie ---------- */
+.cls-icon { width: 1.25em; height: 1.25em; flex-shrink: 0; vertical-align: -0.25em; }
+.cls-brilliant { color: var(--cls-brilliant); }
+.cls-great { color: var(--cls-great); }
+.cls-best { color: var(--cls-best); }
+.cls-excellent { color: var(--cls-excellent); }
+.cls-good { color: var(--cls-good); }
+.cls-book { color: var(--cls-book); }
+.cls-inaccuracy { color: var(--cls-inaccuracy); }
+.cls-mistake { color: var(--cls-mistake); }
+.cls-blunder { color: var(--cls-blunder); }
+.dot-brilliant { background: var(--cls-brilliant); }
+.dot-great { background: var(--cls-great); }
+.dot-inaccuracy { background: var(--cls-inaccuracy); }
+.dot-mistake { background: var(--cls-mistake); }
+.dot-blunder { background: var(--cls-blunder); }
+.cls-text { font-weight: 700; font-size: 0.9rem; }
+
+/* Icona sulla casa d'arrivo della mossa */
+.badge {
+  position: absolute; width: 5.5%; height: 5.5%; transform: translate(-70%, -30%);
+  z-index: 8; pointer-events: none; filter: drop-shadow(0 1px 2px rgba(0,0,0,.45));
+}
+.badge .cls-icon { width: 100%; height: 100%; }
+
+/* ---------- Campi e pulsanti ---------- */
+.card textarea, .select {
+  width: 100%;
+  font: 14px ui-monospace, Menlo, Consolas, monospace;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text);
+  padding: 10px;
+  resize: vertical;
+  margin: 4px 0 8px;
+}
+.select { font-family: inherit; }
+.field-label { display: block; font-size: 0.85rem; color: var(--muted); margin: 10px 0 6px; }
+.btn.wide { width: 100%; margin-top: 12px; }
+.file-btn { display: flex; align-items: center; justify-content: center; text-align: center; }
+.toolbar.two { grid-template-columns: repeat(2, 1fr); }
+.hint.first { margin: 0 0 8px; }
+.segmented.small button { padding: 6px 4px; font-size: 0.85rem; }
+.engine-settings { display: grid; gap: 6px; margin-top: 10px; }
+
+.progress { height: 10px; border-radius: 999px; background: var(--bg); overflow: hidden; border: 1px solid var(--line); }
+.progress-fill { height: 100%; width: 0; background: var(--accent); transition: width 0.2s; }
+#review-progress .btn { margin-top: 10px; }
+
+/* ---------- Linee del motore ---------- */
+.elines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.eline {
+  display: flex; gap: 10px; align-items: baseline;
+  padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line);
+  cursor: pointer; transition: border-color 0.15s;
+}
+.eline:hover, .eline.hl, .eline:focus-visible { border-color: var(--accent); outline: none; }
+.eline.best { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.eline.placeholder { cursor: default; color: var(--muted); display: block; border-style: dashed; }
+.eline-score {
+  font-weight: 800; font-variant-numeric: tabular-nums; min-width: 4.2em; text-align: center;
+  padding: 2px 6px; border-radius: 6px; font-size: 0.85rem;
+}
+.eline-score.white { background: #eceef2; color: #1b1e25; }
+.eline-score.black { background: #2a2e37; color: #eceef2; border: 1px solid var(--line); }
+.eline-score.even { background: var(--bg); }
+.eline-moves { font-size: 0.9rem; line-height: 1.35; overflow-wrap: anywhere; }
+
+/* ---------- Lista mosse ---------- */
+.movelist {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: 1fr; gap: 2px;
+  max-height: 280px; overflow-y: auto; font-variant-numeric: tabular-nums;
+}
+@media (min-width: 520px) { .movelist { grid-template-columns: 1fr 1fr; column-gap: 12px; } }
+.movelist li { display: grid; grid-template-columns: 2.4em 1fr 1fr; align-items: center; }
+.movelist .num { color: var(--muted); font-size: 0.85rem; }
+.mv, .mv-empty {
+  display: flex; align-items: center; gap: 5px; text-align: left;
+  border: 0; background: transparent; padding: 4px 6px; border-radius: 6px; cursor: pointer; font-size: 0.95rem;
+}
+.mv-empty { color: var(--muted); cursor: default; }
+.mv:hover { background: var(--bg); }
+.mv.current { background: var(--accent); color: #0b1a10; font-weight: 700; }
+.movelist:empty::after { content: "Nessuna mossa."; color: var(--muted); font-size: 0.9rem; }
+
+/* ---------- Riepilogo della revisione ---------- */
+.sum-players { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; font-weight: 700; }
+.sum-name { overflow-wrap: anywhere; }
+.sum-name small { color: var(--muted); font-weight: 600; }
+.sum-name.right { text-align: right; }
+.sum-result { color: var(--muted); font-variant-numeric: tabular-nums; }
+.sum-acc { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; margin: 10px 0 4px; }
+.sum-acc > span { color: var(--muted); font-size: 0.85rem; }
+.acc-box { border-radius: 10px; padding: 6px 10px; font-size: 1.5rem; text-align: center; font-variant-numeric: tabular-nums; }
+.acc-box.white { background: #eceef2; color: #1b1e25; }
+.acc-box.black { background: #2a2e37; color: #eceef2; border: 1px solid var(--line); }
+.sum-opening { text-align: center; color: var(--muted); font-size: 0.9rem; margin: 6px 0; }
+.sum-table { width: 100%; border-collapse: collapse; margin: 6px 0; }
+.sum-table td { padding: 3px 4px; border-top: 1px solid var(--line); }
+.sum-table .cnt { width: 3em; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+.sum-table .cls { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; }
+#review-summary .toolbar { margin-top: 10px; }
+
+/* ---------- Scheda della mossa ---------- */
+.move-card { display: flex; flex-direction: column; gap: 6px; }
+.mc-head { display: flex; gap: 10px; align-items: flex-start; }
+.mc-head > .cls-icon { width: 2em; height: 2em; }
+.mc-title { font-weight: 800; font-size: 1.05rem; }
+.mc-sub { color: var(--muted); font-size: 0.85rem; margin-top: 2px; }
+.mc-best, .mc-key, .mc-feedback { margin: 0; font-size: 0.92rem; }
+.mc-line { display: block; color: var(--muted); font-size: 0.85rem; margin-top: 2px; }
+.mc-key { color: var(--accent); font-weight: 600; }
+.move-card .toolbar { margin-top: 4px; }

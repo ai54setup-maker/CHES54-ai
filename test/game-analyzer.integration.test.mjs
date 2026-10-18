@@ -44,11 +44,29 @@ test('Matto del barbiere: errore che subisce matto, matto dato, precisioni', asy
 });
 
 test('Partita dell\'Opera: i sacrifici famosi sono Brilliant', async () => {
-  const game = gameFromPgn(readFileSync(root('test/fixtures/opera-game.pgn'), 'utf8'));
+  const game = gameFromPgn(readFileSync(root('data/examples/opera-game.pgn'), 'utf8'));
   const a = await analyzeGame(game, engine, { book, settings: { ...settings, depth: 14 } });
   const bySan = (san) => a.moves.find((m) => m.ply.san === san && m.ply.color === 'w');
   assert.equal(a.opening.eco, 'C41');
   assert.equal(bySan('Qb8+').classification, 'brilliant');
   assert.equal(bySan('Rd8#').after.terminal, 'checkmate');
   assert.equal(a.result, '1-0');
+});
+
+test('Ritenta la mossa: un\'alternativa migliore viene riconosciuta', async () => {
+  const { evaluateAttempt, retryCandidates } = await import('../src/analysis/retry.js');
+  const game = gameFromPgn('1. e4 e5 2. Bc4 Nc6 3. Qh5 Nf6 4. Qxf7# 1-0');
+  const a = await analyzeGame(game, engine, { book, settings });
+  assert.deepEqual(retryCandidates(a), [5]);
+  assert.deepEqual(retryCandidates(a, 'w'), []);
+
+  const good = await evaluateAttempt({ analysis: a, index: 5, move: a.moves[5].bestSan, engine });
+  assert.equal(good.isBest, true);
+  assert.equal(good.improved, true);
+  assert.ok(['best', 'great', 'brilliant', 'excellent'].includes(good.classification));
+
+  const bad = await evaluateAttempt({ analysis: a, index: 5, move: 'a6', engine });
+  assert.equal(bad.classification, 'blunder');
+  assert.equal(bad.after.lines[0].pv[0], 'h5f7', 'il motore mostra il matto');
+  assert.equal(await evaluateAttempt({ analysis: a, index: 5, move: 'Ke2', engine }), null);
 });

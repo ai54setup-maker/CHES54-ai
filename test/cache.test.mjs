@@ -49,3 +49,11 @@ test('LRU: oltre il limite elimina la posizione usata meno di recente', () => {
   assert.ok(c.get(fens[0], { depth: 10, multiPv: 1, movetimeMs: null }));
   assert.equal(c.get(fens[1], { depth: 10, multiPv: 1, movetimeMs: null }), null);
 });
+
+test('modalità esatta: solo risultati con le stesse impostazioni', () => {
+  const c = new AnalysisCache(10);
+  c.set(START, result(20, 3));
+  assert.ok(c.get(START, { depth: 14, multiPv: 2, movetimeMs: null }), 'normale: un risultato più profondo va bene');
+  assert.equal(c.get(START, { depth: 14, multiPv: 2, movetimeMs: null }, { exact: true }), null);
+  assert.ok(c.get(START, { depth: 20, multiPv: 3, movetimeMs: null }, { exact: true }));
+});

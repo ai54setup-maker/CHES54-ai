@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>CHES54.ai</title>
-  <meta name="description" content="CHES54.ai – analisi scacchistica con Stockfish: inserisci le mosse e scopri le migliori.">
+  <meta name="description" content="CHES54.ai – revisione e analisi delle partite di scacchi con Stockfish, direttamente nel browser.">
   <meta name="theme-color" content="#14161b">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
@@ -16,73 +16,109 @@
 <body>
   <header class="topbar">
     <div class="logo"><img src="icons/icon.svg" alt="" class="logo-icon">CHES<span>54</span><small>.ai</small></div>
-    <div class="topbar-actions">
-      <button id="btn-theme" class="icon-btn" title="Cambia tema" aria-label="Cambia tema">◐</button>
-    </div>
+    <nav class="tabs" role="tablist" aria-label="Modalità">
+      <button type="button" role="tab" id="tab-review" data-mode="review">Revisione</button>
+      <button type="button" role="tab" id="tab-analysis" data-mode="analysis">Analisi</button>
+    </nav>
+    <button id="btn-theme" class="icon-btn" title="Cambia tema" aria-label="Cambia tema">◐</button>
   </header>
 
   <main class="layout">
     <section class="board-area">
       <div class="player-tag" id="tag-top"></div>
       <div class="board-row">
-        <div class="evalbar" id="evalbar" aria-label="Barra di valutazione">
+        <div class="evalbar" id="evalbar" role="img" aria-label="Valutazione">
           <div class="evalbar-fill" id="evalbar-fill"></div>
-          <span class="evalbar-label" id="evalbar-label">0.0</span>
+          <span class="evalbar-label" id="evalbar-label"></span>
         </div>
         <div class="board-wrap">
           <div id="board" class="board"></div>
         </div>
       </div>
       <div class="player-tag" id="tag-bottom"></div>
+
+      <div class="navbar" role="toolbar" aria-label="Navigazione tra le mosse">
+        <button type="button" class="btn" id="nav-first" title="Inizio (Home)" aria-label="Inizio">⏮</button>
+        <button type="button" class="btn" id="nav-prev" title="Indietro (←)" aria-label="Mossa precedente">◀</button>
+        <button type="button" class="btn" id="nav-next" title="Avanti (→)" aria-label="Mossa successiva">▶</button>
+        <button type="button" class="btn" id="nav-last" title="Fine (End)" aria-label="Fine">⏭</button>
+        <button type="button" class="btn" id="btn-flip" title="Gira la scacchiera (F)" aria-label="Gira la scacchiera">⇅</button>
+      </div>
+
+      <div class="card graph-card" id="graph-card" hidden>
+        <div id="eval-graph"></div>
+      </div>
     </section>
 
     <section class="panel">
-      <div class="status" id="status">Scegli il tuo colore per iniziare</div>
+      <!-- Revisione: caricamento della partita -->
+      <div class="card" id="review-input">
+        <h2>Revisione partita</h2>
+        <p class="hint first">Incolla il PGN esportato da Chess.com, Lichess o da un altro programma, oppure apri un file.</p>
+        <textarea id="pgn-text" rows="7" spellcheck="false" aria-label="Testo PGN"
+                  placeholder='[White "…"]&#10;[Black "…"]&#10;&#10;1. e4 e5 2. Cf3 …'></textarea>
+        <div class="toolbar two">
+          <label class="btn file-btn">Apri file .pgn<input type="file" id="pgn-file" accept=".pgn,text/plain" hidden></label>
+          <button type="button" class="btn" id="btn-example">Partita di esempio</button>
+        </div>
+        <label class="field-label" for="game-select" id="game-select-label" hidden>Partita del file</label>
+        <select id="game-select" class="select" hidden></select>
+        <div class="field-label">Profondità di analisi</div>
+        <div class="segmented" id="review-depth" role="radiogroup" aria-label="Profondità di analisi della partita"></div>
+        <div class="input-error" id="review-error" role="alert"></div>
+        <button type="button" class="btn primary wide" id="btn-analyze">Analizza la partita</button>
+      </div>
 
-      <form class="move-input" id="move-form" autocomplete="off">
+      <!-- Revisione: avanzamento -->
+      <div class="card" id="review-progress" hidden>
+        <h2>Analisi in corso…</h2>
+        <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="progress"><div class="progress-fill" id="progress-fill"></div></div>
+        <p class="hint" id="progress-text"></p>
+        <button type="button" class="btn" id="btn-cancel-review">Annulla</button>
+      </div>
+
+      <!-- Revisione: riepilogo e mossa corrente -->
+      <div class="card" id="review-summary" hidden></div>
+      <div class="card move-card" id="move-card" hidden aria-live="polite"></div>
+
+      <!-- Analisi libera: inserimento mosse -->
+      <form class="move-input" id="move-form" autocomplete="off" hidden>
         <input id="move-text" type="text" inputmode="text" autocapitalize="off" spellcheck="false"
-               placeholder="Scrivi una mossa: d3, e5, Cf3, O-O, d2d3…" aria-label="Mossa">
+               placeholder="Scrivi una mossa: e4, Cf3, O-O, e2e4…" aria-label="Mossa">
         <button type="submit" class="btn primary">Gioca</button>
       </form>
       <div class="input-error" id="input-error" role="alert"></div>
 
-      <div class="card">
+      <!-- Linee del motore -->
+      <div class="card" id="lines-card">
         <div class="card-head">
-          <h2 id="suggest-title">Mosse consigliate</h2>
+          <h2>Motore</h2>
           <span class="depth-info" id="depth-info"></span>
         </div>
-        <ol class="suggestions" id="suggestions"></ol>
-        <p class="hint">Tocca una mossa per giocarla. Valutazioni dal tuo punto di vista.</p>
+        <ol class="elines" id="lines"></ol>
+        <div class="engine-settings">
+          <div class="segmented small" id="depth-control" role="radiogroup" aria-label="Profondità di analisi"></div>
+          <div class="segmented small" id="lines-control" role="radiogroup" aria-label="Numero di linee del motore"></div>
+        </div>
+        <p class="hint">Valutazioni dal punto di vista del Bianco (+ vantaggio Bianco, − vantaggio Nero). Tocca una linea per giocarne la prima mossa.</p>
       </div>
 
-      <div class="segmented" id="depth-control" role="radiogroup" aria-label="Profondità di analisi"></div>
-      <div class="segmented" id="lines-control" role="radiogroup" aria-label="Numero di linee del motore"></div>
+      <!-- Mosse -->
+      <div class="card" id="moves-card">
+        <div class="card-head"><h2>Mosse</h2></div>
+        <ol class="movelist" id="movelist"></ol>
+      </div>
 
-      <div class="toolbar">
-        <button type="button" class="btn" id="btn-undo">↶ Annulla</button>
-        <button type="button" class="btn" id="btn-flip">⇅ Gira</button>
+      <div class="toolbar" id="analysis-tools" hidden>
+        <button type="button" class="btn" id="btn-undo">↶ Annulla mossa</button>
         <button type="button" class="btn" id="btn-io">FEN / PGN</button>
-        <button type="button" class="btn danger" id="btn-new">Nuova partita</button>
-      </div>
-
-      <div class="card">
-        <div class="card-head"><h2>Mosse della partita</h2></div>
-        <ol class="history" id="history"></ol>
+        <button type="button" class="btn" id="btn-review-this">Rivedi questa partita</button>
+        <button type="button" class="btn danger" id="btn-reset">Nuova posizione</button>
       </div>
 
       <p class="footnote">Strumento di analisi e allenamento. Usarlo durante partite online o tornei è contro il regolamento.</p>
     </section>
   </main>
-
-  <!-- Scelta colore -->
-  <dialog id="dlg-color" class="dialog">
-    <h2>Benvenuto in CHES54.ai</h2>
-    <p>Con quale colore giochi?</p>
-    <div class="color-choice">
-      <button type="button" data-color="w" class="color-btn"><img src="pieces/wK.svg" alt=""><span>Bianco</span></button>
-      <button type="button" data-color="b" class="color-btn"><img src="pieces/bK.svg" alt=""><span>Nero</span></button>
-    </div>
-  </dialog>
 
   <!-- Promozione -->
   <dialog id="dlg-promo" class="dialog">
@@ -90,10 +126,10 @@
     <div class="promo-choice" id="promo-choice"></div>
   </dialog>
 
-  <!-- FEN / PGN -->
+  <!-- FEN / PGN (analisi libera) -->
   <dialog id="dlg-io" class="dialog wide">
     <h2>Posizione e partita</h2>
-    <label for="io-fen">FEN (posizione attuale)</label>
+    <label for="io-fen">FEN (posizione mostrata)</label>
     <textarea id="io-fen" rows="2" spellcheck="false"></textarea>
     <label for="io-pgn">PGN (partita)</label>
     <textarea id="io-pgn" rows="5" spellcheck="false"></textarea>
@@ -107,8 +143,8 @@
     </div>
   </dialog>
 
-  <div class="toast" id="toast"></div>
+  <div class="toast" id="toast" role="status"></div>
 
-  <script type="module" src="js/app.js"></script>
+  <script type="module" src="src/ui/app.js"></script>
 </body>
 </html>

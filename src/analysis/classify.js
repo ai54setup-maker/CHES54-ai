@@ -122,6 +122,9 @@ export function classifyMove({ ply, prevPly, before, after, isBook }) {
   const winBefore = winPercentFor(before.winPct, color);
   const winAfter = winPercentFor(after.winPct, color);
   const winLoss = Math.max(0, winBefore - winAfter);
+  // Nota: anche la prima scelta del motore può risultare un errore, se l'analisi della posizione
+  // dopo la mossa (che vede una semimossa più avanti) la valuta molto peggio. Come Lichess, vale
+  // l'analisi della posizione dopo; l'interfaccia segnala il caso (valutazione instabile).
   const isBest = before.bestMove === ply.uci;
   const base = { winBefore, winAfter, winLoss, isBest };
 

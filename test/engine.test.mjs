@@ -119,3 +119,23 @@ test('MultiPV fuori dai limiti della configurazione', async () => {
   await assert.rejects(engine.analyze(START, { multiPv: ENGINE_CONFIG.maxMultiPv + 1 }), RangeError);
   await assert.rejects(engine.analyze(START, { multiPv: 0 }), RangeError);
 });
+
+test('newGame: "ucinewgame" in coda, dopo la ricerca in corso', async () => {
+  const { engine, sent, say } = fakeEngine();
+  const a = engine.analyze(START, { depth: 5, multiPv: 1 });
+  const reset = engine.newGame();
+  assert.ok(!sent.includes('ucinewgame'), 'non durante una ricerca');
+  say('info depth 5 multipv 1 score cp 20 pv e2e4', 'bestmove e2e4');
+  await a;
+  assert.deepEqual(sent.slice(-2), ['ucinewgame', 'isready']);
+  let resolved = false;
+  reset.then(() => { resolved = true; });
+  await Promise.resolve();
+  assert.equal(resolved, false, 'attende readyok');
+  say('readyok');
+  await reset;
+  const b = engine.analyze(AFTER_E4, { depth: 5, multiPv: 1 });
+  assert.equal(sent.at(-1), 'go depth 5');
+  say('info depth 5 multipv 1 score cp -20 pv e7e5', 'bestmove e7e5');
+  await b;
+});

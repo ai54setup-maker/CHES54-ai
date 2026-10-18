@@ -14,7 +14,8 @@ export class Board {
     this.position = [];      // [{ square, type, color }]
     this.lastMove = null;    // { from, to }
     this.checkSquare = null;
-    this.arrows = [];        // [{ from, to, color, width, opacity }]
+    this.arrows = [];        // [{ from, to, color, width, opacity, dashed }]
+    this.badge = null;       // { square, html }: icona sulla casa (es. classificazione della mossa)
     this.selected = null;
     this.drag = null;
 
@@ -26,7 +27,9 @@ export class Board {
     this.arrowsEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     this.arrowsEl.setAttribute('class', 'arrows');
     this.arrowsEl.setAttribute('viewBox', '0 0 8 8');
-    el.append(this.squaresEl, this.piecesEl, this.arrowsEl);
+    this.badgeEl = document.createElement('div');
+    this.badgeEl.className = 'badge';
+    el.append(this.squaresEl, this.piecesEl, this.arrowsEl, this.badgeEl);
 
     el.addEventListener('pointerdown', (e) => this.onDown(e));
     el.addEventListener('pointermove', (e) => this.onDragMove(e));
@@ -60,6 +63,7 @@ export class Board {
     this.renderSquares();
     this.renderPieces(false);
     this.renderArrows();
+    this.renderBadge();
   }
 
   setPosition(position, lastMove, checkSquare, animate = true) {
@@ -76,6 +80,25 @@ export class Board {
   setArrows(arrows) {
     this.arrows = arrows;
     this.renderArrows();
+  }
+
+  /** @param {{ square: string, html: string } | null} badge */
+  setBadge(badge) {
+    this.badge = badge;
+    this.renderBadge();
+  }
+
+  renderBadge() {
+    if (!this.badge) {
+      this.badgeEl.hidden = true;
+      return;
+    }
+    const { x, y } = this.toXY(this.badge.square);
+    this.badgeEl.hidden = false;
+    this.badgeEl.innerHTML = this.badge.html;
+    // In alto a destra della casa
+    this.badgeEl.style.left = `${(x + 1) * 12.5}%`;
+    this.badgeEl.style.top = `${y * 12.5}%`;
   }
 
   // ---------- rendering ----------
@@ -167,6 +190,7 @@ export class Board {
       line.setAttribute('stroke', a.color);
       line.setAttribute('stroke-width', w);
       line.setAttribute('stroke-linecap', 'round');
+      if (a.dashed) line.setAttribute('stroke-dasharray', `${w * 1.2} ${w * 0.9}`);
       const poly = document.createElementNS(ns, 'polygon');
       const hw = head * 0.6;
       poly.setAttribute('points', [

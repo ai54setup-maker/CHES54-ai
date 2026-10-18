@@ -35,6 +35,11 @@ export function satisfies(entry, req) {
   return atLeast(entry.request.depth, req.depth) && noLessTime(entry.request.movetimeMs, req.movetimeMs);
 }
 
+/** Stesse impostazioni di ricerca (profondità, tempo, numero di linee). */
+export function sameRequest(entry, req) {
+  return entry.multiPv === req.multiPv && entry.request.depth === req.depth && entry.request.movetimeMs === req.movetimeMs;
+}
+
 export class AnalysisCache {
   /** @param {number} maxEntries */
   constructor(maxEntries) {
@@ -50,12 +55,15 @@ export class AnalysisCache {
   /**
    * @param {string} fen
    * @param {AnalysisRequest} req
+   * @param {{ exact?: boolean }} [opts] exact: riusa solo risultati ottenuti con le stesse identiche
+   *        impostazioni (per analisi riproducibili, es. la revisione di una partita)
    * @returns {any|null} il risultato, con le linee ridotte a req.multiPv
    */
-  get(fen, req) {
+  get(fen, req, opts = {}) {
     const key = positionKey(fen);
     const entry = this.map.get(key);
-    if (!entry || !satisfies(entry, req)) return null;
+    if (!entry) return null;
+    if (opts.exact ? !sameRequest(entry, req) : !satisfies(entry, req)) return null;
     // Aggiorna l'ordine LRU: la voce usata per ultima va in fondo.
     this.map.delete(key);
     this.map.set(key, entry);

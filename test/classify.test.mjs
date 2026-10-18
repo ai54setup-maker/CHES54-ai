@@ -50,7 +50,8 @@ test('Best / Excellent / Good / errori in base alla perdita', () => {
   assert.equal(best.winLoss, 0);
 
   const notBest = (afterCp) => classifyMove({
-    ply: E4, prevPly: null, before: pe([[cp(30), ['d2d4']], [cp(20), ['e2e4']]]), after: pe([[cp(afterCp), ['e7e5']]]), isBook: false,
+    // e2e4 non è tra le linee del motore: la perdita viene dall'analisi della posizione dopo
+    ply: E4, prevPly: null, before: pe([[cp(30), ['d2d4']], [cp(20), ['c2c4']]]), after: pe([[cp(afterCp), ['e7e5']]]), isBook: false,
   });
   assert.equal(notBest(20).classification, 'excellent'); // perdita ≈ 0.9
   const loss = (afterCp) => winPercentFromCp(30) - winPercentFromCp(afterCp);
@@ -107,4 +108,14 @@ test('momenti chiave: le variazioni di win% più grandi, in ordine di gioco', ()
   assert.deepEqual(k.map((m) => m.index), [1, 3]);
   assert.ok(k[1].swing > 0);
   assert.deepEqual(keyMoments([50, 51, 52], { minSwing: 10 }), []);
+});
+
+test('come Lichess: vale l\'analisi della posizione dopo, anche per la prima scelta del motore', () => {
+  // Partita dell'Opera, 15...Cxd7: a profondità 14 era la prima scelta (+1.63),
+  // ma l'analisi della posizione dopo trova il matto in 2 → Errore grave.
+  const before = pe([[cp(163), ['f6d7']], [cp(655), ['e6d7']]]);
+  const g = gameFromPgn('[FEN "4kb1r/p2B1ppp/4qn2/4p1B1/4P3/1Q6/PPP2PPP/2KR4 b k - 0 15"]\n\n15... Nxd7 *');
+  const r = classifyMove({ ply: g.plies[0], prevPly: null, before, after: pe([[mate(2), ['b3b8']]]), isBook: false });
+  assert.equal(r.isBest, true);
+  assert.equal(r.classification, 'blunder');
 });
