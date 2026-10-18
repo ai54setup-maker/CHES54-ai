@@ -1,0 +1,227 @@
+{
+  "_info": "Catalogo scritto a mano della libreria di partite. NON contiene mosse: le mosse arrivano dalle fonti (pgnmentor = fonte principale, chessgames = controllo incrociato) tramite scripts/build-examples.mjs, che genera index.json, games/*.pgn e SOURCES.md. 'mentions' = mosse citate nel testo 'famous', con numero di mossa e SAN inglese (es. 30.Ba3, 17...Be6): il test verifica che compaiano davvero nella partita.",
+  "games": [
+    {
+      "id": "anderssen-kieseritzky-1851",
+      "white": "Adolf Anderssen", "black": "Lionel Kieseritzky", "year": 1851, "event": "Londra, partita amichevole",
+      "categories": ["classic"],
+      "famous": "«L'Immortale»: Anderssen lascia entrambe le torri, un alfiere e infine la donna (22.Df6+) e dà matto con i pezzi minori.",
+      "mentions": ["22.Qf6+", "23.Be7#"],
+      "pgnmentor": { "archive": "Anderssen", "white": "Anderssen", "black": "Kieseritzky", "date": "1851", "event": "Immortal" },
+      "chessgames": { "gid": 1018910 }
+    },
+    {
+      "id": "anderssen-dufresne-1852",
+      "white": "Adolf Anderssen", "black": "Jean Dufresne", "year": 1852, "event": "Berlino, partita amichevole",
+      "categories": ["classic"],
+      "famous": "«La Sempreverde»: il sacrificio di donna 21.Dxd7+ apre la strada a un matto di alfieri.",
+      "mentions": ["21.Qxd7+", "24.Bxe7#"],
+      "pgnmentor": { "archive": "Anderssen", "white": "Anderssen", "black": "Dufresne", "date": "1852", "event": "Evergreen" },
+      "chessgames": { "gid": 1018961 }
+    },
+    {
+      "id": "morphy-opera-1858",
+      "white": "Paul Morphy", "black": "Duca di Brunswick e Conte Isouard", "year": 1858, "event": "Parigi, al Teatro dell'Opera",
+      "categories": ["classic"],
+      "famous": "«La Partita dell'Opera»: Morphy sviluppa tutti i pezzi, sacrifica la donna con 16.Db8+ e dà matto con la torre.",
+      "mentions": ["16.Qb8+", "17.Rd8#"],
+      "pgnmentor": { "archive": "Morphy", "white": "Morphy", "black": "Isouard", "date": "1858" },
+      "chessgames": { "gid": 1233404 }
+    },
+    {
+      "id": "lasker-bauer-1889",
+      "white": "Emanuel Lasker", "black": "Johann Bauer", "year": 1889, "event": "Torneo di Amsterdam",
+      "categories": ["classic", "champions"],
+      "famous": "Il doppio sacrificio di alfieri più celebre: con 15.Axh7+ e 17.Axg7 Lasker apre completamente il re nero.",
+      "mentions": ["15.Bxh7+", "17.Bxg7"],
+      "pgnmentor": { "archive": "Lasker", "white": "Lasker", "black": "Bauer", "date": "1889", "plies": 75 },
+      "chessgames": { "gid": 1026352 }
+    },
+    {
+      "id": "steinitz-bardeleben-1895",
+      "white": "Wilhelm Steinitz", "black": "Curt von Bardeleben", "year": 1895, "event": "Torneo di Hastings",
+      "categories": ["classic", "champions"],
+      "famous": "Premio di bellezza a Hastings: dopo 22.Txe7+ la torre bianca dà scacco dopo scacco sulla settima traversa e von Bardeleben lascia la sala senza aspettare il matto.",
+      "mentions": ["22.Rxe7+", "25.Rxh7+"],
+      "pgnmentor": { "archive": "Steinitz", "white": "Steinitz", "black": "Bardeleben", "date": "1895" },
+      "chessgames": { "tid": 79221, "pid": 10421 }
+    },
+    {
+      "id": "rotlewi-rubinstein-1907",
+      "white": "Georg Rotlewi", "black": "Akiba Rubinstein", "year": 1907, "event": "Torneo di Łódź",
+      "categories": ["classic"],
+      "famous": "«L'Immortale di Rubinstein»: una catena di sacrifici, a partire da 22...Txc3, che si chiude con 25...Th3.",
+      "mentions": ["22...Rxc3", "25...Rh3"],
+      "pgnmentor": { "archive": "Rubinstein", "white": "Rotlewi", "black": "Rubinstein", "date": "1907", "event": "Lodz1" },
+      "chessgames": { "gid": 1119679 }
+    },
+    {
+      "id": "levitsky-marshall-1912",
+      "white": "Stepan Levitsky", "black": "Frank Marshall", "year": 1912, "event": "Congresso di Breslavia",
+      "categories": ["classic"],
+      "famous": "«La partita delle monete d'oro»: con 23...Dg3 Marshall mette la donna dove tre pezzi bianchi possono catturarla.",
+      "mentions": ["23...Qg3"],
+      "pgnmentor": { "archive": "Marshall", "white": "Levitsky", "black": "Marshall", "date": "1912" },
+      "chessgames": { "gid": 1094915 }
+    },
+    {
+      "id": "reti-tartakower-1910",
+      "white": "Richard Réti", "black": "Savielly Tartakower", "year": 1910, "event": "Vienna, partita amichevole",
+      "categories": [],
+      "famous": "Una delle miniature più famose: Réti sacrifica la donna con 9.Dd8+ e chiude con un doppio scacco.",
+      "mentions": ["9.Qd8+"],
+      "pgnmentor": { "archive": "Reti", "white": "Reti", "black": "Tartakower", "date": "1910", "eco": "B15" },
+      "chessgames": { "gid": 1250654 }
+    },
+    {
+      "id": "capablanca-marshall-1918",
+      "white": "José Raúl Capablanca", "black": "Frank Marshall", "year": 1918, "event": "Torneo di New York",
+      "categories": ["classic", "champions"],
+      "famous": "Marshall presenta il gambetto 8...d5 nella Spagnola, oggi chiamato Attacco Marshall; Capablanca respinge l'attacco e vince.",
+      "mentions": ["8...d5"],
+      "pgnmentor": { "archive": "Capablanca", "white": "Capablanca", "black": "Marshall", "date": "1918" },
+      "chessgames": { "gid": 1095025 }
+    },
+    {
+      "id": "botvinnik-capablanca-1938",
+      "white": "Mikhail Botvinnik", "black": "José Raúl Capablanca", "year": 1938, "event": "Torneo AVRO",
+      "categories": ["champions"],
+      "famous": "Il futuro campione batte l'ex campione: 30.Aa3 dà il via a una combinazione in cui il Bianco sacrifica anche la donna.",
+      "mentions": ["30.Ba3"],
+      "pgnmentor": { "archive": "Botvinnik", "white": "Botvinnik", "black": "Capablanca", "date": "1938", "event": "AVRO" },
+      "chessgames": { "gid": 1031957 }
+    },
+    {
+      "id": "byrne-fischer-1956",
+      "white": "Donald Byrne", "black": "Bobby Fischer", "year": 1956, "event": "Trofeo Rosenwald, New York",
+      "categories": ["classic", "champions"],
+      "famous": "«La partita del secolo»: Fischer, 13 anni, lascia la donna con 17...Ae6 e vince con i pezzi minori.",
+      "mentions": ["17...Be6"],
+      "pgnmentor": { "archive": "Fischer", "white": "Byrne", "black": "Fischer", "date": "1956" },
+      "chessgames": { "gid": 1008361 }
+    },
+    {
+      "id": "botvinnik-tal-1960-6",
+      "white": "Mikhail Botvinnik", "black": "Mikhail Tal", "year": 1960, "event": "Match mondiale, partita 6",
+      "categories": ["champions"],
+      "famous": "Tal sacrifica un cavallo con 21...Cf4 in una posizione complicatissima e vince: tappa decisiva verso il titolo mondiale.",
+      "mentions": ["21...Nf4"],
+      "pgnmentor": { "archive": "Tal", "white": "Botvinnik", "black": "Tal", "date": "1960", "round": "6" },
+      "chessgames": { "gid": 1032537 }
+    },
+    {
+      "id": "fischer-spassky-1972-6",
+      "white": "Bobby Fischer", "black": "Boris Spassky", "year": 1972, "event": "Match mondiale di Reykjavík, partita 6",
+      "categories": ["champions"],
+      "famous": "Fischer, che apriva quasi sempre con 1.e4, gioca 1.c4 e vince; si racconta che Spassky stesso abbia applaudito.",
+      "mentions": ["1.c4"],
+      "pgnmentor": { "archive": "Fischer", "white": "Fischer", "black": "Spassky", "date": "1972", "round": "6" },
+      "chessgames": { "gid": 1044366 }
+    },
+    {
+      "id": "karpov-kasparov-1985-16",
+      "white": "Anatoly Karpov", "black": "Garry Kasparov", "year": 1985, "event": "Match mondiale di Mosca, partita 16",
+      "categories": ["champions"],
+      "famous": "Il cavallo nero in d3 (16...Cd3) blocca il Bianco per tutta la partita: Kasparov la considerava la più bella del match che lo fece campione.",
+      "mentions": ["16...Nd3"],
+      "pgnmentor": { "archive": "Kasparov", "white": "Karpov", "black": "Kasparov", "date": "1985", "round": "16" },
+      "chessgames": { "gid": 1067175 }
+    },
+    {
+      "id": "deepblue-kasparov-1997-6",
+      "white": "Deep Blue (computer)", "black": "Garry Kasparov", "year": 1997, "event": "Match uomo-macchina di New York, partita 6",
+      "categories": ["champions"],
+      "famous": "Con il sacrificio 8.Cxe6 Deep Blue vince in 19 mosse e chiude il match: è la prima volta che un computer batte il campione del mondo in un match.",
+      "mentions": ["8.Nxe6"],
+      "pgnmentor": { "archive": "Kasparov", "white": "Deep Blue", "black": "Kasparov", "date": "1997", "round": "6" },
+      "chessgames": { "gid": 1070917 }
+    },
+    {
+      "id": "kasparov-topalov-1999",
+      "white": "Garry Kasparov", "black": "Veselin Topalov", "year": 1999, "event": "Torneo di Wijk aan Zee",
+      "categories": ["classic", "champions"],
+      "famous": "«L'Immortale di Kasparov»: 24.Txd4 dà il via a una caccia al re che porta il re nero fino in a3 e oltre.",
+      "mentions": ["24.Rxd4", "31...Kxa3"],
+      "pgnmentor": { "archive": "Kasparov", "white": "Kasparov", "black": "Topalov", "date": "1999.01" },
+      "chessgames": { "gid": 1011478 }
+    },
+    {
+      "id": "polgar-kasparov-2002",
+      "white": "Judit Polgár", "black": "Garry Kasparov", "year": 2002, "event": "Russia – Resto del mondo (rapid), Mosca",
+      "categories": ["champions"],
+      "famous": "La giocatrice più forte di sempre batte Kasparov, numero uno al mondo: la sua unica vittoria contro di lui, in una partita rapid.",
+      "mentions": [],
+      "pgnmentor": { "archive": "PolgarJ", "white": "Polgar", "black": "Kasparov", "date": "2002.09" },
+      "chessgames": { "gid": 1254283 }
+    },
+    {
+      "id": "carlsen-ernst-2004",
+      "white": "Magnus Carlsen", "black": "Sipke Ernst", "year": 2004, "event": "Torneo di Wijk aan Zee, gruppo C",
+      "categories": ["carlsen"],
+      "famous": "Carlsen ha 13 anni: con i sacrifici 18.Cg6 e 21.Axh6 apre il re nero e vince la partita che lo fa conoscere al mondo.",
+      "mentions": ["18.Ng6", "21.Bxh6"],
+      "pgnmentor": { "archive": "Carlsen", "white": "Carlsen", "black": "Ernst", "date": "2004" },
+      "chessgames": { "gid": 1272702 }
+    },
+    {
+      "id": "aronian-anand-2013",
+      "white": "Levon Aronian", "black": "Viswanathan Anand", "year": 2013, "event": "Torneo di Wijk aan Zee",
+      "categories": ["champions"],
+      "famous": "Anand con il Nero sacrifica più pezzi e vince in 23 mosse: lui stesso la considera una delle migliori partite della sua vita.",
+      "mentions": [],
+      "pgnmentor": { "archive": "Anand", "white": "Aronian", "black": "Anand", "date": "2013.01" },
+      "chessgames": { "gid": 1704763 }
+    },
+    {
+      "id": "carlsen-anand-2013-5",
+      "white": "Magnus Carlsen", "black": "Viswanathan Anand", "year": 2013, "event": "Match mondiale di Chennai, partita 5",
+      "categories": ["carlsen", "champions"],
+      "famous": "La prima vittoria di Carlsen nel match per il titolo: da un piccolo vantaggio arriva a un finale e lo vince con pazienza.",
+      "mentions": [],
+      "pgnmentor": { "archive": "Carlsen", "white": "Carlsen", "black": "Anand", "date": "2013.11", "round": "5" },
+      "chessgames": { "gid": 1737319 }
+    },
+    {
+      "id": "anand-carlsen-2013-9",
+      "white": "Viswanathan Anand", "black": "Magnus Carlsen", "year": 2013, "event": "Match mondiale di Chennai, partita 9",
+      "categories": ["carlsen", "champions"],
+      "famous": "Anand attacca sul lato di re ma sbaglia nel momento critico: con questa vittoria Carlsen arriva a un passo dal titolo.",
+      "mentions": [],
+      "pgnmentor": { "archive": "Carlsen", "white": "Anand", "black": "Carlsen", "date": "2013.11", "round": "9" },
+      "chessgames": { "tid": 81142 }
+    },
+    {
+      "id": "carlsen-karjakin-2016-10",
+      "white": "Magnus Carlsen", "black": "Sergey Karjakin", "year": 2016, "event": "Match mondiale di New York, partita 10",
+      "categories": ["carlsen", "champions"],
+      "famous": "Sotto di un punto, Carlsen pareggia il match vincendo un lungo finale: un esempio del suo stile «macinatore».",
+      "mentions": [],
+      "pgnmentor": { "archive": "Carlsen", "white": "Carlsen", "black": "Karjakin", "date": "2016.11", "event": "WCh 2016", "round": "10" },
+      "chessgames": { "gid": 1848571 }
+    },
+    {
+      "id": "carlsen-karjakin-2016-rapid4",
+      "white": "Magnus Carlsen", "black": "Sergey Karjakin", "year": 2016, "event": "Match mondiale di New York, spareggio rapid 4",
+      "categories": ["carlsen", "champions"],
+      "famous": "Carlsen mantiene il titolo chiudendo lo spareggio con il sacrificio di donna 50.Dh6+.",
+      "mentions": ["50.Qh6+"],
+      "pgnmentor": { "archive": "Carlsen", "white": "Carlsen", "black": "Karjakin", "date": "2016.11", "event": "WCh Rapid TB 2016", "round": "4" },
+      "chessgames": { "gid": 1848607 }
+    },
+    {
+      "id": "carlsen-nepomniachtchi-2021-6",
+      "white": "Magnus Carlsen", "black": "Ian Nepomniachtchi", "year": 2021, "event": "Match mondiale di Dubai, partita 6",
+      "categories": ["carlsen", "champions"],
+      "famous": "136 mosse: la partita più lunga nella storia dei match mondiali. Carlsen la vince e il match cambia direzione.",
+      "mentions": [],
+      "pgnmentor": { "archive": "Carlsen", "white": "Carlsen", "black": "Nepomniachtchi", "date": "2021.12", "round": "6" },
+      "chessgames": { "tid": 105291 }
+    }
+  ],
+  "excluded": [
+    { "id": "lasker-thomas-1912", "title": "Edward Lasker – George Alan Thomas, Londra 1912",
+      "reason": "non verificabile: non è negli archivi di PGN Mentor e le versioni pubblicate non concordano (ordine delle mosse d'apertura; matto finale 18.Rd2 o 18.O-O-O, vedi la pagina chessgames gid 1259009 e gli articoli di Edward Winter)" },
+    { "id": "legall-saint-brie-1750", "title": "Légal – Saint Brie, Parigi 1750",
+      "reason": "non verificabile: unica fonte (chessgames.com) e circolano versioni diverse (matto alla 7ª o alla 10ª mossa); più che una partita documentata è l'illustrazione di uno schema" }
+  ]
+}

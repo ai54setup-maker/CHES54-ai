@@ -1,0 +1,419 @@
+{
+ "games": [
+  {
+   "id": "anderssen-kieseritzky-1851",
+   "white": "Adolf Anderssen",
+   "black": "Lionel Kieseritzky",
+   "year": 1851,
+   "event": "Londra, partita amichevole",
+   "result": "1-0",
+   "moves": 23,
+   "plies": 45,
+   "categories": [
+    "classic",
+    "miniature"
+   ],
+   "opening": {
+    "eco": "C33",
+    "name": "King's Gambit Accepted: Bishop's Gambit, Bryan Countergambit"
+   },
+   "famous": "«L'Immortale»: Anderssen lascia entrambe le torri, un alfiere e infine la donna (22.Df6+) e dà matto con i pezzi minori.",
+   "pgn": "games/anderssen-kieseritzky-1851.pgn"
+  },
+  {
+   "id": "anderssen-dufresne-1852",
+   "white": "Adolf Anderssen",
+   "black": "Jean Dufresne",
+   "year": 1852,
+   "event": "Berlino, partita amichevole",
+   "result": "1-0",
+   "moves": 24,
+   "plies": 47,
+   "categories": [
+    "classic",
+    "miniature"
+   ],
+   "opening": {
+    "eco": "C52",
+    "name": "Italian Game: Evans Gambit, Dufresne Defense"
+   },
+   "famous": "«La Sempreverde»: il sacrificio di donna 21.Dxd7+ apre la strada a un matto di alfieri.",
+   "pgn": "games/anderssen-dufresne-1852.pgn"
+  },
+  {
+   "id": "morphy-opera-1858",
+   "white": "Paul Morphy",
+   "black": "Duca di Brunswick e Conte Isouard",
+   "year": 1858,
+   "event": "Parigi, al Teatro dell'Opera",
+   "result": "1-0",
+   "moves": 17,
+   "plies": 33,
+   "categories": [
+    "classic",
+    "miniature"
+   ],
+   "opening": {
+    "eco": "C41",
+    "name": "Philidor Defense"
+   },
+   "famous": "«La Partita dell'Opera»: Morphy sviluppa tutti i pezzi, sacrifica la donna con 16.Db8+ e dà matto con la torre.",
+   "pgn": "games/morphy-opera-1858.pgn"
+  },
+  {
+   "id": "steinitz-bardeleben-1895",
+   "white": "Wilhelm Steinitz",
+   "black": "Curt von Bardeleben",
+   "year": 1895,
+   "event": "Torneo di Hastings",
+   "result": "1-0",
+   "moves": 25,
+   "plies": 49,
+   "categories": [
+    "classic",
+    "champions",
+    "miniature"
+   ],
+   "opening": {
+    "eco": "C54",
+    "name": "Italian Game: Giuoco Piano, Greco's Attack"
+   },
+   "famous": "Premio di bellezza a Hastings: dopo 22.Txe7+ la torre bianca dà scacco dopo scacco sulla settima traversa e von Bardeleben lascia la sala senza aspettare il matto.",
+   "pgn": "games/steinitz-bardeleben-1895.pgn"
+  },
+  {
+   "id": "rotlewi-rubinstein-1907",
+   "white": "Georg Rotlewi",
+   "black": "Akiba Rubinstein",
+   "year": 1907,
+   "event": "Torneo di Łódź",
+   "result": "0-1",
+   "moves": 25,
+   "plies": 50,
+   "categories": [
+    "classic",
+    "miniature"
+   ],
+   "opening": {
+    "eco": "D32",
+    "name": "Tarrasch Defense: Symmetrical Variation"
+   },
+   "famous": "«L'Immortale di Rubinstein»: una catena di sacrifici, a partire da 22...Txc3, che si chiude con 25...Th3.",
+   "pgn": "games/rotlewi-rubinstein-1907.pgn"
+  },
+  {
+   "id": "reti-tartakower-1910",
+   "white": "Richard Réti",
+   "black": "Savielly Tartakower",
+   "year": 1910,
+   "event": "Vienna, partita amichevole",
+   "result": "1-0",
+   "moves": 11,
+   "plies": 21,
+   "categories": [
+    "miniature"
+   ],
+   "opening": {
+    "eco": "B15",
+    "name": "Caro-Kann Defense: Main Line"
+   },
+   "famous": "Una delle miniature più famose: Réti sacrifica la donna con 9.Dd8+ e chiude con un doppio scacco.",
+   "pgn": "games/reti-tartakower-1910.pgn"
+  },
+  {
+   "id": "capablanca-marshall-1918",
+   "white": "José Raúl Capablanca",
+   "black": "Frank Marshall",
+   "year": 1918,
+   "event": "Torneo di New York",
+   "result": "1-0",
+   "moves": 36,
+   "plies": 71,
+   "categories": [
+    "classic",
+    "champions"
+   ],
+   "opening": {
+    "eco": "C89",
+    "name": "Ruy Lopez: Marshall Attack, Original Marshall Attack"
+   },
+   "famous": "Marshall presenta il gambetto 8...d5 nella Spagnola, oggi chiamato Attacco Marshall; Capablanca respinge l'attacco e vince.",
+   "pgn": "games/capablanca-marshall-1918.pgn"
+  },
+  {
+   "id": "botvinnik-capablanca-1938",
+   "white": "Mikhail Botvinnik",
+   "black": "José Raúl Capablanca",
+   "year": 1938,
+   "event": "Torneo AVRO",
+   "result": "1-0",
+   "moves": 41,
+   "plies": 81,
+   "categories": [
+    "champions"
+   ],
+   "opening": {
+    "eco": "E40",
+    "name": "Nimzo-Indian Defense: Rubinstein System"
+   },
+   "famous": "Il futuro campione batte l'ex campione: 30.Aa3 dà il via a una combinazione in cui il Bianco sacrifica anche la donna.",
+   "pgn": "games/botvinnik-capablanca-1938.pgn"
+  },
+  {
+   "id": "byrne-fischer-1956",
+   "white": "Donald Byrne",
+   "black": "Bobby Fischer",
+   "year": 1956,
+   "event": "Trofeo Rosenwald, New York",
+   "result": "0-1",
+   "moves": 41,
+   "plies": 82,
+   "categories": [
+    "classic",
+    "champions"
+   ],
+   "opening": {
+    "eco": "A15",
+    "name": "English Opening: Anglo-Indian Defense, King's Indian Formation"
+   },
+   "famous": "«La partita del secolo»: Fischer, 13 anni, lascia la donna con 17...Ae6 e vince con i pezzi minori.",
+   "pgn": "games/byrne-fischer-1956.pgn"
+  },
+  {
+   "id": "fischer-spassky-1972-6",
+   "white": "Bobby Fischer",
+   "black": "Boris Spassky",
+   "year": 1972,
+   "event": "Match mondiale di Reykjavík, partita 6",
+   "result": "1-0",
+   "moves": 41,
+   "plies": 81,
+   "categories": [
+    "champions"
+   ],
+   "opening": {
+    "eco": "D59",
+    "name": "Queen's Gambit Declined: Tartakower Defense"
+   },
+   "famous": "Fischer, che apriva quasi sempre con 1.e4, gioca 1.c4 e vince; si racconta che Spassky stesso abbia applaudito.",
+   "pgn": "games/fischer-spassky-1972-6.pgn"
+  },
+  {
+   "id": "karpov-kasparov-1985-16",
+   "white": "Anatoly Karpov",
+   "black": "Garry Kasparov",
+   "year": 1985,
+   "event": "Match mondiale di Mosca, partita 16",
+   "result": "0-1",
+   "moves": 40,
+   "plies": 80,
+   "categories": [
+    "champions"
+   ],
+   "opening": {
+    "eco": "B44",
+    "name": "Sicilian Defense: Taimanov Variation, Gary Gambit"
+   },
+   "famous": "Il cavallo nero in d3 (16...Cd3) blocca il Bianco per tutta la partita: Kasparov la considerava la più bella del match che lo fece campione.",
+   "pgn": "games/karpov-kasparov-1985-16.pgn"
+  },
+  {
+   "id": "deepblue-kasparov-1997-6",
+   "white": "Deep Blue (computer)",
+   "black": "Garry Kasparov",
+   "year": 1997,
+   "event": "Match uomo-macchina di New York, partita 6",
+   "result": "1-0",
+   "moves": 19,
+   "plies": 37,
+   "categories": [
+    "champions",
+    "miniature"
+   ],
+   "opening": {
+    "eco": "B17",
+    "name": "Caro-Kann Defense: Karpov Variation, Modern Variation"
+   },
+   "famous": "Con il sacrificio 8.Cxe6 Deep Blue vince in 19 mosse e chiude il match: è la prima volta che un computer batte il campione del mondo in un match.",
+   "pgn": "games/deepblue-kasparov-1997-6.pgn"
+  },
+  {
+   "id": "kasparov-topalov-1999",
+   "white": "Garry Kasparov",
+   "black": "Veselin Topalov",
+   "year": 1999,
+   "event": "Torneo di Wijk aan Zee",
+   "result": "1-0",
+   "moves": 44,
+   "plies": 87,
+   "categories": [
+    "classic",
+    "champions"
+   ],
+   "opening": {
+    "eco": "B07",
+    "name": "Pirc Defense"
+   },
+   "famous": "«L'Immortale di Kasparov»: 24.Txd4 dà il via a una caccia al re che porta il re nero fino in a3 e oltre.",
+   "pgn": "games/kasparov-topalov-1999.pgn"
+  },
+  {
+   "id": "polgar-kasparov-2002",
+   "white": "Judit Polgár",
+   "black": "Garry Kasparov",
+   "year": 2002,
+   "event": "Russia – Resto del mondo (rapid), Mosca",
+   "result": "1-0",
+   "moves": 42,
+   "plies": 84,
+   "categories": [
+    "champions"
+   ],
+   "opening": {
+    "eco": "C67",
+    "name": "Ruy Lopez: Berlin Defense, l'Hermet Variation, Berlin Wall Defense"
+   },
+   "famous": "La giocatrice più forte di sempre batte Kasparov, numero uno al mondo: la sua unica vittoria contro di lui, in una partita rapid.",
+   "pgn": "games/polgar-kasparov-2002.pgn"
+  },
+  {
+   "id": "carlsen-ernst-2004",
+   "white": "Magnus Carlsen",
+   "black": "Sipke Ernst",
+   "year": 2004,
+   "event": "Torneo di Wijk aan Zee, gruppo C",
+   "result": "1-0",
+   "moves": 29,
+   "plies": 57,
+   "categories": [
+    "carlsen"
+   ],
+   "opening": {
+    "eco": "B19",
+    "name": "Caro-Kann Defense: Classical Variation, Spassky Variation"
+   },
+   "famous": "Carlsen ha 13 anni: con i sacrifici 18.Cg6 e 21.Axh6 apre il re nero e vince la partita che lo fa conoscere al mondo.",
+   "pgn": "games/carlsen-ernst-2004.pgn"
+  },
+  {
+   "id": "aronian-anand-2013",
+   "white": "Levon Aronian",
+   "black": "Viswanathan Anand",
+   "year": 2013,
+   "event": "Torneo di Wijk aan Zee",
+   "result": "0-1",
+   "moves": 23,
+   "plies": 46,
+   "categories": [
+    "champions",
+    "miniature"
+   ],
+   "opening": {
+    "eco": "D46",
+    "name": "Semi-Slav Defense: Chigorin Defense"
+   },
+   "famous": "Anand con il Nero sacrifica più pezzi e vince in 23 mosse: lui stesso la considera una delle migliori partite della sua vita.",
+   "pgn": "games/aronian-anand-2013.pgn"
+  },
+  {
+   "id": "carlsen-anand-2013-5",
+   "white": "Magnus Carlsen",
+   "black": "Viswanathan Anand",
+   "year": 2013,
+   "event": "Match mondiale di Chennai, partita 5",
+   "result": "1-0",
+   "moves": 58,
+   "plies": 115,
+   "categories": [
+    "carlsen",
+    "champions"
+   ],
+   "opening": {
+    "eco": "D31",
+    "name": "Semi-Slav Defense: Marshall Gambit, Forgotten Variation"
+   },
+   "famous": "La prima vittoria di Carlsen nel match per il titolo: da un piccolo vantaggio arriva a un finale e lo vince con pazienza.",
+   "pgn": "games/carlsen-anand-2013-5.pgn"
+  },
+  {
+   "id": "anand-carlsen-2013-9",
+   "white": "Viswanathan Anand",
+   "black": "Magnus Carlsen",
+   "year": 2013,
+   "event": "Match mondiale di Chennai, partita 9",
+   "result": "0-1",
+   "moves": 28,
+   "plies": 56,
+   "categories": [
+    "carlsen",
+    "champions"
+   ],
+   "opening": {
+    "eco": "E25",
+    "name": "Nimzo-Indian Defense: Sämisch Variation"
+   },
+   "famous": "Anand attacca sul lato di re ma sbaglia nel momento critico: con questa vittoria Carlsen arriva a un passo dal titolo.",
+   "pgn": "games/anand-carlsen-2013-9.pgn"
+  },
+  {
+   "id": "carlsen-karjakin-2016-10",
+   "white": "Magnus Carlsen",
+   "black": "Sergey Karjakin",
+   "year": 2016,
+   "event": "Match mondiale di New York, partita 10",
+   "result": "1-0",
+   "moves": 75,
+   "plies": 149,
+   "categories": [
+    "carlsen",
+    "champions"
+   ],
+   "opening": {
+    "eco": "C65",
+    "name": "Ruy Lopez: Berlin Defense, Anti-Berlin Variation"
+   },
+   "famous": "Sotto di un punto, Carlsen pareggia il match vincendo un lungo finale: un esempio del suo stile «macinatore».",
+   "pgn": "games/carlsen-karjakin-2016-10.pgn"
+  },
+  {
+   "id": "carlsen-karjakin-2016-rapid4",
+   "white": "Magnus Carlsen",
+   "black": "Sergey Karjakin",
+   "year": 2016,
+   "event": "Match mondiale di New York, spareggio rapid 4",
+   "result": "1-0",
+   "moves": 50,
+   "plies": 99,
+   "categories": [
+    "carlsen",
+    "champions"
+   ],
+   "opening": {
+    "eco": "B54",
+    "name": "Sicilian Defense: Prins Variation"
+   },
+   "famous": "Carlsen mantiene il titolo chiudendo lo spareggio con il sacrificio di donna 50.Dh6+.",
+   "pgn": "games/carlsen-karjakin-2016-rapid4.pgn"
+  },
+  {
+   "id": "carlsen-nepomniachtchi-2021-6",
+   "white": "Magnus Carlsen",
+   "black": "Ian Nepomniachtchi",
+   "year": 2021,
+   "event": "Match mondiale di Dubai, partita 6",
+   "result": "1-0",
+   "moves": 136,
+   "plies": 271,
+   "categories": [
+    "carlsen",
+    "champions"
+   ],
+   "opening": {
+    "eco": "D02",
+    "name": "Queen's Pawn Game: Symmetrical Variation, Pseudo-Catalan"
+   },
+   "famous": "136 mosse: la partita più lunga nella storia dei match mondiali. Carlsen la vince e il match cambia direzione.",
+   "pgn": "games/carlsen-nepomniachtchi-2021-6.pgn"
+  }
+ ]
+}

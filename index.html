@@ -15,10 +15,10 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="logo"><img src="icons/icon.svg" alt="" class="logo-icon">CHES<span>54</span><small>.ai</small></div>
+    <div class="logo"><img src="icons/icon.svg" alt="CHES54.ai" class="logo-icon"><span class="logo-text">CHES<span>54</span><small>.ai</small></span></div>
     <nav class="tabs" role="tablist" aria-label="Modalità">
       <button type="button" role="tab" id="tab-review" data-mode="review">Revisione</button>
-      <button type="button" role="tab" id="tab-analysis" data-mode="analysis">Analisi</button>
+      <button type="button" role="tab" id="tab-analysis" data-mode="analysis">Analisi partita</button>
     </nav>
     <button id="btn-theme" class="icon-btn" title="Cambia tema" aria-label="Cambia tema">◐</button>
   </header>
@@ -59,7 +59,7 @@
                   placeholder='[White "…"]&#10;[Black "…"]&#10;&#10;1. e4 e5 2. Cf3 …'></textarea>
         <div class="toolbar two">
           <label class="btn file-btn">Apri file .pgn<input type="file" id="pgn-file" accept=".pgn,text/plain" hidden></label>
-          <button type="button" class="btn" id="btn-example">Partita di esempio</button>
+          <button type="button" class="btn" id="btn-library">Libreria partite</button>
         </div>
         <label class="field-label" for="game-select" id="game-select-label" hidden>Partita del file</label>
         <select id="game-select" class="select" hidden></select>
@@ -81,7 +81,54 @@
       <div class="card" id="review-summary" hidden></div>
       <div class="card move-card" id="move-card" hidden aria-live="polite"></div>
 
-      <!-- Analisi libera: inserimento mosse -->
+      <!-- Analisi partita: impostazione iniziale -->
+      <div class="card" id="game-setup" hidden>
+        <h2>Analizza la tua partita</h2>
+        <p class="hint first">Ricostruisci la partita mossa per mossa: dopo ogni mossa Stockfish valuta la posizione,
+          giudica la mossa e aggiorna il grafico.</p>
+        <div class="field-label" id="setup-color-label">Con che colore hai giocato?</div>
+        <div class="segmented" id="setup-color" role="radiogroup" aria-labelledby="setup-color-label"></div>
+        <div class="setup-names">
+          <div>
+            <label class="field-label" for="setup-white">Bianco (facoltativo)</label>
+            <input id="setup-white" class="text-input" type="text" autocomplete="off" maxlength="60" placeholder="Nome">
+          </div>
+          <div>
+            <label class="field-label" for="setup-black">Nero (facoltativo)</label>
+            <input id="setup-black" class="text-input" type="text" autocomplete="off" maxlength="60" placeholder="Nome">
+          </div>
+        </div>
+        <details class="setup-fen" id="setup-fen-box">
+          <summary>Parti da una posizione (FEN)</summary>
+          <textarea id="setup-fen" rows="2" spellcheck="false" aria-label="FEN della posizione iniziale"
+                    placeholder="rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"></textarea>
+          <p class="hint">Vuoto = posizione iniziale. Puoi anche usare la scacchiera come analisi libera da qualsiasi posizione.</p>
+        </details>
+        <div class="input-error" id="setup-error" role="alert"></div>
+        <button type="button" class="btn primary wide" id="btn-setup-start">Inizia</button>
+        <button type="button" class="btn wide" id="setup-back" hidden>Torna alla partita</button>
+      </div>
+
+      <!-- Analisi partita: chi sta meglio, variante, mossa corrente -->
+      <div class="card adv-card" id="adv-card" hidden aria-live="polite"></div>
+      <div class="card coach-card" id="coach-card" hidden>
+        <div class="card-head">
+          <h2>Allenatore</h2>
+          <label class="switch"><input type="checkbox" id="coach-on"><span>Attivo</span></label>
+        </div>
+        <div class="segmented small" id="coach-level" role="radiogroup" aria-label="Livello dei suggerimenti"></div>
+        <div class="coach-body" id="coach-body" aria-live="polite"></div>
+      </div>
+      <div class="card variation-bar" id="variation-bar" hidden>
+        <p id="variation-text"></p>
+        <div class="toolbar two">
+          <button type="button" class="btn" id="btn-var-main">Torna alla linea principale</button>
+          <button type="button" class="btn" id="btn-var-promote">Usa come linea principale</button>
+        </div>
+      </div>
+      <div class="card move-card" id="game-move-card" hidden aria-live="polite"></div>
+
+      <!-- Analisi partita: inserimento mosse -->
       <form class="move-input" id="move-form" autocomplete="off" hidden>
         <input id="move-text" type="text" inputmode="text" autocapitalize="off" spellcheck="false"
                placeholder="Scrivi una mossa: e4, Cf3, O-O, e2e4…" aria-label="Mossa">
@@ -109,11 +156,13 @@
         <ol class="movelist" id="movelist"></ol>
       </div>
 
-      <div class="toolbar" id="analysis-tools" hidden>
-        <button type="button" class="btn" id="btn-undo">↶ Annulla mossa</button>
+      <div class="toolbar three" id="analysis-tools" hidden>
+        <button type="button" class="btn" id="btn-undo" title="Annulla l'ultima mossa">↶ Annulla</button>
+        <button type="button" class="btn" id="btn-redo" title="Rimetti la mossa annullata">↷ Ripeti</button>
         <button type="button" class="btn" id="btn-io">FEN / PGN</button>
-        <button type="button" class="btn" id="btn-review-this">Rivedi questa partita</button>
-        <button type="button" class="btn danger" id="btn-reset">Nuova posizione</button>
+        <button type="button" class="btn" id="btn-export">Esporta PGN</button>
+        <button type="button" class="btn primary" id="btn-review-this">Fai la revisione completa</button>
+        <button type="button" class="btn danger" id="btn-reset">Nuova partita</button>
       </div>
 
       <p class="footnote">Strumento di analisi e allenamento. Usarlo durante partite online o tornei è contro il regolamento.
@@ -127,7 +176,22 @@
     <div class="promo-choice" id="promo-choice"></div>
   </dialog>
 
-  <!-- FEN / PGN (analisi libera) -->
+  <!-- Libreria di partite celebri (revisione) -->
+  <dialog id="dlg-library" class="dialog wide library" aria-labelledby="lib-title">
+    <div class="lib-head">
+      <h2 id="lib-title">Libreria partite</h2>
+      <button type="button" class="icon-btn lib-close" aria-label="Chiudi">✕</button>
+    </div>
+    <input type="search" class="lib-search" placeholder="Cerca un giocatore: Carlsen, Morphy…" aria-label="Cerca per nome del giocatore" autocomplete="off" spellcheck="false">
+    <div class="chips lib-filters" role="group" aria-label="Categoria"></div>
+    <div class="lib-count hint" aria-live="polite"></div>
+    <div class="input-error lib-error" role="alert"></div>
+    <ul class="lib-list"></ul>
+    <p class="hint lib-note">Tocca una partita per farne la revisione. Mosse verificate su due fonti pubbliche
+      (<a href="data/examples/SOURCES.md" target="_blank" rel="noopener">fonti</a>).</p>
+  </dialog>
+
+  <!-- FEN / PGN (analisi partita) -->
   <dialog id="dlg-io" class="dialog wide">
     <h2>Posizione e partita</h2>
     <label for="io-fen">FEN (posizione mostrata)</label>

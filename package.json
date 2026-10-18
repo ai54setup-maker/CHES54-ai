@@ -11,6 +11,7 @@
     "test:ui": "node scripts/ui-test/run.mjs",
     "analyze": "node scripts/analyze-pgn.mjs",
     "bench": "node scripts/bench.mjs",
-    "build:openings": "node scripts/build-openings.mjs"
+    "build:openings": "node scripts/build-openings.mjs",
+    "build:examples": "node scripts/build-examples.mjs"
   }
 }

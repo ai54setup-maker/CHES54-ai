@@ -85,11 +85,42 @@ try {
   });
 
   let summary;
-  await step('revisione della partita di esempio', async () => {
-    await b.click('#btn-example');
-    await b.waitFor(`document.getElementById('pgn-text').value.includes('Morphy')`);
+  const libItems = `document.querySelectorAll('#dlg-library .lib-item')`;
+  const libSearch = (text) => b.ev(`(() => { const i = document.querySelector('#dlg-library .lib-search');
+    i.value = ${JSON.stringify(text)}; i.dispatchEvent(new Event('input')); })()`);
+  const libCount = () => b.ev(`${libItems}.length`);
+
+  await step('libreria: elenco, filtri per categoria e ricerca per nome', async () => {
+    const index = await (await fetch(`${url}data/examples/index.json`)).json();
+    await b.click('#btn-library');
+    await b.waitFor(`${libItems}.length > 0`, 10000);
+    assert.equal(await libCount(), index.games.length);
+    const first = await b.text('#dlg-library .lib-item');
+    assert.match(first, /Anderssen – Lionel Kieseritzky/);
+    assert.match(first, /1851 · Londra/);
+    assert.match(first, /C33 · King's Gambit Accepted/); // apertura calcolata dal nostro OpeningBook
+    await b.click('#dlg-library .chip[data-category="carlsen"]');
+    const carlsen = index.games.filter((g) => g.categories.includes('carlsen')).length;
+    assert.equal(await libCount(), carlsen);
+    assert.equal(await b.ev(`[...${libItems}].every((el) => el.textContent.includes('Carlsen'))`), true);
+    await b.click('#dlg-library .chip[data-category=""]');
+    await libSearch('polgar'); // senza accento: trova "Polgár"
+    assert.equal(await libCount(), 1);
+    await libSearch('zzz');
+    assert.equal(await libCount(), 0);
+    assert.match(await b.text('#dlg-library .lib-count'), /0 partite/);
+    await libSearch('');
+    await shot('02-library');
+  });
+
+  await step('revisione della partita scelta nella libreria', async () => {
+    await b.click('.lib-close');
     await b.click('#review-depth button:nth-child(2)'); // Normale (14)
-    await b.click('#btn-analyze');
+    await b.click('#btn-library');
+    await libSearch('morphy');
+    await b.click('#dlg-library .lib-item[data-id="morphy-opera-1858"]');
+    await b.waitFor(`document.getElementById('pgn-text').value.includes('Morphy')`);
+    assert.equal(await b.ev(`document.getElementById('dlg-library').open`), false);
     await b.waitFor(`!document.getElementById('review-summary').hidden`, 120000);
     summary = await b.text('#review-summary');
     // Stessi numeri dell'analisi da terminale (analisi riproducibile)
@@ -161,7 +192,7 @@ try {
     await b.clickSquare('d2');
     await b.clickSquare('d4');
     await sleep(300);
-    assert.equal(await b.text('.tabs .active'), 'Analisi');
+    assert.equal(await b.text('.tabs .active'), 'Analisi partita');
     await b.ev(`(() => { document.getElementById('move-text').value = 'Cf6'; document.getElementById('move-form').requestSubmit(); })()`);
     await sleep(200);
     assert.equal(await b.text('#movelist'), '1. d4 Cf6');
@@ -169,12 +200,28 @@ try {
     await shot('05-analysis');
   });
 
-  await step('telefono: nessuno scorrimento orizzontale', async () => {
+  await step('telefono (375 px): nessuno scorrimento orizzontale, libreria a tutto schermo', async () => {
     await b.click('#tab-review');
-    await b.viewport(390, 844, true);
+    await b.viewport(375, 812, true);
     await sleep(400);
-    assert.equal(await b.ev(`document.documentElement.scrollWidth <= 390`), true);
+    assert.equal(await b.ev(`document.documentElement.scrollWidth <= 375`), true);
     await shot('06-mobile');
+    await b.ev(`document.getElementById('btn-library').click()`);
+    await b.waitFor(`${libItems}.length > 0`, 10000);
+    await sleep(200);
+    const box = await b.ev(`(() => {
+      const d = document.getElementById('dlg-library').getBoundingClientRect();
+      const list = document.querySelector('#dlg-library .lib-list');
+      const items = [...document.querySelectorAll('#dlg-library .lib-item, #dlg-library .chip, #dlg-library .lib-close')];
+      return { w: d.width, h: d.height, overflowX: list.scrollWidth > list.clientWidth,
+        minTouch: Math.min(...items.map((el) => el.getBoundingClientRect().height)) };
+    })()`);
+    assert.equal(box.w, 375);
+    assert.equal(box.h, 812);
+    assert.equal(box.overflowX, false);
+    assert.ok(box.minTouch >= 40, `elemento toccabile alto solo ${box.minTouch} px`);
+    await shot('07-mobile-library');
+    await b.click('.lib-close');
     await b.viewport(1280, 900);
   });
 
@@ -193,6 +240,144 @@ try {
     const license = await (await fetch(`${url}LICENSE`)).text();
     assert.match(license, /GNU GENERAL PUBLIC LICENSE\s+Version 3/);
     await b.click('#about-close');
+  });
+
+  // ---------- Analisi partita ----------
+  const typeMove = (m) => b.ev(`(() => { document.getElementById('move-text').value = ${JSON.stringify(m)};
+    document.getElementById('move-form').requestSubmit(); })()`);
+  const gameCard = () => b.text('#game-move-card');
+  // Solo il testo delle mosse (senza i simboli delle categorie)
+  const movesText = () => b.ev(`[...document.querySelectorAll('#movelist li')]
+    .map((li) => [...li.querySelectorAll('.num, .mv > span:last-child')].map((e) => e.textContent).join(' ')).join(' ')`);
+
+  await step('analisi partita: impostazione con colore e nomi', async () => {
+    await b.click('#tab-analysis');
+    await b.click('#btn-reset'); // "Nuova partita": non cancella nulla finché non si preme Inizia
+    assert.equal(await b.ev(`document.getElementById('game-setup').hidden`), false);
+    assert.equal(await b.ev(`document.getElementById('setup-back').hidden`), false);
+    await b.click('#setup-color button:nth-child(2)'); // Nero
+    await b.ev(`document.getElementById('setup-white').value = 'Mario'; document.getElementById('setup-black').value = 'Anna'`);
+    await b.click('#btn-setup-start');
+    await sleep(200);
+    assert.equal(await b.ev(`document.getElementById('evalbar').classList.contains('flipped')`), true, 'scacchiera dal lato del Nero');
+    assert.equal(await b.text('#tag-bottom'), 'Anna (tu)');
+    assert.equal(await b.text('#tag-top'), 'Mario');
+    assert.match(await gameCard(), /Posizione iniziale/);
+  });
+
+  await step('analisi partita: mosse veloci, 3 linee, classificazione e punto di svolta', async () => {
+    for (const m of ['e4', 'e5', 'Dh5', 'Cc6', 'Ac4', 'Cf6']) await typeMove(m); // senza attendere: l'analisi precedente si annulla
+    assert.equal(await movesText(), '1. e4 e5 2. Dh5 Cc6 3. Ac4 Cf6');
+    await b.waitFor(`/Errore grave/.test(document.getElementById('game-move-card').innerText)`, 60000);
+    assert.match(await gameCard(), /3… Cf6 Errore grave/);
+    assert.match(await gameCard(), /Migliore: \S+/);
+    await b.waitFor(`(document.getElementById('depth-info').textContent || '').includes('✓')`, 60000);
+    assert.equal(await b.ev(`document.querySelectorAll('#lines .eline:not(.placeholder)').length`), 3);
+    assert.match(await b.text('#adv-card'), /Il Bianco ha il matto in 1/);
+    // Tutte le posizioni vengono valutate in sottofondo: il grafico cresce fino all'ultima
+    await b.waitFor(`document.querySelectorAll('#movelist .cls-icon').length === 6`, 90000);
+    assert.match(await b.text('#adv-card'), /Hai iniziato a perdere vantaggio con 3… Cf6/);
+    assert.equal(await b.ev(`!!document.querySelector('#eval-graph .dot-turning')`), true);
+    assert.equal(await b.ev(`!!document.querySelector('.badge svg')`), true);
+    await shot('08-game');
+    await typeMove('Dxf7#');
+    await b.waitFor(`/Scacco matto: vince il Bianco/.test(document.getElementById('adv-card').innerText)`, 30000);
+  });
+
+  await step('allenatore: suggerimento dimostrato, freccia, variante, livello Indizio, spegnimento', async () => {
+    await b.click('#btn-undo'); // torna alla posizione dopo 3... Cf6 (tocca al Bianco)
+    await b.waitFor(`/matto in 1/.test(document.getElementById('coach-body').innerText)`, 60000);
+    assert.match(await b.text('#coach-body'), /Attenzione: l'avversario ha il matto in 1 \(Dxf7#\)/);
+    await b.click('#coach-body .coach-hint');
+    await sleep(150);
+    assert.match(await b.text('#coach-body'), /Variante del motore: 4\. Dxf7#/);
+    assert.equal(await b.ev(`document.querySelectorAll('.arrows line').length`), 1, 'solo la freccia del suggerimento');
+    await shot('11-coach');
+    await b.click('#coach-level button:nth-child(1)'); // Indizio
+    await sleep(150);
+    assert.match(await b.text('#coach-body'), /C'è un matto per il Bianco: cercala!/);
+    assert.match(await b.text('#lines'), /Linee nascoste/);
+    assert.equal(await b.ev(`document.querySelectorAll('.arrows line').length`), 0);
+    await b.click('#coach-body .coach-hint'); // tocco = soluzione
+    await sleep(150);
+    assert.match(await b.text('#coach-body'), /Dxf7#/);
+    await b.click('#coach-level button:nth-child(2)'); // Soluzione
+    await b.ev(`document.getElementById('coach-on').click()`);
+    await sleep(150);
+    assert.match(await b.text('#coach-body'), /Allenatore spento/);
+    await b.ev(`document.getElementById('coach-on').click()`);
+    await b.click('#btn-redo');
+    await sleep(150);
+  });
+
+  await step('analisi partita: annulla e ripeti', async () => {
+    await b.click('#btn-undo');
+    await sleep(150);
+    assert.equal(await movesText(), '1. e4 e5 2. Dh5 Cc6 3. Ac4 Cf6');
+    assert.equal(await b.ev(`document.getElementById('btn-redo').disabled`), false);
+    await b.click('#btn-redo');
+    await sleep(150);
+    assert.match(await movesText(), /4\. Dxf7#$/);
+    assert.equal(await b.ev(`document.getElementById('btn-redo').disabled`), true);
+  });
+
+  await step('analisi partita: variante da un punto qualsiasi e ritorno alla linea principale', async () => {
+    await b.ev(moveButton(4)); // dopo 3. Ac4
+    await sleep(150);
+    await typeMove('g6');
+    await sleep(200);
+    assert.equal(await b.ev(`document.getElementById('variation-bar').hidden`), false);
+    assert.match(await b.text('#variation-text'), /al posto di 3… Cf6/);
+    assert.equal(await movesText(), '1. e4 e5 2. Dh5 Cc6 3. Ac4 g6');
+    await b.click('#btn-var-main');
+    await sleep(150);
+    assert.equal(await b.ev(`document.getElementById('variation-bar').hidden`), true);
+    assert.match(await movesText(), /3\. Ac4 Cf6 4\. Dxf7#$/);
+  });
+
+  await step('analisi partita: PGN con i nomi e revisione completa', async () => {
+    await b.click('#btn-io');
+    const pgn = await b.ev(`document.getElementById('io-pgn').value`);
+    assert.match(pgn, /\[White "Mario"\]/);
+    assert.match(pgn, /\[Black "Anna"\]/);
+    assert.match(pgn, /4\. Qxf7#/);
+    await b.click('#io-close');
+    await b.click('#btn-review-this');
+    assert.equal(await b.text('.tabs .active'), 'Revisione');
+    await b.waitFor(`!document.getElementById('review-summary').hidden`, 120000);
+    assert.match(await b.text('#review-summary'), /Mario.*Anna/);
+  });
+
+  await step('analisi partita: parti da una posizione (FEN)', async () => {
+    await b.click('#tab-analysis');
+    await b.click('#btn-reset');
+    await b.ev(`document.getElementById('setup-fen-box').open = true; document.getElementById('setup-fen').value = 'non una fen'`);
+    await b.click('#btn-setup-start');
+    assert.match(await b.text('#setup-error'), /FEN non valida/);
+    await b.click('#setup-color button:nth-child(1)'); // Bianco
+    await b.ev(`document.getElementById('setup-fen').value = '6k1/5ppp/8/8/8/8/5PPP/3R2K1 w - - 0 1'`);
+    await b.click('#btn-setup-start');
+    await sleep(200);
+    assert.equal(await b.ev(`document.getElementById('game-setup').hidden`), true);
+    await b.waitFor(`/matto in 1/.test(document.getElementById('adv-card').innerText)`, 30000);
+    await typeMove('Td8#');
+    await b.waitFor(`/Scacco matto: vince il Bianco \\(tu\\)/.test(document.getElementById('adv-card').innerText)`, 30000);
+  });
+
+  await step('analisi partita sul telefono (375 px)', async () => {
+    await b.viewport(375, 812, true);
+    await sleep(400);
+    assert.equal(await b.ev(`document.documentElement.scrollWidth <= 375`), true);
+    const small = await b.ev(`[...document.querySelectorAll('#analysis-tools .btn, #move-form .btn, .navbar .btn, #coach-level button, .coach-hint, .switch, .tabs button')]
+      .filter((el) => el.getBoundingClientRect().height < 40).length`);
+    assert.equal(small, 0, 'pulsanti troppo piccoli per il dito');
+    await shot('09-game-mobile');
+    await b.click('#btn-reset');
+    await sleep(200);
+    assert.equal(await b.ev(`document.documentElement.scrollWidth <= 375`), true);
+    await shot('10-setup-mobile');
+    await b.click('#setup-back');
+    await b.viewport(1280, 900);
   });
 
   await step('nessun errore nella console', async () => {

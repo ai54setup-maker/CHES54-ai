@@ -83,6 +83,34 @@ export const ANALYSIS_CONFIG = Object.freeze({
     maxPly: 40, // cerca il nome dell'apertura nelle prime 40 semimosse
   }),
 
+  // Nostro (scheda Analisi partita): "chi sta meglio e di quanto", in base a |win% del Bianco − 50|.
+  advantage: Object.freeze({
+    equalBelow: 5, //   sotto: posizione equilibrata
+    slightBelow: 15, // sotto: leggero vantaggio
+    clearBelow: 30, //  sotto: vantaggio chiaro; da qui in su: vantaggio decisivo
+  }),
+
+  // Nostro: "dove ho iniziato a perdere vantaggio". Si segnala solo se la win% del giocatore è scesa
+  // di almeno minDrop punti rispetto al massimo raggiunto; il punto è il primo suo errore dopo il massimo
+  // (o, se non ci sono errori, la sua mossa che ha perso più win%).
+  turningPoint: Object.freeze({
+    minDrop: 10,
+  }),
+
+  // Nostro (fase C): Allenatore. Un suggerimento compare solo se una linea di Stockfish lo dimostra.
+  coach: Object.freeze({
+    minGap: 10, //        occasione tattica: la 1ª linea batte la 2ª di almeno 10 punti di win% (mossa "unica")
+    minMaterial: 2, //    e lungo la 1ª linea si guadagnano almeno 2 pedoni di materiale (a scambi conclusi)
+    threatMinGap: 10, //  minaccia: se l'avversario potesse muovere ora, la sua win% salirebbe di almeno 10 punti
+    threatDepth: 12, //   profondità dell'analisi "a mossa nulla" usata per trovare le minacce
+    maxMateIn: 5, //      matti segnalati: fino al matto in 5
+    maxHints: 2, //       suggerimenti mostrati al massimo per posizione
+    minTargetValue: 3, // bersagli di forchette, inchiodature, infilate, scoperte: pezzi da 3 in su o il re
+    materialPlies: 4, //  semimosse della linea da giocare prima di misurare il materiale (poi fino a fine scambio)
+    maxPlies: 12,
+    linePlies: 6, //      semimosse della variante mostrata
+  }),
+
   keyMoments: Object.freeze({
     count: 5, // quanti momenti chiave mostrare al massimo
     minSwing: 10, // variazione minima di win% per essere un momento chiave

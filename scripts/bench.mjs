@@ -17,7 +17,7 @@ const { values, positionals } = parseArgs({
   allowPositionals: true,
   options: { depths: { type: 'string', default: '10,14,18' }, multipv: { type: 'string', default: '1,2' } },
 });
-const game = gameFromPgn(readFileSync(positionals[0] ?? root('data/examples/kasparov-topalov-1999.pgn'), 'utf8'));
+const game = gameFromPgn(readFileSync(positionals[0] ?? root('data/examples/games/kasparov-topalov-1999.pgn'), 'utf8'));
 const positions = game.plies.length + 1;
 console.log(`Partita: ${game.headers.White ?? '?'} – ${game.headers.Black ?? '?'}, ${game.plies.length} semimosse (${positions} posizioni)\n`);
 console.log('profondità  MultiPV   tempo totale   per posizione   Bianco/Nero (precisione)');

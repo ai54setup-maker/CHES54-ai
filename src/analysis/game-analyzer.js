@@ -64,25 +64,9 @@ export async function analyzeGame(game, engine, opts = {}) {
   const { bookPlies, opening } = opts.book ? opts.book.identify(fensAfter) : { bookPlies: 0, opening: null };
 
   /** @type {MoveAnalysis[]} */
-  const moves = game.plies.map((ply, i) => {
-    const before = positions[i];
-    const after = positions[i + 1];
-    const c = classifyMove({ ply, prevPly: game.plies[i - 1] ?? null, before, after, isBook: i < bookPlies });
-    return {
-      ply,
-      before,
-      after,
-      bestMove: before.bestMove,
-      bestSan: uciToSan(ply.fenBefore, before.bestMove),
-      isBest: c.isBest,
-      winBefore: c.winBefore,
-      winAfter: c.winAfter,
-      winLoss: c.winLoss,
-      accuracy: moveAccuracy(c.winBefore, c.winAfter),
-      classification: c.classification,
-      explanations: explainMove({ ply, before, after, classification: c.classification }),
-    };
-  });
+  const moves = game.plies.map((ply, i) => analyzeMove({
+    ply, prevPly: game.plies[i - 1] ?? null, before: positions[i], after: positions[i + 1], isBook: i < bookPlies,
+  }));
 
   const whiteWin = positions.map((p) => p.winPct);
   const startColor = game.startFen.split(' ')[1] === 'b' ? 'b' : 'w';
@@ -111,6 +95,76 @@ export async function analyzeGame(game, engine, opts = {}) {
     keyMoments: keyMoments(whiteWin),
     durationMs: Date.now() - t0,
   };
+}
+
+/**
+ * Analisi di una mossa a partire dalle valutazioni del motore prima e dopo: unico punto in cui si
+ * calcolano classificazione, precisione e spiegazioni (usato dalla revisione e dall'analisi partita).
+ * @param {{ ply: import('./game-model.js').Ply, prevPly: import('./game-model.js').Ply|null,
+ *           before: PositionEval, after: PositionEval, isBook: boolean }} p
+ * @returns {MoveAnalysis}
+ */
+export function analyzeMove({ ply, prevPly, before, after, isBook }) {
+  const c = classifyMove({ ply, prevPly, before, after, isBook });
+  return {
+    ply,
+    before,
+    after,
+    bestMove: before.bestMove,
+    bestSan: uciToSan(ply.fenBefore, before.bestMove),
+    isBest: c.isBest,
+    winBefore: c.winBefore,
+    winAfter: c.winAfter,
+    winLoss: c.winLoss,
+    accuracy: moveAccuracy(c.winBefore, c.winAfter),
+    classification: c.classification,
+    explanations: explainMove({ ply, before, after, classification: c.classification }),
+  };
+}
+
+/**
+ * Analisi di una partita ancora "in costruzione" (scheda Analisi partita): usa le valutazioni già
+ * disponibili e analizza le mosse che hanno sia la posizione prima sia quella dopo valutate.
+ * Le posizioni finali (matto, stallo, patta per regola) sono valutate con le regole, senza motore.
+ * @param {import('./game-model.js').Game} game
+ * @param {(fen: string) => PositionEval|null|undefined} evalOf  valutazioni del motore già pronte
+ * @param {import('./openings.js').OpeningBook|null} [book]
+ * @param {Map<string, any>} [memo]  memoria tra una chiamata e l'altra (risultati per mossa e posizione)
+ * @returns {{ positions: (PositionEval|null)[], moves: (MoveAnalysis|null)[], bookPlies: number,
+ *             opening: import('./openings.js').Opening|null }}
+ */
+export function analyzeLine(game, evalOf, book = null, memo = new Map()) {
+  const fens = [game.startFen, ...game.plies.map((p) => p.fenAfter)];
+  const positions = fens.map((fen, i) => {
+    if (i === fens.length - 1 && game.ending) return terminalEval(fen, game.ending);
+    const ending = cached(memo, `end|${fen}`, () => {
+      const c = new Chess(fen);
+      if (c.isCheckmate()) return 'checkmate';
+      return c.isStalemate() || c.isInsufficientMaterial() ? 'stalemate' : null;
+    });
+    return ending ? terminalEval(fen, ending) : evalOf(fen) ?? null;
+  });
+  const { bookPlies, opening } = book ? book.identify(fens.slice(1)) : { bookPlies: 0, opening: null };
+  const moves = game.plies.map((ply, i) => {
+    const before = positions[i];
+    const after = positions[i + 1];
+    if (!before || !after) return null;
+    const prevPly = game.plies[i - 1] ?? null;
+    const isBook = i < bookPlies;
+    // Stessa mossa con le stesse valutazioni (stessi oggetti) e lo stesso contesto: si riusa il risultato.
+    const key = `move|${ply.fenBefore}|${ply.uci}|${prevPly?.uci ?? ''}|${isBook}`;
+    const hit = memo.get(key);
+    if (hit && hit.before === before && (hit.after === after || (hit.after.terminal && after.terminal === hit.after.terminal))) return hit.result;
+    const result = analyzeMove({ ply, prevPly, before, after, isBook });
+    memo.set(key, { before, after, result });
+    return result;
+  });
+  return { positions, moves, bookPlies, opening };
+}
+
+function cached(memo, key, compute) {
+  if (!memo.has(key)) memo.set(key, compute());
+  return memo.get(key);
 }
 
 /**

@@ -42,7 +42,8 @@ Il browser si apre su `http://localhost:5454`. Nel terminale c'è anche l'indiri
 ## Uso
 
 ### Revisione di una partita
-1. Scheda **Revisione** → incolla il PGN, oppure **Apri file .pgn**, oppure **Partita di esempio**.
+1. Scheda **Revisione** → incolla il PGN, oppure **Apri file .pgn**, oppure **Libreria partite**: 21 partite celebri
+   (classiche, campioni del mondo, Magnus Carlsen, miniature) con filtri e ricerca; toccandone una parte subito la revisione.
    - *Chess.com:* apri la partita → Condividi → PGN → Copia.
    - *Lichess:* apri la partita → Condividi ed esporta → Scarica PGN.
 2. Scegli la profondità e premi **Analizza la partita**. La profondità **Normale (14)** è un buon compromesso:
@@ -53,11 +54,35 @@ Il browser si apre su `http://localhost:5454`. Nel terminale c'è anche l'indiri
    - **Ritenta questa mossa** (sugli errori) oppure **Ritenta gli errori** dal riepilogo.
 4. Se muovi un pezzo durante la revisione si apre una **variante** in Analisi libera.
 
-### Analisi libera
-- Muovi i pezzi trascinandoli, toccando prima il pezzo e poi la casa, oppure scrivendo la mossa
-  (`e4`, `Cf3`, `O-O`, `e2e4`, anche in notazione inglese `Nf3`).
-- Le linee del motore mostrano punteggio e mosse; toccane una per giocarne la prima mossa.
-- **FEN / PGN** per copiare o caricare una posizione o una partita. **Rivedi questa partita** la manda alla revisione.
+### Analisi partita
+Per ricostruire una partita mossa per mossa e vedere, a ogni passo, come cambia la situazione.
+1. Scegli il **colore con cui hai giocato** (la scacchiera si gira dal tuo lato) e, se vuoi, i nomi dei giocatori.
+   Con **Parti da una posizione** puoi incollare un FEN: è anche l'analisi libera da qualsiasi posizione.
+2. Inserisci le mosse trascinando i pezzi, toccando pezzo e casa, oppure scrivendole (`e4`, `Cf3`, `O-O`, `e2e4`,
+   anche `Nf3`). **↶ Annulla** e **↷ Ripeti** tolgono e rimettono l'ultima mossa.
+3. Dopo ogni mossa Stockfish analizza la posizione (l'analisi precedente si interrompe subito):
+   - le **3 mosse migliori** per chi deve muovere, con il punteggio;
+   - il **giudizio sulla mossa** appena inserita, con le stesse regole e soglie della Revisione;
+   - **chi sta meglio e di quanto** (equilibrio, leggero, chiaro o decisivo vantaggio, matto);
+   - il **grafico** che cresce mossa dopo mossa; il cerchio arancione indica **dove hai iniziato a perdere vantaggio**
+     (il tuo primo errore dopo il momento migliore, se la tua win% è scesa di almeno 10 punti).
+4. **Varianti:** torna a una mossa qualsiasi e gioca un'alternativa. La linea principale resta salvata:
+   **Torna alla linea principale** oppure **Usa come linea principale**.
+5. **Esporta PGN** scarica la partita; **FEN / PGN** copia o carica posizione e partita;
+   **Fai la revisione completa** la passa alla scheda Revisione. **Nuova partita** non cancella nulla finché non premi Inizia.
+
+### Allenatore
+Nella scheda Analisi partita, dopo ogni mossa, l'Allenatore mostra al massimo 2 suggerimenti brevi, per esempio
+*"Hai una forchetta: Cd5 attacca la donna e la torre"*, *"Attenzione: il tuo alfiere in c4 è in presa"*,
+*"Con Dh5+ c'è un matto in 2!"*, *"L'avversario minaccia Cxf7"*.
+- Ogni suggerimento è **dimostrato da una linea di Stockfish**: il motore trova la mossa, poi un riconoscitore dà il nome
+  alla tattica (forchetta, inchiodatura, infilata, attacco di scoperta, pezzo in presa, matto in N, minaccia).
+  Compare solo se la mossa è nettamente la migliore (almeno 10 punti di win% sulla seconda) e lungo la linea si vince
+  davvero materiale (almeno 2 pedoni), oppure se c'è un matto. Una "forchetta" che perde materiale non viene segnalata.
+- Le **minacce** si trovano chiedendo al motore che cosa farebbe l'avversario se toccasse a lui.
+- Tocca un suggerimento per vedere la **freccia** sulla scacchiera e la **variante del motore**.
+- **Indizio** dice solo che c'è una tattica (e nasconde le linee del motore finché non tocchi il suggerimento);
+  **Soluzione** dice quale. L'Allenatore si può spegnere.
 
 Le valutazioni sono sempre **dal punto di vista del Bianco**: `+1.20` vuol dire Bianco avanti di circa un pedone e
 un quinto, `M3` vuol dire che il Bianco dà matto in 3, `-M3` che lo dà il Nero.
@@ -101,6 +126,8 @@ consultati) sono in [`CLAUDE.md`](CLAUDE.md).
 **Limiti da conoscere:**
 - I risultati dipendono dalla profondità: a profondità basse la precisione può variare di qualche punto.
 - Capita che la prima scelta del motore risulti un errore dopo la mossa ("valutazione instabile"): l'app lo segnala.
+- Nella scheda Analisi partita la profondità è quella scelta nel riquadro Motore (Normale = 16), mentre la Revisione usa
+  la sua (Normale = 14): per questo il giudizio di una mossa può cambiare leggermente tra le due schede.
 
 ## Per chi sviluppa
 
@@ -112,6 +139,7 @@ npm run test:ui                  # test dell'interfaccia in un browser headless 
 npm run analyze -- partita.pgn   # revisione da terminale (--depth, --multipv, --movetime, --game, --json)
 npm run bench                    # tempi di analisi a diverse profondità
 npm run build:openings           # rigenera il dataset delle aperture
+npm run build:examples           # riscarica e verifica la libreria di partite (data/examples/)
 ```
 
 Tempi misurati su Apple M2 Pro, partita di 44 mosse (88 posizioni), motore single-thread:
@@ -132,11 +160,11 @@ ches54-ai/
 ├── src/
 │   ├── config/                parametri: motore, formule e soglie, interfaccia
 │   ├── engine/                Stockfish via UCI: worker, coda, cache, punteggi normalizzati
-│   ├── analysis/              PGN, partita, win%, precisione, classificazione, aperture, spiegazioni
+│   ├── analysis/              PGN, partita, win%, precisione, classificazione, aperture, spiegazioni, tattiche
 │   └── ui/                    scacchiera, barra, grafico, linee, lista mosse, riepilogo, app
 ├── engine/                    Stockfish 17.1 (WebAssembly), provenienza in engine/README.md
 ├── lib/chess.js               regole degli scacchi (chess.js 1.4.0)
-├── data/                      dataset delle aperture, partite di esempio
+├── data/                      dataset delle aperture, libreria di partite (fonti in data/examples/SOURCES.md)
 ├── test/                      test (node --test)
 ├── scripts/                   analisi da terminale, benchmark, test dell'interfaccia, dataset
 ├── docs/licenze.md            licenze, marchi, API: cosa sapere prima di pubblicare
@@ -146,6 +174,13 @@ ches54-ai/
 
 Se modifichi dei file e l'app è già installata sul telefono, cambia `VERSION` in `sw.js`: così il telefono scarica
 la nuova versione.
+
+### Aggiungere una partita alla libreria
+Le mosse non si scrivono mai a mano. Aggiungi una voce in `data/examples/catalog.json` (giocatori, anno, categorie,
+descrizione, mosse citate con il numero, selettore per l'archivio di [PGN Mentor](https://www.pgnmentor.com/files.html)
+e ID della stessa partita su chessgames.com), poi lancia `npm run build:examples`: lo script scarica le due fonti,
+le confronta mossa per mossa, controlla legalità e risultato, calcola l'apertura e aggiorna `index.json`, `games/` e
+`SOURCES.md`. Se le fonti non concordano la partita viene esclusa, con il motivo. Infine `npm test`.
 
 ## Crediti e licenze
 

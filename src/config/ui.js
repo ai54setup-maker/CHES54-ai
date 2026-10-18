@@ -12,6 +12,9 @@ export const UI_CONFIG = Object.freeze({
   ]),
   arrowHighlight: '#f59e0b', // linea su cui passa il mouse
   solutionArrow: Object.freeze({ color: '#22c55e', width: 0.2, opacity: 0.95, dashed: true }),
+  // Allenatore: freccia del suggerimento scelto (occasione) e della minaccia dell'avversario.
+  coachArrow: Object.freeze({ color: '#f59e0b', width: 0.2, opacity: 0.95 }),
+  coachThreatArrow: Object.freeze({ color: '#ef4444', width: 0.2, opacity: 0.95, dashed: true }),
 
   // Mosse mostrate per ogni linea del motore e nella "linea migliore" di una mossa.
   lineMoves: 8,
@@ -23,7 +26,24 @@ export const UI_CONFIG = Object.freeze({
     Object.freeze({ label: 'Profonda', depth: 18 }),
   ]),
 
-  examplePgnUrl: 'data/examples/opera-game.pgn',
+  // Scheda "Analisi partita": linee del motore mostrate dopo ogni mossa (servono anche a riconoscere le "Great").
+  gameMode: Object.freeze({
+    multiPv: 3,
+  }),
+
+  // Libreria di partite (data/examples/, generata da scripts/build-examples.mjs).
+  examples: Object.freeze({
+    indexUrl: 'data/examples/index.json',
+    baseUrl: 'data/examples/',
+    // Filtri della finestra; 'miniature' viene assegnata in automatico dallo script.
+    categories: Object.freeze([
+      Object.freeze({ id: 'classic', label: 'Classiche' }),
+      Object.freeze({ id: 'champions', label: 'Campioni del mondo' }),
+      Object.freeze({ id: 'carlsen', label: 'Magnus Carlsen' }),
+      Object.freeze({ id: 'miniature', label: 'Miniature/trappole' }),
+    ]),
+    miniatureMaxMoves: 25, // partita vinta (non patta) entro questo numero di mosse → "miniatura"
+  }),
 
   // Finestra "Informazioni e licenze" (avvisi legali richiesti dalla GPLv3, sezione 5(d)).
   about: Object.freeze({

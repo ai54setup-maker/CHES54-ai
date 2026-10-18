@@ -1,4 +1,4 @@
-// CHES54.ai – interfaccia: revisione della partita e analisi libera.
+// CHES54.ai – interfaccia: revisione della partita e analisi della partita mossa per mossa.
 // Qui ci sono solo lo stato dell'interfaccia e il collegamento tra i moduli: motore (src/engine),
 // logica di analisi (src/analysis) e componenti grafici (src/ui). Nessuna formula scacchistica.
 
@@ -10,7 +10,10 @@ import { ANALYSIS_CONFIG } from '../config/analysis.js';
 import { UI_CONFIG } from '../config/ui.js';
 import { splitPgnGames, parsePgn, PgnError } from '../analysis/pgn.js';
 import { gameFromPgn, createGame, withMoveAt, truncateGame, gameToPgn, uciToMove } from '../analysis/game-model.js';
-import { analyzeGame } from '../analysis/game-analyzer.js';
+import { analyzeGame, analyzeLine, positionEval } from '../analysis/game-analyzer.js';
+import { advantageOf, turningPoint } from '../analysis/advantage.js';
+import { coachHints, nullMoveFen } from '../analysis/tactics.js';
+import { formatHint } from './coach.js';
 import { loadOpeningBook } from '../analysis/openings.js';
 import { retryCandidates, evaluateAttempt, RETRY_CLASSIFICATIONS } from '../analysis/retry.js';
 import { Board } from './board.js';
@@ -23,6 +26,7 @@ import { renderSummary } from './summary.js';
 import { CLASS_INFO, classIcon } from './classification.js';
 import { formatExplanation } from './explanations.js';
 import { explainMove } from '../analysis/explain.js';
+import { Library } from './library.js';
 
 const $ = (id) => document.getElementById(id);
 const COLOR_NAME = { w: 'Bianco', b: 'Nero' };
@@ -52,18 +56,40 @@ const state = {
   depth: pickNum('depth', ENGINE_CONFIG.depthPresets.map((p) => p.depth), ENGINE_CONFIG.defaultDepth),
   multiPv: pickNum('multipv', ENGINE_CONFIG.multiPvOptions, ENGINE_CONFIG.multiPv),
   reviewDepth: pickNum('reviewDepth', UI_CONFIG.reviewDepthPresets.map((p) => p.depth), ANALYSIS_CONFIG.gameAnalysis.depth),
+  // Analisi partita
+  side: store.get('side', 'w') === 'b' ? 'b' : 'w', // colore con cui l'utente ha giocato
+  setupDone: store.get('setupDone', '') === '1', //  impostazione iniziale fatta (colore, nomi, posizione)
+  variation: null, // { base, game }: variante provata dalla posizione `base` della linea principale (state.free)
+  redo: [], // mosse annullate (UCI), per "Ripeti"
+  coach: { on: store.get('coach', '1') === '1', level: store.get('coachLevel', 'solution') === 'hint' ? 'hint' : 'solution' },
+  coachPick: null, // suggerimento scelto (indice) nella posizione mostrata: freccia e variante
 };
-// Analisi "dal vivo" della posizione mostrata
-const live = { fen: null, pending: true, result: null, highlighted: null };
+// Analisi "dal vivo" della posizione mostrata; gen cambia a ogni nuova richiesta (le risposte vecchie si ignorano)
+const live = { fen: null, pending: true, result: null, highlighted: null, gen: 0 };
 let engine = null;
 let engineFailed = false;
 const bookPromise = loadOpeningBook().catch(() => null);
+
+// Analisi partita: valutazioni finite del motore, per profondità e posizione.
+const gameEvals = new Map();
+const evalKey = (fen, depth = state.depth) => `${depth}|${fen}`;
+const evalOf = (fen) => gameEvals.get(evalKey(fen));
+let openingBook = null;
+const lineMemo = new Map(); // analisi delle linee già calcolate (si svuota quando arriva una valutazione)
+const moveMemo = new Map(); // analisi delle singole mosse: non si ricalcolano quelle che non cambiano
+const MOVE_MEMO_MAX = 5000;
+const coachCache = new Map(); // suggerimenti dell'Allenatore per profondità e posizione
+bookPromise.then((b) => {
+  openingBook = b;
+  lineMemo.clear();
+  if (state.mode === 'analysis') render();
+});
 
 const cur = () => state.cursors[state.mode];
 const setCur = (i) => { state.cursors[state.mode] = i; };
 const reviewDone = () => state.mode === 'review' && state.review.status === 'done';
 const EMPTY_GAME = createGame();
-const currentGame = () => (state.mode === 'review' ? state.review.game ?? EMPTY_GAME : state.free);
+const currentGame = () => (state.mode === 'review' ? state.review.game ?? EMPTY_GAME : state.variation?.game ?? state.free);
 const fenAt = (game, i) => (i === 0 ? game.startFen : game.plies[i - 1].fenAfter);
 const moveLabel = (ply) => `${ply.moveNumber}${ply.color === 'w' ? '.' : '…'} ${toItalian(ply.san)}`;
 
@@ -120,6 +146,7 @@ const board = new Board($('board'), {
 });
 
 const graph = new EvalGraph($('eval-graph'), { onSelect: (i) => goTo(i) });
+let graphShown = null; // dati attualmente disegnati nel grafico (per non ridisegnarlo a ogni render)
 
 // ---------- mosse giocate dall'utente ----------
 function playMove(move) {
@@ -131,16 +158,39 @@ function playMove(move) {
     if (!g) return false;
     state.free = g;
     state.cursors.analysis = g.plies.length;
+    Object.assign(state, { variation: null, redo: [], setupDone: true });
+    store.set('setupDone', '1');
     saveFree();
     setMode('analysis');
-    toast('Variante: ora sei in analisi libera');
+    toast('Variante: ora sei in Analisi partita');
     return true;
   }
-  const g = withMoveAt(state.free, cur(), move);
+  return playInGame(move);
+}
+
+/** Analisi partita: la mossa allunga la linea mostrata, oppure apre una variante. */
+function playInGame(move) {
+  if (!state.setupDone) return false;
+  const line = currentGame();
+  const i = cur();
+  const g = withMoveAt(line, i, move);
   if (!g) return false;
-  state.free = g;
-  setCur(g.plies.length);
-  saveFree();
+  state.redo = [];
+  if (line.plies[i]?.uci === g.plies[i].uci) {
+    setCur(i + 1); // è la mossa già presente nella linea: si va avanti
+  } else if (!state.variation && i < line.plies.length) {
+    // Mossa diversa a metà partita: la linea principale non si tocca, si prova una variante.
+    state.variation = { base: i, game: g };
+    setCur(i + 1);
+    toast('Variante: la linea principale resta salvata');
+  } else {
+    if (state.variation) state.variation = { base: Math.min(state.variation.base, i), game: g };
+    else {
+      state.free = g;
+      saveFree();
+    }
+    setCur(i + 1);
+  }
   render({ animate: true });
   return true;
 }
@@ -159,6 +209,7 @@ function setMode(mode) {
   if (state.retry) exitRetry(false);
   state.mode = mode;
   store.set('mode', mode);
+  if (mode === 'analysis' && state.setupDone) setOrientation(state.side);
   render();
 }
 
@@ -178,6 +229,7 @@ function onEngineError() {
 }
 
 function storedEval(fen) {
+  if (state.mode === 'analysis') return evalOf(fen) ?? null;
   if (state.mode !== 'review' || !state.review.analysis) return null;
   return state.review.analysis.positions.find((p) => p.fen === fen) ?? null;
 }
@@ -187,24 +239,165 @@ function requestLive() {
   const d = displayed();
   if (live.fen !== d.fen) {
     Object.assign(live, { fen: d.fen, pending: true, result: null, highlighted: null });
+    state.coachPick = null;
   }
   const busy = state.review.status === 'running' || state.retry?.phase === 'thinking'
     || state.retry?.phase === 'waiting' // durante "ritenta" le linee restano nascoste
-    || (state.mode === 'review' && !reviewDone()); // nessuna partita caricata: niente da analizzare
+    || (state.mode === 'review' && !reviewDone()) // nessuna partita caricata: niente da analizzare
+    || (state.mode === 'analysis' && !state.setupDone);
   if (!live.pending || busy || engineFailed || !engine) return renderLive();
   live.pending = false;
+  live.gen++;
   if (positionState(d.fen).over) {
     engine.cancelAll();
+    fillMissing();
     return renderLive();
   }
+  const multiPv = state.mode === 'analysis' ? UI_CONFIG.gameMode.multiPv : state.multiPv;
   const stored = storedEval(d.fen);
-  if (stored?.lines.length) live.result = { lines: stored.lines.slice(0, state.multiPv), depth: stored.depth, done: false, stored: true };
-  engine.cancelAll();
+  if (stored?.lines.length) live.result = { lines: stored.lines.slice(0, multiPv), depth: stored.depth, done: false, stored: true };
+  engine.cancelAll(); // la nuova posizione ha la precedenza: l'analisi precedente si interrompe
   const fen = d.fen;
-  engine.analyze(fen, { depth: state.depth, multiPv: state.multiPv, onUpdate: (r) => showLive(fen, r) })
-    .then((r) => showLive(fen, r))
+  const { mode, depth } = state;
+  const gen = live.gen;
+  engine.analyze(fen, { depth, multiPv, onUpdate: (r) => showLive(fen, r) })
+    .then(async (r) => {
+      showLive(fen, r);
+      if (mode === 'analysis') {
+        storeEval(fen, r, depth);
+        await runCoach(fen, depth, gen);
+        if (gen === live.gen) fillMissing();
+      }
+    })
     .catch((err) => { if (!(err instanceof AnalysisCancelled)) onEngineError(); });
   renderLive();
+}
+
+// ---------- analisi partita: valutazioni in sottofondo ----------
+/** Salva una valutazione finita e aggiorna classificazioni, grafico e indicatori. */
+function storeEval(fen, r, depth) {
+  if (!r.done) return;
+  gameEvals.set(evalKey(fen, depth), positionEval(r));
+  lineMemo.clear();
+  saveEvals();
+  renderGame();
+}
+
+/**
+ * Dopo l'analisi della posizione mostrata, valuta una alla volta le posizioni che ancora mancano
+ * (prima la linea mostrata, poi la linea principale). Una nuova mossa o posizione interrompe la catena.
+ */
+function fillMissing() {
+  if (state.mode !== 'analysis' || !state.setupDone || !engine || engineFailed) return;
+  const gen = live.gen;
+  for (const line of [currentGame(), state.free]) {
+    const i = lineAnalysis(line).positions.findIndex((p) => !p);
+    if (i < 0) continue;
+    const fen = i === 0 ? line.startFen : line.plies[i - 1].fenAfter;
+    const { depth } = state;
+    engine.analyze(fen, { depth, multiPv: UI_CONFIG.gameMode.multiPv })
+      .then((r) => {
+        if (gen !== live.gen) return;
+        storeEval(fen, r, depth);
+        fillMissing();
+      })
+      .catch((err) => { if (!(err instanceof AnalysisCancelled)) onEngineError(); });
+    return;
+  }
+}
+
+/**
+ * Allenatore: suggerimenti per la posizione mostrata, dalle linee del motore (MultiPV) e, se tocca
+ * all'utente, dall'analisi a mossa nulla (che cosa minaccia l'avversario).
+ */
+async function runCoach(fen, depth, gen) {
+  const key = evalKey(fen, depth);
+  if (!state.coach.on || coachCache.has(key)) return renderCoach();
+  const pe = gameEvals.get(key);
+  if (!pe || pe.terminal) return renderCoach();
+  const nf = fen.split(' ')[1] === state.side ? nullMoveFen(fen) : null;
+  let threat = null;
+  if (nf) {
+    try {
+      threat = positionEval(await engine.analyze(nf, { depth: ANALYSIS_CONFIG.coach.threatDepth, multiPv: 1 }));
+    } catch (err) {
+      if (!(err instanceof AnalysisCancelled)) onEngineError();
+      return;
+    }
+  }
+  if (gen !== live.gen) return;
+  const hints = coachHints({ fen, pe, threat });
+  coachCache.set(key, hints);
+  // Avviso breve (utile sul telefono, dove il pannello può essere fuori schermo)
+  if (hints.length && fen === displayed().fen) toast(`Allenatore: ${formatHint(hints[0], { user: state.side, level: state.coach.level }).text}`);
+  renderCoach();
+  renderLive(); // nel livello "Indizio" le linee si nascondono se c'è una tattica da trovare
+}
+
+/** Suggerimenti calcolati per la posizione mostrata (undefined = non ancora pronti). */
+const coachFor = () => coachCache.get(evalKey(displayed().fen));
+
+/** Livello "Indizio" con una tattica da trovare: linee e frecce del motore restano nascoste. */
+function coachHides() {
+  return state.mode === 'analysis' && state.coach.on && state.coach.level === 'hint'
+    && state.coachPick == null && !!coachFor()?.length;
+}
+
+function renderCoach() {
+  if (state.mode !== 'analysis' || !state.setupDone) return;
+  $('coach-on').checked = state.coach.on;
+  $('coach-level').hidden = !state.coach.on;
+  const el = $('coach-body');
+  if (!state.coach.on) {
+    el.innerHTML = '<p class="hint">Allenatore spento: attivalo per ricevere suggerimenti tattici dopo ogni mossa.</p>';
+    return;
+  }
+  const ps = positionState(displayed().fen);
+  const hints = coachFor();
+  if (ps.over || (hints && !hints.length)) {
+    el.innerHTML = '<p class="hint">Nessuna tattica da segnalare in questa posizione.</p>';
+    return;
+  }
+  if (!hints) {
+    el.innerHTML = '<p class="hint">L\'allenatore sta guardando la posizione…</p>';
+    return;
+  }
+  el.replaceChildren(...hints.map((h, i) => {
+    const picked = state.coachPick === i;
+    const f = formatHint(h, { user: state.side, level: picked ? 'solution' : state.coach.level });
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `coach-hint${h.threat ? ' threat' : ''}${picked ? ' picked' : ''}`;
+    b.setAttribute('aria-pressed', String(picked));
+    b.innerHTML = '<span class="coach-title"></span><span class="coach-text"></span>';
+    b.querySelector('.coach-title').textContent = f.title;
+    b.querySelector('.coach-text').textContent = f.text;
+    if (picked && f.line) {
+      const line = document.createElement('span');
+      line.className = 'mc-line';
+      line.textContent = `Variante del motore: ${f.line}`;
+      b.append(line);
+    } else {
+      const more = document.createElement('span');
+      more.className = 'coach-more';
+      more.textContent = state.coach.level === 'hint' ? 'Tocca per la soluzione' : 'Tocca per la freccia e la variante';
+      b.append(more);
+    }
+    b.addEventListener('click', () => {
+      state.coachPick = picked ? null : i;
+      renderCoach();
+      renderLive();
+    });
+    return b;
+  }));
+}
+
+/** Analisi (parziale) di una linea con le valutazioni pronte; memorizzata finché non ne arrivano di nuove. */
+function lineAnalysis(game) {
+  const key = `${state.depth}|${game.startFen}|${game.plies.map((p) => p.uci).join(' ')}|${game.ending}`;
+  if (moveMemo.size > MOVE_MEMO_MAX) moveMemo.clear();
+  if (!lineMemo.has(key)) lineMemo.set(key, analyzeLine(game, evalOf, openingBook, moveMemo));
+  return lineMemo.get(key);
 }
 
 function showLive(fen, r) {
@@ -229,6 +422,8 @@ function render({ animate = false } = {}) {
   renderNav();
   renderMoves();
   renderReviewCards();
+  renderGraph();
+  renderGame();
   requestLive();
 }
 
@@ -247,12 +442,20 @@ function renderVisibility() {
   $('review-progress').hidden = !(inReview && rs === 'running');
   $('review-summary').hidden = !reviewDone() || !!state.retry;
   $('move-card').hidden = !reviewDone();
-  $('graph-card').hidden = !reviewDone();
-  $('move-form').hidden = inReview;
+  const setup = !inReview && !state.setupDone; // Analisi partita, prima di "Inizia"
+  $('graph-card').hidden = inReview ? !reviewDone() : setup;
+  $('game-setup').hidden = !setup;
+  $('adv-card').hidden = inReview || setup;
+  $('coach-card').hidden = inReview || setup;
+  $('variation-bar').hidden = inReview || setup || !state.variation;
+  $('game-move-card').hidden = inReview || setup;
+  $('setup-back').hidden = !state.free.plies.length;
+  $('lines-control').hidden = !inReview; // in Analisi partita le linee sono sempre UI_CONFIG.gameMode.multiPv
+  $('move-form').hidden = inReview || setup;
   $('input-error').hidden = inReview;
-  $('analysis-tools').hidden = inReview;
-  $('lines-card').hidden = inReview && rs !== 'done';
-  $('moves-card').hidden = inReview && rs !== 'done';
+  $('analysis-tools').hidden = inReview || setup;
+  $('lines-card').hidden = (inReview && rs !== 'done') || setup;
+  $('moves-card').hidden = (inReview && rs !== 'done') || setup;
   if (inReview && rs === 'running') renderProgress();
 }
 
@@ -262,15 +465,23 @@ function renderBoard(animate) {
   let check = null;
   if (c.inCheck()) check = c.board().flat().find((p) => p && p.type === 'k' && p.color === c.turn())?.square ?? null;
   board.setPosition(c.board().flat().filter(Boolean), d.lastMove ? { from: d.lastMove.from, to: d.lastMove.to } : null, check, animate);
+  renderBadge();
+  if (reviewDone()) graph.setCursor(state.retry ? state.retry.index : cur());
+}
+
+/** Icona della categoria sulla casa d'arrivo della mossa mostrata. */
+function renderBadge() {
   let badge = null;
   if (state.retry?.attempt) {
     badge = { square: state.retry.attempt.ply.to, html: classIcon(state.retry.attempt.classification) };
   } else if (reviewDone() && !state.retry && cur() > 0) {
     const m = state.review.analysis.moves[cur() - 1];
     badge = { square: m.ply.to, html: classIcon(m.classification) };
+  } else if (state.mode === 'analysis' && state.setupDone && cur() > 0) {
+    const m = lineAnalysis(currentGame()).moves[cur() - 1];
+    if (m) badge = { square: m.ply.to, html: classIcon(m.classification) };
   }
   board.setBadge(badge);
-  if (reviewDone()) graph.setCursor(state.retry ? state.retry.index : cur());
 }
 
 function renderTags() {
@@ -284,7 +495,9 @@ function renderTags() {
       const acc = state.review.analysis?.players[color].accuracy;
       return `${name}${acc != null ? ` · ${fmt1(acc)}` : ''}`;
     }
-    return COLOR_NAME[color];
+    const h = state.free.headers;
+    const name = (color === 'w' ? h.White : h.Black) || COLOR_NAME[color];
+    return state.setupDone && color === state.side ? `${name} (tu)` : name;
   };
   const top = state.orientation === 'w' ? 'b' : 'w';
   const bottom = state.orientation;
@@ -302,14 +515,15 @@ function renderNav() {
   $('nav-prev').disabled = lock || (i === 0 && !state.retry);
   $('nav-next').disabled = lock || i >= max;
   $('nav-last').disabled = lock || i >= max;
-  $('btn-undo').disabled = state.free.plies.length === 0;
+  $('btn-undo').disabled = state.mode !== 'analysis' || currentGame().plies.length === 0;
+  $('btn-redo').disabled = !state.redo.length;
 }
 
 function renderMoves() {
   const game = currentGame();
   renderMoveList($('movelist'), {
     game,
-    moves: reviewDone() ? state.review.analysis.moves : null,
+    moves: reviewDone() ? state.review.analysis.moves : state.mode === 'analysis' ? lineAnalysis(game).moves : null,
     cursor: state.retry ? -1 : cur(),
     onSelect: (i) => goTo(i),
   });
@@ -341,6 +555,8 @@ function renderLive() {
     renderEngineMessage(ol, ps.text);
   } else if (state.review.status === 'running') {
     renderEngineMessage(ol, 'Il motore è occupato con la revisione della partita…');
+  } else if (coachHides()) {
+    renderEngineMessage(ol, 'Linee nascoste: c\'è una tattica da trovare. Tocca il suggerimento dell\'allenatore per la soluzione.');
   } else if (!lines.length) {
     renderEngineMessage(ol, engine?.isReady ? 'Analisi in corso…' : 'Avvio del motore…');
   } else {
@@ -362,6 +578,7 @@ function renderLive() {
     { bar: $('evalbar'), fill: $('evalbar-fill'), label: $('evalbar-label') },
     { score: ps.over ? null : score, mateWinner: ps.mateWinner ?? null, draw: !!ps.draw, orientation: state.orientation },
   );
+  if (state.mode === 'analysis' && state.setupDone) renderAdvantage(lineAnalysis(currentGame()));
 }
 
 function markHighlighted() {
@@ -381,6 +598,14 @@ function renderArrows() {
   }
   const lines = live.result?.lines ?? [];
   if (positionState(displayed().fen).over || (state.mode === 'review' && !reviewDone())) return board.setArrows([]);
+  if (state.mode === 'analysis') {
+    const h = state.coachPick != null ? coachFor()?.[state.coachPick] : null;
+    if (h) {
+      const style = h.threat ? UI_CONFIG.coachThreatArrow : UI_CONFIG.coachArrow;
+      return board.setArrows([{ from: h.move.slice(0, 2), to: h.move.slice(2, 4), ...style }]);
+    }
+    if (coachHides()) return board.setArrows([]);
+  }
   const styles = UI_CONFIG.arrows;
   board.setArrows(lines.map((l, i) => {
     const s = styles[Math.min(i, styles.length - 1)];
@@ -411,6 +636,20 @@ function explanationsHtml(facts) {
   return `<ul class="mc-explain">${items.join('')}</ul>`;
 }
 
+/** Intestazione della scheda di una mossa: categoria, valutazione, mossa migliore, spiegazioni. */
+function moveDetailsHtml(m) {
+  const info = CLASS_INFO[m.classification];
+  let html = `<div class="mc-head">${classIcon(m.classification)}<div>
+      <div class="mc-title">${moveLabel(m.ply)} <span class="cls-text cls-${m.classification}">${info.label}</span></div>
+      <div class="mc-sub">Valutazione ${evalText(m.after)} · perdita ${fmt1(m.winLoss)} punti di win% · precisione ${Math.round(m.accuracy)}</div>
+    </div></div>`;
+  if (!m.isBest && m.bestSan && m.before.lines[0]) {
+    html += `<p class="mc-best">Migliore: <b>${toItalian(m.bestSan)}</b> (${formatScore(m.before.lines[0].score)})
+      <span class="mc-line">${numberedLine(m.ply.fenBefore, m.before.lines[0].pv, UI_CONFIG.lineMoves)}</span></p>`;
+  }
+  return html + explanationsHtml(m.explanations ?? explainMove(m));
+}
+
 function renderReviewCards() {
   if (!reviewDone()) return;
   const a = state.review.analysis;
@@ -431,16 +670,7 @@ function renderReviewCards() {
     return;
   }
   const m = a.moves[i - 1];
-  const info = CLASS_INFO[m.classification];
-  let html = `<div class="mc-head">${classIcon(m.classification)}<div>
-      <div class="mc-title">${moveLabel(m.ply)} <span class="cls-text cls-${m.classification}">${info.label}</span></div>
-      <div class="mc-sub">Valutazione ${evalText(m.after)} · perdita ${fmt1(m.winLoss)} punti di win% · precisione ${Math.round(m.accuracy)}</div>
-    </div></div>`;
-  if (!m.isBest && m.bestSan && m.before.lines[0]) {
-    html += `<p class="mc-best">Migliore: <b>${toItalian(m.bestSan)}</b> (${formatScore(m.before.lines[0].score)})
-      <span class="mc-line">${numberedLine(m.ply.fenBefore, m.before.lines[0].pv, UI_CONFIG.lineMoves)}</span></p>`;
-  }
-  html += explanationsHtml(m.explanations ?? explainMove(m));
+  let html = moveDetailsHtml(m);
   if (m.isBest && RETRY_CLASSIFICATIONS.includes(m.classification)) html += `<p class="hint">${UNSTABLE_NOTE}</p>`;
   const key = a.keyMoments.find((k) => k.index === i - 1);
   if (key) html += `<p class="mc-key">Momento chiave: win% del Bianco ${key.swing > 0 ? '+' : '−'}${fmt1(Math.abs(key.swing))}</p>`;
@@ -563,6 +793,131 @@ function retryAction(act) {
   render();
 }
 
+// ---------- analisi partita: grafico, indicatori, schede ----------
+/** Grafico della revisione o della partita in analisi (cresce man mano che le posizioni sono valutate). */
+function renderGraph() {
+  let win;
+  let marks;
+  let cursor;
+  if (reviewDone()) {
+    const a = state.review.analysis;
+    win = a.positions.map((p) => p.winPct);
+    marks = a.moves.map((m, i) => ({ index: i + 1, cls: m.classification })).filter((m) => GRAPH_MARKS.includes(m.cls));
+    cursor = state.retry ? state.retry.index : cur();
+  } else if (state.mode === 'analysis' && state.setupDone) {
+    const a = lineAnalysis(currentGame());
+    win = [];
+    for (const p of a.positions) {
+      if (!p) break;
+      win.push(p.winPct);
+    }
+    marks = a.moves.map((m, i) => ({ index: i + 1, cls: m?.classification }))
+      .filter((m) => m.index < win.length && GRAPH_MARKS.includes(m.cls));
+    const tp = mainTurningPoint();
+    if (tp && !state.variation && tp.moveIndex + 1 < win.length) marks.push({ index: tp.moveIndex + 1, cls: 'turning' });
+    cursor = Math.min(cur(), Math.max(0, win.length - 1));
+  } else {
+    return;
+  }
+  const key = `${state.mode}|${win.join(',')}|${marks.map((m) => m.index + m.cls).join(',')}`;
+  if (key !== graphShown) {
+    graph.setData(win, marks);
+    graphShown = key;
+  }
+  graph.setCursor(cursor);
+}
+
+/** Dove il giocatore ha iniziato a perdere vantaggio, sulla linea principale. */
+function mainTurningPoint() {
+  const a = lineAnalysis(state.free);
+  return turningPoint(a.positions, a.moves, state.side);
+}
+
+/** Aggiorna tutto ciò che dipende dalle valutazioni (chiamata anche quando arriva una valutazione). */
+function renderGame() {
+  if (state.mode !== 'analysis' || !state.setupDone) return;
+  const a = lineAnalysis(currentGame());
+  renderAdvantage(a);
+  renderGameMoveCard(a);
+  renderVariationBar();
+  renderCoach();
+  renderBadge();
+  renderGraph();
+  renderMoves();
+}
+
+const ADV_TEXT = {
+  slight: 'sta leggermente meglio',
+  clear: 'ha un chiaro vantaggio',
+  decisive: 'ha un vantaggio decisivo',
+};
+
+/** "Chi sta meglio e di quanto" nella posizione mostrata, e dove il giocatore ha perso il vantaggio. */
+function renderAdvantage(a) {
+  const el = $('adv-card');
+  const i = cur();
+  let pe = a.positions[i];
+  let partial = false;
+  if (!pe && live.fen === displayed().fen && live.result?.lines?.length) {
+    pe = positionEval({ ...live.result, fen: live.fen }); // analisi ancora in corso
+    partial = true;
+  }
+  const who = (color) => `il ${COLOR_NAME[color]}${color === state.side ? ' (tu)' : ''}`;
+  const cap = (s) => s[0].toUpperCase() + s.slice(1);
+  let html;
+  if (!pe) {
+    html = '<div class="adv-title">Valutazione in corso…</div>';
+  } else {
+    const adv = advantageOf(pe);
+    let title;
+    if (adv.level === 'checkmate') title = `Scacco matto: vince ${who(adv.side)}`;
+    else if (adv.level === 'draw') title = 'Patta';
+    else if (adv.level === 'mate') title = `${cap(who(adv.side))} ha il matto in ${Math.abs(adv.mate)}`;
+    else if (adv.level === 'equal') title = 'Posizione equilibrata';
+    else title = `${cap(who(adv.side))} ${ADV_TEXT[adv.level]}`;
+    const whitePct = Math.round(adv.winPct);
+    const sub = pe.terminal ? '' : `Valutazione ${formatScore(pe.score)} · win% del Bianco ${whitePct}${partial ? ' · analisi in corso…' : ''}`;
+    html = `<div class="adv-title adv-${adv.side ?? 'none'}">${title}</div>
+      <div class="adv-meter" role="img" aria-label="win% del Bianco ${whitePct}"><div class="adv-meter-fill" style="width:${adv.winPct}%"></div></div>
+      ${sub ? `<div class="adv-sub">${sub}</div>` : ''}`;
+  }
+  const tp = mainTurningPoint();
+  if (tp) {
+    const ply = state.free.plies[tp.moveIndex];
+    html += `<p class="adv-turn">Hai iniziato a perdere vantaggio con
+      <button type="button" class="link-btn" data-goto="${tp.moveIndex + 1}">${moveLabel(ply)}</button>:
+      la tua win% è scesa da ${Math.round(tp.peakWin)} a ${Math.round(tp.nowWin)}.</p>`;
+  }
+  el.innerHTML = html;
+  el.querySelector('[data-goto]')?.addEventListener('click', (e) => {
+    state.variation = null;
+    goTo(Number(e.currentTarget.dataset.goto));
+  });
+}
+
+function renderGameMoveCard(a) {
+  const el = $('game-move-card');
+  const i = cur();
+  if (i === 0) {
+    el.innerHTML = `<div class="mc-title">Posizione iniziale</div>
+      <p class="hint">Gioca la prima mossa: trascina un pezzo oppure scrivila qui sotto (es. e4, Cf3, O-O).</p>`;
+    return;
+  }
+  const m = a.moves[i - 1];
+  const ply = currentGame().plies[i - 1];
+  let html = m ? moveDetailsHtml(m) : `<div class="mc-title">${moveLabel(ply)}</div><p class="hint">Stockfish sta valutando la mossa…</p>`;
+  if (a.opening && i <= a.bookPlies) html += `<p class="hint">Teoria: ${a.opening.eco} · ${a.opening.name}</p>`;
+  el.innerHTML = html;
+}
+
+function renderVariationBar() {
+  const v = state.variation;
+  if (!v) return;
+  const replaced = state.free.plies[v.base];
+  $('variation-text').textContent = `Stai provando una variante${replaced ? ` al posto di ${moveLabel(replaced)}` : ''}: `
+    + 'la linea principale resta salvata.';
+}
+
 // ---------- revisione ----------
 async function startReview() {
   const text = $('pgn-text').value;
@@ -611,10 +966,7 @@ async function startReview() {
 
 function finishReview(game, analysis) {
   state.review = { status: 'done', game, analysis, progress: [0, 0] };
-  graph.setData(
-    analysis.positions.map((p) => p.winPct),
-    analysis.moves.map((m, i) => ({ index: i + 1, cls: m.classification })).filter((m) => GRAPH_MARKS.includes(m.cls)),
-  );
+  graphShown = null; // il grafico va ridisegnato con la nuova revisione (renderGraph)
   live.pending = true;
   render();
 }
@@ -657,6 +1009,13 @@ function saveFree() {
   store.set('free', gameToPgn(state.free));
 }
 
+/** Valutazioni della linea principale (così dopo una ricarica non si rifà l'analisi). */
+function saveEvals() {
+  const fens = new Set([state.free.startFen, ...state.free.plies.map((p) => p.fenAfter)]);
+  const keep = [...gameEvals].filter(([k]) => fens.has(k.slice(k.indexOf('|') + 1)));
+  store.set('evals', JSON.stringify(keep));
+}
+
 function saveReview() {
   const { game, analysis } = state.review;
   store.set('review', JSON.stringify({ pgn: gameToPgn(game), analysis }));
@@ -670,6 +1029,10 @@ function restore() {
     state.free = createGame();
   }
   state.cursors.analysis = state.free.plies.length;
+  if (state.free.plies.length) state.setupDone = true; // partita salvata da una versione precedente dell'app
+  try {
+    for (const [k, v] of JSON.parse(store.get('evals', '') || '[]')) gameEvals.set(k, v);
+  } catch { /* valutazioni salvate non leggibili: si rifanno */ }
   try {
     const saved = JSON.parse(store.get('review', '') || 'null');
     if (saved) {
@@ -722,6 +1085,8 @@ function loadFromIO() {
     err.textContent = e instanceof PgnError ? e.message : 'Testo non valido.';
     return;
   }
+  Object.assign(state, { variation: null, redo: [], setupDone: true });
+  store.set('setupDone', '1');
   saveFree();
   $('dlg-io').close();
   render();
@@ -823,15 +1188,13 @@ $('pgn-file').addEventListener('change', async (e) => {
   showReviewError('');
   updateGameSelect();
 });
-$('btn-example').onclick = async () => {
-  try {
-    const res = await fetch(UI_CONFIG.examplePgnUrl);
-    $('pgn-text').value = await res.text();
-    updateGameSelect();
-  } catch {
-    showReviewError('Partita di esempio non disponibile offline.');
-  }
-};
+// Libreria: la partita scelta passa dallo stesso percorso di un PGN incollato.
+const library = new Library($('dlg-library'), (pgnText) => {
+  $('pgn-text').value = pgnText;
+  updateGameSelect();
+  startReview();
+});
+$('btn-library').onclick = () => library.open();
 
 $('move-form').addEventListener('submit', (e) => {
   e.preventDefault();
@@ -847,21 +1210,125 @@ $('move-form').addEventListener('submit', (e) => {
 });
 $('move-text').addEventListener('input', () => { $('input-error').textContent = ''; });
 
-$('btn-undo').onclick = () => {
-  // Toglie l'ultima mossa della partita in analisi
-  const n = state.free.plies.length;
-  if (!n) return;
-  state.free = truncateGame(state.free, n - 1);
-  setCur(Math.min(cur(), n - 1));
+// ---------- analisi partita: comandi ----------
+let setupColor = state.side;
+buildSegmented($('setup-color'), [{ label: 'Bianco', value: 'w' }, { label: 'Nero', value: 'b' }], setupColor, (v) => { setupColor = v; });
+
+$('btn-setup-start').onclick = () => {
+  let g;
+  try {
+    g = createGame($('setup-fen').value.trim() || undefined);
+  } catch (e) {
+    $('setup-error').textContent = e instanceof PgnError ? e.message : 'FEN non valida.';
+    return;
+  }
+  $('setup-error').textContent = '';
+  const white = $('setup-white').value.trim();
+  const black = $('setup-black').value.trim();
+  g.headers = { ...(white && { White: white }), ...(black && { Black: black }) };
+  Object.assign(state, { free: g, variation: null, redo: [], setupDone: true, side: setupColor });
+  store.set('side', setupColor);
+  store.set('setupDone', '1');
+  setCur(0);
   saveFree();
+  setOrientation(setupColor);
+  render();
+};
+$('setup-back').onclick = () => {
+  state.setupDone = true;
+  store.set('setupDone', '1');
+  render();
+};
+
+/** Sostituisce la linea mostrata (principale o variante) con `g`. */
+function replaceLine(g) {
+  if (state.variation) state.variation = { ...state.variation, game: g };
+  else {
+    state.free = g;
+    saveFree();
+  }
+}
+
+$('btn-undo').onclick = () => {
+  // Toglie l'ultima mossa della linea mostrata; "Ripeti" la rimette.
+  const line = currentGame();
+  const n = line.plies.length;
+  if (!n) return;
+  state.redo.push(line.plies[n - 1].uci);
+  if (state.variation && n - 1 <= state.variation.base) {
+    // La variante è vuota: si torna alla linea principale.
+    setCur(state.variation.base);
+    state.variation = null;
+    state.redo = [];
+  } else {
+    replaceLine(truncateGame(line, n - 1));
+    setCur(Math.min(cur(), n - 1));
+  }
+  render();
+};
+$('btn-redo').onclick = () => {
+  const uci = state.redo.pop();
+  if (!uci) return;
+  const line = currentGame();
+  const g = withMoveAt(line, line.plies.length, uciToMove(uci));
+  if (!g) {
+    state.redo = [];
+    return render();
+  }
+  replaceLine(g);
+  setCur(g.plies.length);
+  render({ animate: true });
+};
+$('btn-var-main').onclick = () => {
+  const { base } = state.variation;
+  state.variation = null;
+  state.redo = [];
+  setCur(base);
+  render();
+};
+$('btn-var-promote').onclick = () => {
+  state.free = { ...state.variation.game, headers: state.free.headers };
+  state.variation = null;
+  state.redo = [];
+  saveFree();
+  saveEvals();
+  toast('La variante ora è la linea principale');
   render();
 };
 $('btn-reset').onclick = () => {
-  state.free = createGame();
-  setCur(0);
-  saveFree();
+  // Non cancella nulla finché non si preme "Inizia": "Torna alla partita" annulla.
+  const h = state.free.headers;
+  $('setup-white').value = h.White ?? '';
+  $('setup-black').value = h.Black ?? '';
+  $('setup-fen').value = '';
+  state.setupDone = false;
+  state.variation = null;
   render();
 };
+$('btn-export').onclick = () => {
+  const pgn = gameToPgn(state.free);
+  const url = URL.createObjectURL(new Blob([pgn + '\n'], { type: 'application/x-chess-pgn' }));
+  const a = Object.assign(document.createElement('a'), { href: url, download: `ches54-${new Date().toISOString().slice(0, 10)}.pgn` });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('PGN scaricato');
+};
+$('coach-on').addEventListener('change', (e) => {
+  state.coach.on = e.target.checked;
+  store.set('coach', state.coach.on ? '1' : '0');
+  state.coachPick = null;
+  refreshLive();
+  renderCoach();
+});
+buildSegmented($('coach-level'), [{ label: 'Indizio', value: 'hint' }, { label: 'Soluzione', value: 'solution' }], state.coach.level, (v) => {
+  state.coach.level = v;
+  store.set('coachLevel', v);
+  state.coachPick = null;
+  renderCoach();
+  renderLive();
+});
 $('btn-io').onclick = openIO;
 $('btn-review-this').onclick = () => {
   if (!state.free.plies.length) return toast('Gioca almeno una mossa');
@@ -917,6 +1384,7 @@ applyTheme(store.get('theme', 'dark'));
 startEngine();
 board.setOrientation(state.orientation);
 restore();
+if (state.mode === 'analysis' && state.setupDone) setOrientation(state.side);
 render();
 
 if ('serviceWorker' in navigator && window.isSecureContext) {

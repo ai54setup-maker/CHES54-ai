@@ -44,7 +44,7 @@ test('Matto del barbiere: errore che subisce matto, matto dato, precisioni', asy
 });
 
 test('Partita dell\'Opera: i sacrifici famosi sono Brilliant', async () => {
-  const game = gameFromPgn(readFileSync(root('data/examples/opera-game.pgn'), 'utf8'));
+  const game = gameFromPgn(readFileSync(root('data/examples/games/morphy-opera-1858.pgn'), 'utf8'));
   const a = await analyzeGame(game, engine, { book, settings: { ...settings, depth: 14 } });
   const bySan = (san) => a.moves.find((m) => m.ply.san === san && m.ply.color === 'w');
   assert.equal(a.opening.eco, 'C41');

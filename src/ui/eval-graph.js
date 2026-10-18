@@ -26,6 +26,12 @@ export class EvalGraph {
    */
   setData(whiteWin, marks) {
     this.n = whiteWin.length;
+    if (!this.n) {
+      // Nessuna posizione ancora valutata (analisi partita appena iniziata)
+      this.el.innerHTML = '';
+      this.cursorEl = null;
+      return;
+    }
     const x = (i) => (this.n > 1 ? (i / (this.n - 1)) * W : W / 2);
     const y = (v) => H - v;
     const pts = whiteWin.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(2)}`).join(' L');

@@ -28,7 +28,17 @@ Se una formula o un'informazione non è verificabile, dichiaralo invece di inven
 | 4 | Spiegazioni basate solo sulle linee del motore | ✅ completata |
 | 5 | Test (perft, PGN), prestazioni, licenze, README | ✅ completata |
 
-Esperienza principale scelta: **revisione partita (PGN → analisi) + scacchiera di analisi libera**.
+### Seconda serie di fasi (richiesta del 2026-10-18)
+La scheda Revisione non va cambiata nel funzionamento: solo aggiunte.
+| Fase | Contenuto | Stato |
+|---|---|---|
+| A | Libreria di partite celebri (modale, filtri, ricerca, fonti verificate) | ✅ completata |
+| B | Scheda "Analisi partita" al posto di "Analisi" (ricostruzione mossa per mossa, grafico, varianti) | ✅ completata |
+| C | Allenatore: suggerimenti tattici dimostrati da Stockfish | ✅ completata |
+| D | Rifinitura per telefono, prestazioni, documentazione | ✅ completata |
+
+Esperienza principale: **Revisione** (PGN → analisi) + **Analisi partita** (ricostruzione mossa per mossa, con Allenatore;
+l'analisi libera da FEN è l'opzione "Parti da una posizione").
 
 ## Stack
 - JavaScript puro con moduli ES, tipi via **JSDoc**. **Nessuna build**, nessuna dipendenza npm a runtime.
@@ -56,7 +66,10 @@ src/analysis/accuracy.js  moveAccuracy, gameAccuracy (Lichess), meanAccuracy
 src/analysis/classify.js  classifyMove, errorLevel (regole Lichess), Great/Brilliant (nostre)
 src/analysis/openings.js  OpeningBook: identify(fensAfter) → { bookPlies, opening }
 src/analysis/key-moments.js  semimosse con la variazione di win% più grande
-src/analysis/game-analyzer.js  analyzeGame(game, engine, { book, settings, onProgress })
+src/analysis/game-analyzer.js  analyzeGame(game, engine, …); analyzeMove() = unico calcolo di una mossa (classificazione,
+                          precisione, spiegazioni); analyzeLine() = partita parziale con le valutazioni pronte (memo per mossa)
+src/analysis/advantage.js advantageOf() "chi sta meglio e di quanto"; turningPoint() "dove ho iniziato a perdere vantaggio"
+src/analysis/tactics.js   Allenatore: recognizeTactic() dà il nome a una linea del motore; coachHints(); nullMoveFen()
 src/analysis/retry.js     retryCandidates(), evaluateAttempt(): "ritenta la mossa" con le stesse regole della revisione
 src/analysis/material.js  materialBalance, materialAlongLine (materiale a fine scambio lungo una variante)
 src/analysis/explain.js   explainMove(): fatti strutturati dimostrati dalle linee del motore (nessun testo)
@@ -69,7 +82,14 @@ src/ui/board.js           scacchiera: drag, tocco, frecce (anche tratteggiate), 
 src/ui/notation.js        notazione italiana, linee numerate, parsing dell'input utente
 src/ui/classification.js  nomi italiani e icone SVG delle categorie (simboli standard !!, !, ?!, ?, ??)
 src/ui/evalbar.js, eval-graph.js, engine-lines.js, move-list.js, summary.js   componenti grafici
-data/examples/opera-game.pgn  partita di esempio (Morphy 1858, pubblico dominio), usata anche nei test
+src/ui/coach.js           testo italiano dei suggerimenti dell'Allenatore (solo formulazione)
+src/ui/library.js         finestra "Libreria partite": indice, filtri per categoria, ricerca (senza accenti), scelta → startReview()
+data/examples/catalog.json  catalogo scritto a mano (metadati, categorie, "perché è famosa", mosse citate, selettori delle fonti): NESSUNA mossa
+data/examples/index.json    generato: dati mostrati nella finestra (apertura calcolata da OpeningBook)
+data/examples/games/*.pgn   generati: un PGN per partita, testo originale di PGN Mentor
+data/examples/SOURCES.md    generato: fonti, date di download, SHA-256, partite escluse e perché
+scripts/build-examples.mjs  scarica (PGN Mentor + chessgames.com), confronta, verifica, genera i file sopra
+scripts/lib/examples.mjs    controlli condivisi da script e test (checkGame, compareGames, categoriesOf)
 ```
 `js/explain.js` (spiegazioni euristiche non basate sul motore) è stato rimosso in fase 1;
 le spiegazioni torneranno in fase 4, derivate solo dalle linee del motore.
@@ -86,8 +106,9 @@ le spiegazioni torneranno in fase 4, derivate solo dalle linee del motore.
   almeno altrettanto esigente per profondità e tempo). Un risultato peggiore non sostituisce uno migliore.
 
 ### Interfaccia (fase 3)
-- Due schede: **Revisione** (PGN → analisi → riepilogo, grafico, scheda mossa, "ritenta") e **Analisi**
-  (analisi libera, inserimento mosse, FEN/PGN). Giocare una mossa diversa in revisione apre una variante in Analisi.
+- Due schede: **Revisione** (PGN o Libreria → analisi → riepilogo, grafico, scheda mossa, "ritenta") e **Analisi partita**
+  (vedi fase B; `data-mode="analysis"` resta il nome interno). Giocare una mossa diversa in revisione apre una variante
+  in Analisi partita (sostituisce la partita che c'era: comportamento della Revisione invariato).
 - Tutte le valutazioni mostrate sono dal punto di vista del Bianco.
 - Stato: `state` in app.js; posizione mostrata = `displayed()` (in "ritenta" è quella del tentativo).
 - Analisi dal vivo della posizione mostrata (`requestLive`): sospesa durante la revisione, durante
@@ -144,7 +165,8 @@ node --test test/engine.integration.test.mjs   # solo test con il motore reale
 npm run analyze -- partita.pgn [--depth 14] [--multipv 2] [--movetime 500] [--game N] [--json]
 npm run build:openings # rigenera data/openings/openings.json dopo aver aggiornato i .tsv
 npm run test:ui        # test dell'interfaccia in Chromium headless (scripts/ui-test/, CHROME_PATH se non trovato)
-npm run bench          # tempi di analisi (default: data/examples/kasparov-topalov-1999.pgn)
+npm run bench          # tempi di analisi (default: data/examples/games/kasparov-topalov-1999.pgn)
+npm run build:examples # libreria di partite: scarica le fonti (in data/examples/source/, esclusa da git), verifica, rigenera
 ```
 Richiede Node ≥ 22 (WebSocket integrato per test:ui; glob in `node --test`).
 Prima di chiudere una modifica all'interfaccia: `npm test` e `npm run test:ui` devono passare.
@@ -196,6 +218,55 @@ Parametri in `explanations` di `src/config/analysis.js`. Solo per Inaccuracy/Mis
   affidabile: nessun fatto sul materiale. Se nessun fatto è dimostrabile non si mostra nulla (in "ritenta" si
   mostra solo la risposta del motore).
 - Massimo 2 fatti per mossa, in quest'ordine: matti, poi materiale.
+
+### Libreria di partite (fase A)
+- **Mai mosse scritte a memoria.** Fonte principale: archivi per giocatore di PGN Mentor; seconda fonte: PGN di
+  chessgames.com (`/nodejs/game/viewGamePGN?text=1&gid=…`, serve uno User-Agent da browser; pausa di 1,5 s tra le richieste).
+- Inclusa solo se le due fonti hanno stesse mosse e stesso risultato. Unica eccezione: una fonte si ferma prima e
+  riporta le mosse mancanti, identiche, nel commento finale (matto annunciato, es. la Sempreverde).
+  Le trasposizioni nell'ordine delle mosse contano come differenza (Lasker–Bauer e Levitsky–Marshall esclusi per questo).
+- `mentions` nel catalogo: le mosse citate nella descrizione, con numero (es. `30.Ba3`); il test verifica che ci siano.
+- Categoria "miniature" automatica: partita vinta entro `UI_CONFIG.examples.miniatureMaxMoves` (25) mosse.
+- Il service worker mette in cache solo `index.json`; i PGN entrano in cache quando vengono aperti (strategia rete-poi-cache).
+- La descrizione "perché è famosa" è un fatto storico, non una valutazione: i giudizi sulle mosse restano a Stockfish.
+
+### Analisi partita (fase B)
+- Stato in app.js: `state.free` = linea principale; `state.variation = { base, game }` = variante provata dalla posizione
+  `base` (una mossa diversa a metà partita NON sovrascrive la linea principale); `state.redo` = mosse annullate (UCI);
+  `state.side` = colore dell'utente; `state.setupDone`. Persistenti: free (PGN), side, setupDone, valutazioni (`evals`).
+- Motore: prima la posizione mostrata (MultiPV `UI_CONFIG.gameMode.multiPv` = 3, profondità del riquadro Motore), poi
+  Allenatore, poi `fillMissing()` valuta una alla volta le posizioni senza valutazione. Ogni nuova posizione mostrata
+  incrementa `live.gen` e chiama `cancelAll()`: le risposte vecchie vengono ignorate.
+- Valutazioni salvate in `gameEvals` con chiave `profondità|FEN`; `lineAnalysis()` memorizza l'analisi della linea
+  (si svuota a ogni valutazione nuova) e `moveMemo` le singole mosse: 271 semimosse = 115 ms senza memo, 0,8 ms con.
+- Classificazione = `analyzeMove()`, la stessa della Revisione. La profondità può differire (16 contro 14).
+- Chi sta meglio (`ANALYSIS_CONFIG.advantage`, nostro): |win% − 50| < 5 equilibrio, < 15 leggero, < 30 chiaro, poi decisivo;
+  matto in N; posizioni finali con le regole.
+- Punto di svolta (`ANALYSIS_CONFIG.turningPoint`, nostro): se la win% del giocatore è scesa di ≥ 10 punti dal suo massimo,
+  è il suo primo errore (Inaccuracy/Mistake/Blunder) dopo il massimo, altrimenti la sua mossa che ha perso più win%.
+  Nessun punto se il calo è dovuto solo a mosse dell'avversario. Solo sulla linea principale.
+
+### Allenatore (fase C)
+- `tactics.js`: suggerimento solo se una linea di Stockfish lo dimostra (`ANALYSIS_CONFIG.coach`, nostro):
+  - **occasione** per chi muove: 1ª linea MultiPV migliore della 2ª di ≥ 10 punti di win% E guadagno ≥ 2 pedoni lungo
+    la linea (`materialAlongLine`, a scambi conclusi); oppure matto in ≤ 5 (anche senza distacco);
+  - **minaccia** (solo quando tocca all'utente): analisi a profondità 12 della posizione a mossa nulla (`nullMoveFen`,
+    non se sotto scacco); vale se la win% dell'avversario salirebbe di ≥ 10 punti (o matto) e la linea vince ≥ 2 pedoni.
+  - Nome dalla prima mossa della linea, in quest'ordine: scoperta (un altro pezzo ora attacca un bersaglio) → forchetta
+    (il pezzo mosso attacca ≥ 2 bersagli) → inchiodatura/infilata (alfiere/torre/donna vede due pezzi avversari in fila:
+    davanti meno prezioso = inchiodatura, più prezioso = infilata) → pezzo in presa (cattura senza ripresa sulla casa) →
+    "vince materiale". Bersagli = pezzi da 3 in su o il re.
+  - Massimo 2 suggerimenti, i matti per primi.
+- Interfaccia: pannello "Allenatore" (on/off, Indizio/Soluzione) + toast. Tocco = freccia (`UI_CONFIG.coachArrow`,
+  rossa tratteggiata per le minacce) e variante. Nel livello Indizio, con una tattica da trovare, linee e frecce del motore
+  restano nascoste finché non si tocca il suggerimento.
+- Test con il vero Stockfish (`test/tactics.test.mjs`): una posizione per tipo + negativi (posizioni tranquille,
+  forchetta che perde materiale).
+
+### Rifinitura (fase D)
+- Telefono (375 px, verificato da test:ui): libreria a tutto schermo, nessuno scorrimento orizzontale, elementi toccabili
+  ≥ 40 px; sotto 420 px l'intestazione mostra solo l'icona del logo.
+- `test/sw.test.mjs`: ogni modulo di `src/` deve essere in `FILES` di sw.js.
 
 ### Decisioni valutate e scartate
 - **Perdita calcolata con il punteggio della linea MultiPV della mossa giocata** (stessa ricerca della
