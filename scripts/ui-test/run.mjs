@@ -175,6 +175,17 @@ try {
     assert.equal(await b.text('#review-summary'), summary);
   });
 
+  await step('informazioni e licenze (avvisi GPLv3)', async () => {
+    await b.click('#btn-about');
+    const about = await b.text('#dlg-about');
+    assert.match(about, /GNU General Public License versione 3/);
+    assert.match(about, /senza alcuna garanzia/);
+    assert.match(about, /github\.com\/nmrugg\/stockfish\.js\/tree\/v17\.1\.0/);
+    const license = await (await fetch(`${url}LICENSE`)).text();
+    assert.match(license, /GNU GENERAL PUBLIC LICENSE\s+Version 3/);
+    await b.click('#about-close');
+  });
+
   await step('nessun errore nella console', async () => {
     assert.deepEqual(b.errors, []);
   });

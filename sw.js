@@ -1,6 +1,6 @@
 // Service worker: salva l'app (motore compreso) per usarla anche offline.
 // Cambia VERSION quando aggiorni i file, così i telefoni scaricano la nuova versione.
-const VERSION = 'ches54-v4';
+const VERSION = 'ches54-v5';
 const FILES = [
   './',
   'index.html',
@@ -20,6 +20,8 @@ const FILES = [
   'engine/stockfish.wasm',
   'data/openings/openings.json',
   'data/examples/opera-game.pgn',
+  'LICENSE',
+  'THIRD-PARTY-NOTICES.md',
   'icons/icon.svg',
   'icons/icon-192.png',
   'icons/icon-512.png',

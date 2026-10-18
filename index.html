@@ -116,7 +116,8 @@
         <button type="button" class="btn danger" id="btn-reset">Nuova posizione</button>
       </div>
 
-      <p class="footnote">Strumento di analisi e allenamento. Usarlo durante partite online o tornei è contro il regolamento.</p>
+      <p class="footnote">Strumento di analisi e allenamento. Usarlo durante partite online o tornei è contro il regolamento.
+        <br><button type="button" class="link-btn" id="btn-about">Informazioni e licenze</button></p>
     </section>
   </main>
 
@@ -141,6 +142,26 @@
       <button type="button" class="btn primary" id="io-load">Carica</button>
       <button type="button" class="btn" id="io-close">Chiudi</button>
     </div>
+  </dialog>
+
+  <!-- Informazioni e licenze -->
+  <dialog id="dlg-about" class="dialog wide">
+    <h2>CHES54.ai <small id="about-version"></small></h2>
+    <p id="about-copyright"></p>
+    <p>Questo programma è software libero: puoi ridistribuirlo e/o modificarlo secondo i termini della
+      <a href="LICENSE" target="_blank" rel="noopener">GNU General Public License versione 3</a>, o (a tua scelta)
+      di una versione successiva, pubblicata dalla Free Software Foundation.</p>
+    <p>È distribuito nella speranza che sia utile, ma <b>senza alcuna garanzia</b>; senza neppure la garanzia implicita
+      di commerciabilità o di idoneità a uno scopo particolare. Vedi la licenza per i dettagli.</p>
+    <p><b>Codice sorgente.</b> I file JavaScript che il browser scarica sono il codice sorgente dell'app<span id="about-source"></span>.
+      Il motore Stockfish (GPLv3) è compilato dal sorgente disponibile qui:
+      <a id="about-sf-source" target="_blank" rel="noopener"></a>.</p>
+    <p><b>Componenti di terze parti:</b> Stockfish 17.1 (GPLv3, gli sviluppatori di Stockfish; build JavaScript
+      © Chess.com, LLC), chess.js (BSD-2-Clause, © Jeff Hlywa), pezzi "cburnett" (GPLv2+, Colin M.L. Burnett),
+      dataset delle aperture lichess-org/chess-openings (CC0).
+      <a href="THIRD-PARTY-NOTICES.md" target="_blank" rel="noopener">Dettagli</a>.</p>
+    <p>CHES54.ai non è affiliato a Chess.com né a Lichess e non è approvato da loro.</p>
+    <div class="toolbar two"><span></span><button type="button" class="btn" id="about-close">Chiudi</button></div>
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>

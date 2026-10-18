@@ -891,6 +891,21 @@ buildSegmented($('review-depth'), UI_CONFIG.reviewDepthPresets.map((p) => ({ lab
   store.set('reviewDepth', v);
 });
 
+$('btn-about').onclick = () => {
+  const a = UI_CONFIG.about;
+  $('about-version').textContent = `versione ${a.version}`;
+  $('about-copyright').textContent = a.copyright;
+  const src = $('about-source');
+  src.replaceChildren();
+  if (a.sourceUrl) {
+    const link = Object.assign(document.createElement('a'), { href: a.sourceUrl, textContent: a.sourceUrl, target: '_blank', rel: 'noopener' });
+    src.append('; repository: ', link);
+  }
+  Object.assign($('about-sf-source'), { href: a.stockfishSourceUrl, textContent: a.stockfishSourceUrl });
+  $('dlg-about').showModal();
+};
+$('about-close').onclick = () => $('dlg-about').close();
+
 $('btn-theme').onclick = () => {
   const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
   store.set('theme', next);
