@@ -70,6 +70,15 @@ try {
     await shot('01-input');
   });
 
+  await step('scacchiera: a1 e h8 scure, h1 e a8 chiare', async () => {
+    // Scacchiera dal lato del Bianco: la prima casa disegnata è a8, l'ultima h1
+    const color = (sq) => b.ev(`(() => {
+      const index = (8 - ${Number(sq[1])}) * 8 + ${'abcdefgh'.indexOf(sq[0])};
+      return document.querySelectorAll('#board .sq')[index].classList.contains('dark') ? 'scura' : 'chiara';
+    })()`);
+    assert.deepEqual([await color('a1'), await color('h8'), await color('h1'), await color('a8')], ['scura', 'scura', 'chiara', 'chiara']);
+  });
+
   await step('PGN non valido: messaggio chiaro', async () => {
     await b.ev(`document.getElementById('pgn-text').value = '1. e4 e5 2. Ke3'; document.getElementById('btn-analyze').click()`);
     assert.match(await b.text('#review-error'), /Mossa non legale: 2\. Ke3/);

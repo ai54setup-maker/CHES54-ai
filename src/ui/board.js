@@ -111,7 +111,8 @@ export class Board {
         const d = document.createElement('div');
         const fileIdx = FILES.indexOf(sq[0]);
         const rank = Number(sq[1]);
-        d.className = 'sq ' + ((fileIdx + rank) % 2 === 1 ? 'light' : 'dark');
+        // a1 è una casa scura ("bianca a destra"): scure quelle con colonna + traversa pari
+        d.className = 'sq ' + ((fileIdx + rank) % 2 === 0 ? 'light' : 'dark');
         if (this.lastMove && (sq === this.lastMove.from || sq === this.lastMove.to)) d.classList.add('last');
         if (sq === this.selected) d.classList.add('sel');
         if (sq === this.checkSquare) d.classList.add('check');
