@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>CHES54.ai</title>
+  <meta name="description" content="CHES54.ai – analisi scacchistica con Stockfish: inserisci le mosse e scopri le migliori.">
+  <meta name="theme-color" content="#14161b">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="logo"><img src="icons/icon.svg" alt="" class="logo-icon">CHES<span>54</span><small>.ai</small></div>
+    <div class="topbar-actions">
+      <button id="btn-theme" class="icon-btn" title="Cambia tema" aria-label="Cambia tema">◐</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="board-area">
+      <div class="player-tag" id="tag-top"></div>
+      <div class="board-row">
+        <div class="evalbar" id="evalbar" aria-label="Barra di valutazione">
+          <div class="evalbar-fill" id="evalbar-fill"></div>
+          <span class="evalbar-label" id="evalbar-label">0.0</span>
+        </div>
+        <div class="board-wrap">
+          <div id="board" class="board"></div>
+        </div>
+      </div>
+      <div class="player-tag" id="tag-bottom"></div>
+    </section>
+
+    <section class="panel">
+      <div class="status" id="status">Scegli il tuo colore per iniziare</div>
+
+      <form class="move-input" id="move-form" autocomplete="off">
+        <input id="move-text" type="text" inputmode="text" autocapitalize="off" spellcheck="false"
+               placeholder="Scrivi una mossa: d3, e5, Cf3, O-O, d2d3…" aria-label="Mossa">
+        <button type="submit" class="btn primary">Gioca</button>
+      </form>
+      <div class="input-error" id="input-error" role="alert"></div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2 id="suggest-title">Mosse consigliate</h2>
+          <span class="depth-info" id="depth-info"></span>
+        </div>
+        <ol class="suggestions" id="suggestions"></ol>
+        <p class="hint">Tocca una mossa per giocarla. Valutazioni dal tuo punto di vista.</p>
+      </div>
+
+      <div class="segmented" id="depth-control" role="radiogroup" aria-label="Profondità di analisi">
+        <button type="button" data-depth="12">Veloce</button>
+        <button type="button" data-depth="16">Normale</button>
+        <button type="button" data-depth="20">Profonda</button>
+      </div>
+
+      <div class="toolbar">
+        <button type="button" class="btn" id="btn-undo">↶ Annulla</button>
+        <button type="button" class="btn" id="btn-flip">⇅ Gira</button>
+        <button type="button" class="btn" id="btn-io">FEN / PGN</button>
+        <button type="button" class="btn danger" id="btn-new">Nuova partita</button>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Mosse della partita</h2></div>
+        <ol class="history" id="history"></ol>
+      </div>
+
+      <p class="footnote">Strumento di analisi e allenamento. Usarlo durante partite online o tornei è contro il regolamento.</p>
+    </section>
+  </main>
+
+  <!-- Scelta colore -->
+  <dialog id="dlg-color" class="dialog">
+    <h2>Benvenuto in CHES54.ai</h2>
+    <p>Con quale colore giochi?</p>
+    <div class="color-choice">
+      <button type="button" data-color="w" class="color-btn"><img src="pieces/wK.svg" alt=""><span>Bianco</span></button>
+      <button type="button" data-color="b" class="color-btn"><img src="pieces/bK.svg" alt=""><span>Nero</span></button>
+    </div>
+  </dialog>
+
+  <!-- Promozione -->
+  <dialog id="dlg-promo" class="dialog">
+    <h2>Promuovi il pedone a…</h2>
+    <div class="promo-choice" id="promo-choice"></div>
+  </dialog>
+
+  <!-- FEN / PGN -->
+  <dialog id="dlg-io" class="dialog wide">
+    <h2>Posizione e partita</h2>
+    <label for="io-fen">FEN (posizione attuale)</label>
+    <textarea id="io-fen" rows="2" spellcheck="false"></textarea>
+    <label for="io-pgn">PGN (partita)</label>
+    <textarea id="io-pgn" rows="5" spellcheck="false"></textarea>
+    <p class="hint">Incolla un FEN o un PGN in uno dei due campi e premi «Carica».</p>
+    <div class="input-error" id="io-error" role="alert"></div>
+    <div class="toolbar">
+      <button type="button" class="btn" id="io-copy-fen">Copia FEN</button>
+      <button type="button" class="btn" id="io-copy-pgn">Copia PGN</button>
+      <button type="button" class="btn primary" id="io-load">Carica</button>
+      <button type="button" class="btn" id="io-close">Chiudi</button>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

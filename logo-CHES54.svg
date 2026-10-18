@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400">
+  <rect width="1200" height="400" rx="56" fill="#14161b"/>
+  <g transform="translate(60 56) scale(0.56)">
+    <rect width="512" height="512" rx="112" fill="#1f232b"/>
+    <g fill="#e9ecf2">
+      <path d="M256 70c-34 0-60 26-60 58 0 22 12 40 30 50l-34 92h128l-34-92c18-10 30-28 30-50 0-32-26-58-60-58z"/>
+      <path d="M168 296h176l18 58H150z"/>
+      <rect x="128" y="368" width="256" height="40" rx="12"/>
+    </g>
+    <text x="256" y="476" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="64" fill="#3ddc84">54</text>
+  </g>
+  <text x="400" y="238" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="150" letter-spacing="6" fill="#e9ecf2">CHES<tspan fill="#3ddc84">54</tspan><tspan font-size="80" fill="#9aa3b2" font-weight="600">.ai</tspan></text>
+  <text x="406" y="300" font-family="Helvetica, Arial, sans-serif" font-weight="500" font-size="36" letter-spacing="3" fill="#9aa3b2">ANALISI SCACCHISTICA</text>
+</svg>
