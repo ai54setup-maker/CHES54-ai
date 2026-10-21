@@ -16,6 +16,7 @@ export class Board {
     this.checkSquare = null;
     this.arrows = [];        // [{ from, to, color, width, opacity, dashed }]
     this.badge = null;       // { square, html }: icona sulla casa (es. classificazione della mossa)
+    this.marks = [];         // case evidenziate (lezioni)
     this.selected = null;
     this.drag = null;
 
@@ -82,6 +83,12 @@ export class Board {
     this.renderArrows();
   }
 
+  /** Case evidenziate con un anello (spiegazioni delle lezioni). @param {string[]} squares */
+  setMarks(squares) {
+    this.marks = squares;
+    this.renderSquares();
+  }
+
   /** @param {{ square: string, html: string } | null} badge */
   setBadge(badge) {
     this.badge = badge;
@@ -116,6 +123,7 @@ export class Board {
         if (this.lastMove && (sq === this.lastMove.from || sq === this.lastMove.to)) d.classList.add('last');
         if (sq === this.selected) d.classList.add('sel');
         if (sq === this.checkSquare) d.classList.add('check');
+        if (this.marks.includes(sq)) d.classList.add('mark');
         const dest = dests.find((m) => m.to === sq);
         if (dest) d.classList.add('dest', ...(dest.capture ? ['capture'] : []));
         if (y === 7) d.insertAdjacentHTML('beforeend', `<span class="coord file">${sq[0]}</span>`);

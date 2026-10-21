@@ -133,6 +133,17 @@ consultati) sono in [`CLAUDE.md`](CLAUDE.md).
 
 Nessuna fase di build e nessuna dipendenza npm: i file vengono serviti così come sono. Serve **Node.js 22 o successivo**.
 
+### Lezioni
+10 lezioni brevi in 4 categorie: **tattiche** (forchetta, inchiodatura, infilata, attacco di scoperta), **matti di base**
+(matto della traversa, donna e re, stallo), **principi di apertura** (centro, sviluppo, arrocco, matto del barbiere) e
+**finali di base** (opposizione, regola del quadrato). Ogni lezione alterna spiegazioni, dimostrazioni animate sulla
+scacchiera ed esercizi; le lezioni completate restano segnate.
+- I testi spiegano concetti. Ciò che si vede sulla scacchiera (scacco, matto, stallo, pezzi attaccati o inchiodati) è
+  controllato in automatico; **ogni esercizio è verificato con Stockfish** (`npm run check:lessons`, esito in
+  [`data/lessons/VERIFIED.md`](data/lessons/VERIFIED.md)). Negli esercizi con più risposte giuste il motore valuta tutte
+  le mosse legali: quelle accettate sono buone, tutte le altre nettamente peggiori.
+- Una mossa sbagliata mostra la risposta di Stockfish, come nei Problemi.
+
 ### Problemi
 588 problemi presi dal database pubblico di Lichess (CC0), divisi per **tema** (matto in 1/2/3, forchetta, inchiodatura,
 infilata, attacco di scoperta, pezzo in presa, deviazione, finale) e **difficoltà** (Facile, Medio, Difficile, Esperto).
@@ -151,6 +162,7 @@ npm run bench                    # tempi di analisi a diverse profondità
 npm run build:openings           # rigenera il dataset delle aperture
 npm run build:examples           # riscarica e verifica la libreria di partite (data/examples/)
 npm run build:puzzles            # riscarica, seleziona e verifica con Stockfish i problemi (data/puzzles/, ~6 min)
+npm run check:lessons            # verifica con Stockfish gli esercizi delle lezioni (obbligatorio dopo ogni modifica)
 ```
 
 Tempi misurati su Apple M2 Pro, partita di 44 mosse (88 posizioni), motore single-thread:

@@ -13,6 +13,7 @@
     "bench": "node scripts/bench.mjs",
     "build:openings": "node scripts/build-openings.mjs",
     "build:examples": "node scripts/build-examples.mjs",
-    "build:puzzles": "node scripts/build-puzzles.mjs"
+    "build:puzzles": "node scripts/build-puzzles.mjs",
+    "check:lessons": "node scripts/check-lessons.mjs"
   }
 }

@@ -28,6 +28,7 @@ import { formatExplanation } from './explanations.js';
 import { explainMove } from '../analysis/explain.js';
 import { Library } from './library.js';
 import { PuzzleTrainer } from './puzzles.js';
+import { LessonPlayer } from './lessons.js';
 
 const $ = (id) => document.getElementById(id);
 const COLOR_NAME = { w: 'Bianco', b: 'Nero' };
@@ -227,7 +228,16 @@ function setSection(section) {
 
 /** Lezioni / Problemi: il modulo della sezione viene creato la prima volta che serve. */
 let puzzles = null;
+let lessons = null;
 function showSectionView() {
+  if (state.section === 'lessons') {
+    lessons ??= new LessonPlayer($('view-lessons'), {
+      engine: () => (engineFailed ? null : engine),
+      askPromotion,
+      store,
+    });
+    lessons.show();
+  }
   if (state.section === 'puzzles') {
     puzzles ??= new PuzzleTrainer($('view-puzzles'), {
       engine: () => (engineFailed ? null : engine),

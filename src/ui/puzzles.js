@@ -10,6 +10,7 @@ import { UI_CONFIG } from '../config/ui.js';
 import { puzzleStart, playUci, isCorrectAttempt } from '../analysis/puzzle.js';
 import { Board } from './board.js';
 import { toItalian, numberedLine } from './notation.js';
+import { piecesOf, checkSquareOf, refutation } from './position.js';
 
 const CFG = UI_CONFIG.puzzles;
 const COLOR_NAME = { w: 'Bianco', b: 'Nero' };
@@ -22,8 +23,6 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const evalText = (score) => (score.mate != null
   ? `il ${COLOR_NAME[score.mate > 0 ? 'w' : 'b']} dà matto in ${Math.abs(score.mate)}`
   : `${formatScore(score)} (+ vantaggio Bianco, − vantaggio Nero)`);
-const piecesOf = (c) => c.board().flat().filter(Boolean);
-const checkSquareOf = (c) => (c.inCheck() ? piecesOf(c).find((p) => p.type === 'k' && p.color === c.turn())?.square ?? null : null);
 
 export class PuzzleTrainer {
   /**
@@ -233,13 +232,10 @@ export class PuzzleTrainer {
     const engine = this.deps.engine();
     if (!engine || c.isGameOver()) return;
     try {
-      engine.cancelAll();
-      const r = await engine.analyze(c.fen(), { depth: ANALYSIS_CONFIG.puzzles.refuteDepth, multiPv: 1, movetimeMs: null });
-      if (this.p !== p || p.status !== 'wrong' || !r.lines.length) return;
-      const best = r.lines[0];
-      p.wrong.reply = { line: numberedLine(c.fen(), best.pv, 4), score: formatScore(best.score), depth: best.depth };
-      const mv = best.pv[0];
-      this.board.setArrows([{ from: mv.slice(0, 2), to: mv.slice(2, 4), ...UI_CONFIG.coachThreatArrow }]);
+      const reply = await refutation(engine, c.fen(), ANALYSIS_CONFIG.puzzles.refuteDepth);
+      if (this.p !== p || p.status !== 'wrong' || !reply) return;
+      p.wrong.reply = reply;
+      this.board.setArrows([{ from: reply.move.slice(0, 2), to: reply.move.slice(2, 4), ...UI_CONFIG.coachThreatArrow }]);
       this.renderPanel();
     } catch { /* analisi annullata (cambio di problema o di sezione) */ }
   }

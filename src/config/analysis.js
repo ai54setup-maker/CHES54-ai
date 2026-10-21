@@ -123,6 +123,16 @@ export const ANALYSIS_CONFIG = Object.freeze({
     refuteDepth: 14, //   nell'app: analisi della posizione dopo una mossa sbagliata, per mostrare la confutazione
   }),
 
+  // Nostro (fase G): verifica degli esercizi delle lezioni (scripts/check-lessons.mjs).
+  // Esercizi con "solution": stesse regole dei problemi (puzzles). Esercizi con "accept": si valutano TUTTE le
+  // mosse legali; quelle accettate perdono al massimo acceptTolerance punti di win% rispetto alla migliore,
+  // tutte le altre almeno rejectGap (così l'app non dice "sbagliato" a una mossa che il motore considera buona).
+  lessons: Object.freeze({
+    moveDepth: 16, //      profondità per valutare la posizione dopo ciascuna mossa legale
+    acceptTolerance: 8,
+    rejectGap: 10,
+  }),
+
   keyMoments: Object.freeze({
     count: 5, // quanti momenti chiave mostrare al massimo
     minSwing: 10, // variazione minima di win% per essere un momento chiave

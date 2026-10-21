@@ -43,7 +43,7 @@ Nuove sezioni Lezioni e Problemi + aspetto più "premium". Revisione e Analisi p
 |---|---|---|
 | E | Nuovo logo (cavallo formato da "5" e "4") e nuovo layout: barra laterale / barra in basso, 4 sezioni, tema scuro blu notte + ciano | ✅ completata |
 | F | Risolvi problemi: selezione dal database di puzzle Lichess (CC0), ogni soluzione riverificata da Stockfish | ✅ completata |
-| G | Lezioni interattive (tattiche, matti di base, principi di apertura, finali di base), posizioni verificate da Stockfish | da fare |
+| G | Lezioni interattive (tattiche, matti di base, principi di apertura, finali di base), posizioni verificate da Stockfish | ✅ completata |
 | H | Rifinitura, telefono, offline, documentazione | da fare |
 
 Esperienza principale: **Revisione** (PGN → analisi) + **Analisi partita** (ricostruzione mossa per mossa, con Allenatore;
@@ -159,6 +159,22 @@ le spiegazioni torneranno in fase 4, derivate solo dalle linee del motore.
 - Risultato del 2026-10-21: 588 problemi (matto in 1 "Esperto" ne ha solo 3: pochi candidati); 44 esclusi, quasi tutti per
   risposte dell'avversario non confermate dal motore.
 
+### Lezioni (fase G)
+- Contenuti scritti a mano in `data/lessons/lessons.json`: `categories` + `lessons[{ id, category, title, summary, steps }]`.
+  Passo `explain`: `title, text, fen`, facoltativi `demo` (mosse UCI animate), `arrows` (dopo la dimostrazione), `marks`,
+  `check` (`mate`, `stalemate`, `inCheck`, `attacks {from, targets}`, `pinned`). Passo `exercise`: `text, fen, success` e
+  `solution` (UCI, alternate: chi risolve, risposta, …; facoltativi `tactic`, `mate`) **oppure** `accept` (mosse giuste).
+- **Ogni modifica a lessons.json va verificata con `npm run check:lessons`**: scrive `verified.json` (SHA-256 del file) solo se
+  tutto è confermato; `test/lessons.test.mjs` fallisce se lo SHA non corrisponde. `--explore FEN` valuta ogni mossa legale.
+- Regole (`src/analysis/lesson.js`, `ANALYSIS_CONFIG.lessons`, nostre): controlli statici con chess.js (anche posizione
+  illegale = chi non muove è sotto scacco, che chess.js accetta ma Stockfish no); `solution` come i problemi + `tactic` =
+  `recognizeTactic` sulla linea del motore; `accept`: tutte le mosse legali a profondità 16, accettate ≤ 8 punti di win% dalla
+  migliore, tutte le altre ≥ 10 (scelto 8 perché nel matto del barbiere Ch6 perde 6,3 ed è una difesa vera).
+- Testi: solo concetti e fatti sulla scacchiera; nessuna valutazione scritta a mano (quelle che compaiono, es. "le difese buone
+  sono…", "le uniche mosse che salvano…", sono il risultato della verifica).
+- Interfaccia: `src/ui/lessons.js` (`LessonPlayer`), funzioni comuni con i Problemi in `src/ui/position.js`; `Board.setMarks()`
+  per le case evidenziate. Lezioni completate in localStorage (`lessonsDone`). Orientamento = lato di chi risolve il primo esercizio.
+
 ### Riproducibilità
 - Prima di ogni revisione e di ogni tentativo di "ritenta": `engine.newGame()` (UCI `ucinewgame`, svuota la
   tabella delle trasposizioni). Senza, a parità di profondità il risultato dipendeva dalle posizioni analizzate prima.
@@ -209,6 +225,7 @@ npm run test:ui        # test dell'interfaccia in Chromium headless (scripts/ui-
 npm run bench          # tempi di analisi (default: data/examples/games/kasparov-topalov-1999.pgn)
 npm run build:examples # libreria di partite: scarica le fonti (in data/examples/source/, esclusa da git), verifica, rigenera
 npm run build:puzzles  # problemi: legge il database Lichess (CC0), verifica con Stockfish, rigenera data/puzzles/
+npm run check:lessons  # lezioni: verifica gli esercizi con Stockfish (--explore FEN per scriverne di nuovi)
 ```
 Richiede Node ≥ 22 (WebSocket integrato per test:ui; glob in `node --test`).
 Prima di chiudere una modifica all'interfaccia: `npm test` e `npm run test:ui` devono passare.

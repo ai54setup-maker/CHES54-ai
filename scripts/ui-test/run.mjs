@@ -317,6 +317,50 @@ try {
     await b.click('#tab-review');
   });
 
+  await step('lezioni: indice, spiegazione con dimostrazione, esercizio sbagliato e giusto, lezione completata', async () => {
+    await b.click('#tab-lessons');
+    await b.waitFor(`document.querySelectorAll('#ls-groups .ls-item').length > 0`, 10000);
+    const total = await b.ev(`document.querySelectorAll('#ls-groups .ls-item').length`);
+    assert.ok(total >= 10, `solo ${total} lezioni`);
+    await shot('11-lessons');
+    await b.click('#ls-groups .ls-item[data-id="fork"]');
+    assert.equal(await b.text('#ls-step-count'), 'Passo 1 di 4');
+    await b.click('#ls-next');
+    // Dimostrazione Ce7+: parte da sola, poi compaiono le due frecce
+    await b.waitFor(`document.querySelectorAll('#ls-board .arrows g').length === 2`, 5000);
+    assert.equal(await b.ev(`!!document.querySelector('#ls-board .sq.check')`), true);
+    await b.click('#ls-next');
+    const sq = (s, flipped = false) => b.clickSquare(s, 'ls-board', flipped);
+    await sq('b5'); await sq('d4'); // sbagliata
+    await b.waitFor(`document.getElementById('ls-card').dataset.state === 'wrong'`, 5000);
+    await b.waitFor(`/Stockfish risponde/.test(document.getElementById('ls-feedback').textContent)`, 30000);
+    await b.click('#ls-retry');
+    await sq('b5'); await sq('c7'); // forchetta
+    await b.waitFor(`document.getElementById('ls-card').dataset.state === 'solved'`, 5000);
+    assert.match(await b.text('#ls-feedback'), /Cc7\+/);
+    await shot('12-lesson-solved');
+    await b.click('#ls-next');
+    await b.click('#ls-solution'); // ultimo esercizio: soluzione mostrata
+    await b.waitFor(`document.getElementById('ls-card').dataset.state === 'solved'`, 5000);
+    assert.equal(await b.text('#ls-next'), 'Completa la lezione');
+    await b.click('#ls-next');
+    assert.match(await b.text('#ls-meta'), /inchiodatura/i); // si apre la lezione successiva
+    await b.click('#ls-back');
+    assert.match(await b.text('#ls-progress-text'), /^1 di /);
+    assert.equal(await b.ev(`document.querySelector('.ls-item[data-id="fork"]').classList.contains('done')`), true);
+    // Esercizio con più risposte giuste, dal lato del Nero
+    await b.click('#ls-groups .ls-item[data-id="scholars-mate"]');
+    await b.click('#ls-next');
+    await b.click('#ls-next');
+    await sq('g8', true); await sq('f6', true); // Cf6?? permette Dxf7#
+    await b.waitFor(`/Dxf7#/.test(document.getElementById('ls-feedback').textContent)`, 30000);
+    await b.click('#ls-retry');
+    await sq('d8', true); await sq('e7', true); // De7: accettata
+    await b.waitFor(`document.getElementById('ls-card').dataset.state === 'solved'`, 5000);
+    await b.click('#ls-back');
+    await b.click('#tab-review');
+  });
+
   await step('informazioni e licenze (avvisi GPLv3)', async () => {
     await b.click('#btn-about');
     const about = await b.text('#dlg-about');

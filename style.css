@@ -793,3 +793,49 @@ button { font: inherit; color: inherit; }
 #pz-source a { color: var(--muted); }
 .pz-hint-icon { width: 100%; height: 100%; fill: var(--accent); stroke: var(--accent-ink); stroke-width: 2.4; stroke-linecap: round; }
 @media (max-width: 520px), (pointer: coarse) { #pz-themes .chip { min-height: 40px; } }
+
+/* ---------- Lezioni (fase G) ---------- */
+.sq.mark::after {
+  content: ""; position: absolute; inset: 6%; border-radius: 50%;
+  border: 3px solid var(--accent); box-shadow: 0 0 10px rgba(46, 230, 255, 0.55); pointer-events: none; z-index: 2;
+}
+.ls-progress { max-width: 1280px; margin-bottom: 22px; }
+.ls-progress-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+.ls-progress-head span { color: var(--muted); font-size: 0.88rem; }
+.ls-progress .progress { height: 8px; }
+.ls-group { margin-bottom: 26px; }
+.ls-group h2 { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px 2px; }
+.ls-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.ls-item {
+  display: flex; flex-direction: column; gap: 6px; text-align: left; cursor: pointer; min-height: 120px;
+  color: var(--text); font: inherit; position: relative;
+  transition: border-color 0.15s, transform 0.15s, box-shadow 0.2s;
+}
+.ls-item:hover, .ls-item:focus-visible { border-color: rgba(46, 230, 255, 0.45); transform: translateY(-2px); box-shadow: var(--shadow); outline: none; }
+.ls-item-title { font-weight: 700; font-size: 1.02rem; }
+.ls-item-sum { color: var(--muted); font-size: 0.88rem; line-height: 1.45; flex: 1; }
+.ls-item-meta { font-size: 0.75rem; color: var(--muted); font-weight: 600; }
+.ls-item.done { border-color: color-mix(in srgb, var(--cls-best) 45%, transparent); }
+.ls-item.done::after {
+  content: "✓"; position: absolute; top: 14px; right: 14px; width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 0.8rem; font-weight: 800; color: #fff; background: var(--cls-best);
+}
+.ls-item.done .ls-item-meta { color: var(--cls-best); }
+
+.layout.ls-player { padding: 0; }
+.ls-card { display: flex; flex-direction: column; gap: 10px; border-left: 3px solid var(--line-strong); transition: border-color 0.2s; }
+.ls-card[data-state="solved"] { border-left-color: var(--cls-best); }
+.ls-card[data-state="wrong"] { border-left-color: var(--cls-blunder); }
+.ls-back { align-self: flex-start; padding: 4px 0; text-decoration: none; font-size: 0.85rem; min-height: 32px; }
+.ls-back:hover { color: var(--text); }
+.ls-steps-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ls-steps-row .hint { margin: 0; }
+.ls-steps { display: flex; gap: 6px; }
+.ls-dot { width: 22px; height: 6px; border-radius: 999px; background: var(--line-strong); }
+.ls-dot.ex { width: 10px; }
+.ls-dot.past { background: color-mix(in srgb, var(--accent) 55%, transparent); }
+.ls-dot.current { background: var(--accent); box-shadow: 0 0 8px rgba(46, 230, 255, 0.6); }
+.ls-text { margin: 0; font-size: 0.98rem; line-height: 1.6; }
+.ls-good { color: var(--cls-best); font-weight: 600; }
+.ls-bad { color: var(--cls-blunder); font-weight: 600; }
+.ls-nav { margin-top: 2px; padding-top: 12px; border-top: 1px solid var(--line); }

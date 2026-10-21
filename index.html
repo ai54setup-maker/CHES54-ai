@@ -193,16 +193,45 @@
     </section>
   </main>
 
-  <!-- Lezioni (fase G) -->
-  <section class="view" id="view-lessons" hidden>
-    <div class="card hero-card">
-      <div class="hero-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v5c0 1.6 2.5 3.2 5.5 3.2s5.5-1.6 5.5-3.2v-5"/><path d="M21.5 9v5"/></svg></div>
-      <span class="pill">In arrivo</span>
-      <h2>Lezioni interattive</h2>
-      <p>Spiegazione, posizione sulla scacchiera ed esercizio: forchetta, inchiodatura, infilata, attacco di scoperta,
-        matti di base, principi di apertura e finali di base. Ogni posizione è verificata con Stockfish.</p>
+  <!-- Lezioni (fase G): src/ui/lessons.js -->
+  <main class="view" id="view-lessons" hidden>
+    <div id="ls-index">
+      <div class="card ls-progress">
+        <div class="ls-progress-head"><b>Il tuo percorso</b><span id="ls-progress-text"></span></div>
+        <div class="progress"><div class="progress-fill" id="ls-progress-fill"></div></div>
+        <p class="hint">Ogni lezione: spiegazione, dimostrazione sulla scacchiera ed esercizi. Posizioni ed esercizi sono
+          verificati con Stockfish.</p>
+      </div>
+      <div id="ls-groups"></div>
     </div>
-  </section>
+
+    <div class="layout ls-player" id="ls-player" hidden>
+      <section class="board-area">
+        <div class="board-row">
+          <div class="board-wrap"><div id="ls-board" class="board"></div></div>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="card ls-card" id="ls-card" aria-live="polite">
+          <button type="button" class="link-btn ls-back" id="ls-back">← Tutte le lezioni</button>
+          <div class="pz-meta" id="ls-meta"></div>
+          <h2 class="pz-title" id="ls-title"></h2>
+          <div class="ls-steps-row"><div class="ls-steps" id="ls-steps"></div><span class="hint" id="ls-step-count"></span></div>
+          <p class="ls-text" id="ls-text"></p>
+          <div class="pz-feedback" id="ls-feedback"></div>
+          <div class="toolbar two">
+            <button type="button" class="btn" id="ls-demo" hidden>Mostra la mossa</button>
+            <button type="button" class="btn" id="ls-retry" hidden>Riprova</button>
+            <button type="button" class="btn" id="ls-solution" hidden>Soluzione</button>
+          </div>
+          <div class="toolbar two ls-nav">
+            <button type="button" class="btn" id="ls-prev">Indietro</button>
+            <button type="button" class="btn primary" id="ls-next">Avanti</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
 
   <!-- Problemi (fase F): src/ui/puzzles.js -->
   <main class="layout" id="view-puzzles" hidden>

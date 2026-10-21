@@ -71,6 +71,13 @@ export const UI_CONFIG = Object.freeze({
     replyDelayMs: 450, // pausa prima della risposta automatica dell'avversario
   }),
 
+  // Lezioni (fase G): contenuti in data/lessons/lessons.json, verificati con npm run check:lessons.
+  lessons: Object.freeze({
+    dataUrl: 'data/lessons/lessons.json',
+    demoDelayMs: 650, // pausa tra le mosse delle dimostrazioni e delle risposte automatiche
+    arrow: Object.freeze({ color: '#2ee6ff', width: 0.16, opacity: 0.85 }), // frecce delle spiegazioni
+  }),
+
   // Finestra "Informazioni e licenze" (avvisi legali richiesti dalla GPLv3, sezione 5(d)).
   about: Object.freeze({
     version: '2.0.0',
