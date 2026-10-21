@@ -1,6 +1,6 @@
 // Service worker: salva l'app (motore compreso) per usarla anche offline.
 // Cambia VERSION quando aggiorni i file, così i telefoni scaricano la nuova versione.
-const VERSION = 'ches54-v13';
+const VERSION = 'ches54-v14';
 const FILES = [
   './',
   'index.html',
@@ -12,10 +12,10 @@ const FILES = [
     'analysis/winpct.js', 'analysis/pgn.js', 'analysis/game-model.js', 'analysis/accuracy.js',
     'analysis/classify.js', 'analysis/openings.js', 'analysis/key-moments.js',
     'analysis/game-analyzer.js', 'analysis/retry.js', 'analysis/material.js', 'analysis/explain.js',
-    'analysis/advantage.js', 'analysis/tactics.js',
+    'analysis/advantage.js', 'analysis/tactics.js', 'analysis/puzzle.js',
     'ui/app.js', 'ui/board.js', 'ui/notation.js', 'ui/classification.js', 'ui/evalbar.js',
     'ui/eval-graph.js', 'ui/engine-lines.js', 'ui/move-list.js', 'ui/summary.js', 'ui/explanations.js',
-    'ui/library.js', 'ui/coach.js',
+    'ui/library.js', 'ui/coach.js', 'ui/puzzles.js',
   ].map((f) => `src/${f}`),
   'lib/chess.js',
   'engine/stockfish.js',
@@ -23,6 +23,7 @@ const FILES = [
   'data/openings/openings.json',
   // Libreria: solo l'indice; i PGN si scaricano quando servono (e poi restano in cache, vedi 'fetch').
   'data/examples/index.json',
+  'data/puzzles/puzzles.json',
   'LICENSE',
   'THIRD-PARTY-NOTICES.md',
   'fonts/inter-latin.woff2',

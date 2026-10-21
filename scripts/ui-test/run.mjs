@@ -259,6 +259,64 @@ try {
     assert.equal(await b.ev(`document.getElementById('review-summary').hidden`), false);
   });
 
+  await step('problemi: mossa sbagliata con risposta del motore, indizio, soluzione, serie', async () => {
+    await b.click('#tab-puzzles');
+    await b.waitFor(`document.querySelectorAll('#pz-themes .chip').length > 0`, 10000);
+    await b.click('#pz-themes [data-id="mateIn2"]');
+    await b.click('#pz-levels [data-id="easy"]');
+    const playing = `/trova la mossa/.test(document.getElementById('pz-title').textContent)`;
+    // Problema mostrato: soluzione letta dai dati, mossa sbagliata = una mossa legale qualsiasi diversa
+    const current = () => b.ev(`(async () => {
+      const id = document.querySelector('#pz-source a').textContent.slice(1);
+      const d = await (await fetch('data/puzzles/puzzles.json')).json();
+      const p = d.puzzles.find((x) => x.id === id);
+      const { Chess } = await import('./lib/chess.js');
+      const moves = p.moves.split(' ');
+      const c = new Chess(p.fen);
+      c.move({ from: moves[0].slice(0, 2), to: moves[0].slice(2, 4), promotion: moves[0][4] });
+      const wrong = c.moves({ verbose: true }).find((m) => m.from + m.to !== moves[1].slice(0, 4) && !m.promotion
+        && !new Chess(c.fen()).move(m.san).san.endsWith('#'));
+      return { id, color: c.turn(), solution: moves.slice(1), wrong: wrong.from + wrong.to };
+    })()`);
+    const solve = async (info) => {
+      const sq = (s) => b.clickSquare(s, 'pz-board', info.color === 'b');
+      for (let i = 0; i < info.solution.length; i += 2) {
+        await b.waitFor(playing, 5000);
+        const m = info.solution[i];
+        // dopo l'indizio il pezzo è già selezionato
+        if (!(await b.ev(`!!document.querySelector('#pz-board .sq.sel')`))) await sq(m.slice(0, 2));
+        await sq(m.slice(2, 4));
+      }
+    };
+    await b.waitFor(playing, 10000);
+    let info = await current();
+    const sq = (s) => b.clickSquare(s, 'pz-board', info.color === 'b');
+    await sq(info.wrong.slice(0, 2));
+    await sq(info.wrong.slice(2, 4));
+    await b.waitFor(`document.getElementById('pz-card').dataset.state === 'wrong'`, 5000);
+    await b.waitFor(`/Stockfish risponde/.test(document.getElementById('pz-feedback').textContent)`, 30000);
+    assert.equal(await b.ev(`document.querySelectorAll('#pz-board .arrows g').length`), 1);
+    await b.click('#pz-retry');
+    await b.click('#pz-hint');
+    assert.equal(await b.ev(`!!document.querySelector('#pz-board .sq.sel')`), true);
+    await solve(info);
+    await b.waitFor(`document.getElementById('pz-card').dataset.state === 'done'`, 5000); // completato, ma non al primo colpo
+    assert.match(await b.text('#pz-feedback'), /Soluzione:/);
+    assert.equal(await b.text('#pz-streak'), '0');
+    await shot('09-puzzle');
+    // Il prossimo, risolto al primo colpo: serie 1
+    await b.click('#pz-next');
+    await b.waitFor(`document.querySelector('#pz-source a').textContent.slice(1) !== ${JSON.stringify(info.id)}`, 5000);
+    await b.waitFor(playing, 10000);
+    info = await current();
+    await solve(info);
+    await b.waitFor(`document.getElementById('pz-card').dataset.state === 'solved'`, 5000);
+    assert.equal(await b.text('#pz-streak'), '1');
+    assert.equal(await b.text('#pz-solved'), '1');
+    await shot('10-puzzle-solved');
+    await b.click('#tab-review');
+  });
+
   await step('informazioni e licenze (avvisi GPLv3)', async () => {
     await b.click('#btn-about');
     const about = await b.text('#dlg-about');

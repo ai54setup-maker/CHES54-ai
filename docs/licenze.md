@@ -14,6 +14,7 @@
 | Pezzi "cburnett" (`pieces/`) | GPLv2 **o successiva** | Sì: "o successiva" permette di usarli come GPLv3 |
 | Font Inter (`fonts/`) | SIL Open Font License 1.1 | Sì: l'OFL permette di includere il font in software con qualsiasi licenza; va distribuito con il testo della licenza (`fonts/OFL.txt`) e non venduto da solo |
 | Logo e icone (`icons/`, `logo-CHES54.*`) | GPLv3 (disegnati per questo progetto) | — |
+| Problemi (`data/puzzles/`) | CC0 (pubblico dominio), database di Lichess | Sì, nessun obbligo (citiamo comunque la fonte) |
 | Dataset aperture (`data/openings/`) | CC0 (pubblico dominio) | Sì, nessun obbligo |
 | Rete NNUE (dentro `stockfish.wasm`) | **Non verificabile**: le fonti consultate non indicano una licenza separata | Viene distribuita dagli autori stessi dentro binari GPLv3 |
 

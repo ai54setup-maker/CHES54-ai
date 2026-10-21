@@ -27,6 +27,7 @@ import { CLASS_INFO, classIcon } from './classification.js';
 import { formatExplanation } from './explanations.js';
 import { explainMove } from '../analysis/explain.js';
 import { Library } from './library.js';
+import { PuzzleTrainer } from './puzzles.js';
 
 const $ = (id) => document.getElementById(id);
 const COLOR_NAME = { w: 'Bianco', b: 'Nero' };
@@ -221,6 +222,21 @@ function setSection(section) {
   if (state.review.status !== 'running') engine?.cancelAll();
   live.fen = null;
   render();
+  showSectionView();
+}
+
+/** Lezioni / Problemi: il modulo della sezione viene creato la prima volta che serve. */
+let puzzles = null;
+function showSectionView() {
+  if (state.section === 'puzzles') {
+    puzzles ??= new PuzzleTrainer($('view-puzzles'), {
+      engine: () => (engineFailed ? null : engine),
+      askPromotion,
+      store,
+      toast,
+    });
+    puzzles.show();
+  }
 }
 
 function setMode(mode) {
@@ -1419,6 +1435,7 @@ board.setOrientation(state.orientation);
 restore();
 if (state.mode === 'analysis' && state.setupDone) setOrientation(state.side);
 render();
+showSectionView();
 
 if ('serviceWorker' in navigator && window.isSecureContext) {
   navigator.serviceWorker.register('./sw.js').catch(() => { /* offline non disponibile */ });

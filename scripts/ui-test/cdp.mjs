@@ -88,9 +88,10 @@ export async function launch(browserPath, port) {
       }
     },
     /** Clic su una casa della scacchiera, tenendo conto dell'orientamento. */
-    async clickSquare(sq) {
-      const r = await ev(`(() => { const e = document.getElementById('board').getBoundingClientRect();
+    async clickSquare(sq, boardId = 'board', flipped = null) {
+      const r = await ev(`(() => { const e = document.getElementById(${JSON.stringify(boardId)}).getBoundingClientRect();
         return { x: e.left, y: e.top, s: e.width / 8, flipped: document.getElementById('evalbar').classList.contains('flipped') }; })()`);
+      if (flipped != null) r.flipped = flipped; // scacchiere senza barra di valutazione (es. Problemi)
       const f = 'abcdefgh'.indexOf(sq[0]);
       const rk = Number(sq[1]) - 1;
       const x = r.flipped ? 7 - f : f;

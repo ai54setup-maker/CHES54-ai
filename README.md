@@ -133,6 +133,16 @@ consultati) sono in [`CLAUDE.md`](CLAUDE.md).
 
 Nessuna fase di build e nessuna dipendenza npm: i file vengono serviti così come sono. Serve **Node.js 22 o successivo**.
 
+### Problemi
+588 problemi presi dal database pubblico di Lichess (CC0), divisi per **tema** (matto in 1/2/3, forchetta, inchiodatura,
+infilata, attacco di scoperta, pezzo in presa, deviazione, finale) e **difficoltà** (Facile, Medio, Difficile, Esperto).
+Ogni mossa di ogni soluzione è stata **riverificata dal nostro Stockfish** (profondità 18): i problemi non confermati
+sono esclusi. Fonte, criteri ed esclusi in [`data/puzzles/SOURCES.md`](data/puzzles/SOURCES.md).
+1. La prima mossa è dell'avversario e si gioca da sola; poi tocca a te.
+2. Mossa sbagliata → resta sulla scacchiera e Stockfish mostra come risponderebbe l'avversario; **Riprova**.
+3. **Indizio** evidenzia il pezzo da muovere; **Soluzione** gioca la soluzione. All'ultima mossa vale qualsiasi matto.
+4. Serie, record, problemi risolti e percentuale al primo colpo restano salvati nel browser.
+
 ```bash
 npm test                         # test della logica, compresi Stockfish reale e perft (~3 s)
 npm run test:ui                  # test dell'interfaccia in un browser headless (Chrome, Brave, Edge o Chromium)
@@ -140,6 +150,7 @@ npm run analyze -- partita.pgn   # revisione da terminale (--depth, --multipv, -
 npm run bench                    # tempi di analisi a diverse profondità
 npm run build:openings           # rigenera il dataset delle aperture
 npm run build:examples           # riscarica e verifica la libreria di partite (data/examples/)
+npm run build:puzzles            # riscarica, seleziona e verifica con Stockfish i problemi (data/puzzles/, ~6 min)
 ```
 
 Tempi misurati su Apple M2 Pro, partita di 44 mosse (88 posizioni), motore single-thread:

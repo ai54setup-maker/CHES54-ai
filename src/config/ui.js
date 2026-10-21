@@ -45,6 +45,32 @@ export const UI_CONFIG = Object.freeze({
     miniatureMaxMoves: 25, // partita vinta (non patta) entro questo numero di mosse → "miniatura"
   }),
 
+  // Problemi (fase F): dati generati da scripts/build-puzzles.mjs. I temi sono quelli assegnati da Lichess.
+  puzzles: Object.freeze({
+    dataUrl: 'data/puzzles/puzzles.json',
+    // Ordine = priorità del tema principale di un problema (un problema di Lichess ha più temi).
+    themes: Object.freeze([
+      Object.freeze({ id: 'mateIn1', label: 'Matto in 1' }),
+      Object.freeze({ id: 'mateIn2', label: 'Matto in 2' }),
+      Object.freeze({ id: 'mateIn3', label: 'Matto in 3' }),
+      Object.freeze({ id: 'fork', label: 'Forchetta' }),
+      Object.freeze({ id: 'pin', label: 'Inchiodatura' }),
+      Object.freeze({ id: 'skewer', label: 'Infilata' }),
+      Object.freeze({ id: 'discoveredAttack', label: 'Attacco di scoperta' }),
+      Object.freeze({ id: 'hangingPiece', label: 'Pezzo in presa' }),
+      Object.freeze({ id: 'deflection', label: 'Deviazione' }),
+      Object.freeze({ id: 'endgame', label: 'Finale' }),
+    ]),
+    // Fasce di difficoltà sul punteggio Lichess del problema: [min, max).
+    levels: Object.freeze([
+      Object.freeze({ id: 'easy', label: 'Facile', min: 0, max: 1300 }),
+      Object.freeze({ id: 'medium', label: 'Medio', min: 1300, max: 1800 }),
+      Object.freeze({ id: 'hard', label: 'Difficile', min: 1800, max: 2300 }),
+      Object.freeze({ id: 'expert', label: 'Esperto', min: 2300, max: 4000 }),
+    ]),
+    replyDelayMs: 450, // pausa prima della risposta automatica dell'avversario
+  }),
+
   // Finestra "Informazioni e licenze" (avvisi legali richiesti dalla GPLv3, sezione 5(d)).
   about: Object.freeze({
     version: '2.0.0',

@@ -111,6 +111,18 @@ export const ANALYSIS_CONFIG = Object.freeze({
     linePlies: 6, //      semimosse della variante mostrata
   }),
 
+  // Nostro (fase F): verifica dei problemi presi dal database di Lichess (scripts/build-puzzles.mjs).
+  // Un problema entra nell'app solo se il nostro Stockfish conferma ogni mossa della soluzione.
+  puzzles: Object.freeze({
+    depth: 18, //         profondità per le mosse di chi risolve
+    multiPv: 2, //        serve la 2ª linea per controllare che la mossa sia l'unica buona
+    minGap: 10, //        la mossa della soluzione batte la 2ª linea di almeno 10 punti di win% (salvo matti, vedi puzzle.js)
+    replyDepth: 14, //    profondità per le risposte dell'avversario
+    replyMultiPv: 3,
+    replyTolerance: 3, // la risposta dell'avversario può perdere al massimo 3 punti di win% rispetto alla migliore
+    refuteDepth: 14, //   nell'app: analisi della posizione dopo una mossa sbagliata, per mostrare la confutazione
+  }),
+
   keyMoments: Object.freeze({
     count: 5, // quanti momenti chiave mostrare al massimo
     minSwing: 10, // variazione minima di win% per essere un momento chiave

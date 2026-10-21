@@ -12,6 +12,7 @@
     "analyze": "node scripts/analyze-pgn.mjs",
     "bench": "node scripts/bench.mjs",
     "build:openings": "node scripts/build-openings.mjs",
-    "build:examples": "node scripts/build-examples.mjs"
+    "build:examples": "node scripts/build-examples.mjs",
+    "build:puzzles": "node scripts/build-puzzles.mjs"
   }
 }

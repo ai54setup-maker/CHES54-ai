@@ -764,3 +764,32 @@ button { font: inherit; color: inherit; }
 .chip.active { background: var(--accent-grad); border-color: transparent; }
 .eline { background: rgba(255, 255, 255, 0.02); }
 .navbar .btn { background: var(--card); }
+
+/* ---------- Problemi (fase F) ---------- */
+.pz-card { display: flex; flex-direction: column; gap: 8px; border-left: 3px solid var(--line-strong); transition: border-color 0.2s, box-shadow 0.3s; }
+.pz-card[data-state="good"] { border-left-color: var(--cls-best); }
+.pz-card[data-state="solved"] { border-left-color: var(--cls-best); box-shadow: var(--shadow-sm), 0 0 0 1px color-mix(in srgb, var(--cls-best) 35%, transparent); }
+.pz-card[data-state="done"] { border-left-color: var(--accent); }
+.pz-card[data-state="wrong"] { border-left-color: var(--cls-blunder); }
+.pz-meta { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent); }
+.card .pz-title { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.01em; margin: 0; }
+.pz-card[data-state="solved"] .pz-title { color: var(--cls-best); }
+.pz-card[data-state="wrong"] .pz-title { color: var(--cls-blunder); }
+.pz-feedback { display: flex; flex-direction: column; gap: 4px; }
+.pz-feedback:empty { display: none; }
+.pz-feedback p { margin: 0; font-size: 0.92rem; line-height: 1.45; }
+.pz-feedback .pz-note { color: var(--muted); font-size: 0.85rem; }
+.pz-actions { margin-top: 4px; }
+.pz-actions .btn[hidden] + .btn { grid-column: auto; }
+
+.pz-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 14px 10px; text-align: center; }
+.pz-stats b { display: block; font-size: 1.45rem; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.pz-stats div:first-child b { color: var(--accent); }
+.pz-stats span { font-size: 0.72rem; color: var(--muted); font-weight: 600; }
+
+#pz-themes { margin-bottom: 4px; }
+#pz-themes .chip { min-height: 36px; padding: 6px 12px; font-size: 0.85rem; }
+#pz-source { text-align: left; line-height: 1.5; }
+#pz-source a { color: var(--muted); }
+.pz-hint-icon { width: 100%; height: 100%; fill: var(--accent); stroke: var(--accent-ink); stroke-width: 2.4; stroke-linecap: round; }
+@media (max-width: 520px), (pointer: coarse) { #pz-themes .chip { min-height: 40px; } }

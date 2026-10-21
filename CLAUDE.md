@@ -42,7 +42,7 @@ Nuove sezioni Lezioni e Problemi + aspetto più "premium". Revisione e Analisi p
 | Fase | Contenuto | Stato |
 |---|---|---|
 | E | Nuovo logo (cavallo formato da "5" e "4") e nuovo layout: barra laterale / barra in basso, 4 sezioni, tema scuro blu notte + ciano | ✅ completata |
-| F | Risolvi problemi: selezione dal database di puzzle Lichess (CC0), ogni soluzione riverificata da Stockfish | da fare |
+| F | Risolvi problemi: selezione dal database di puzzle Lichess (CC0), ogni soluzione riverificata da Stockfish | ✅ completata |
 | G | Lezioni interattive (tattiche, matti di base, principi di apertura, finali di base), posizioni verificate da Stockfish | da fare |
 | H | Rifinitura, telefono, offline, documentazione | da fare |
 
@@ -141,6 +141,24 @@ le spiegazioni torneranno in fase 4, derivate solo dalle linee del motore.
   Le PNG si rigenerano facendo uno screenshot dell'SVG con Chromium headless alla dimensione esatta.
   Il cavallo: "5" ruotato di 30° = testa (punta = orecchio, barra = muso con la bocca, pancia = guancia); "4" = collo e petto.
 
+### Problemi (fase F)
+- `scripts/build-puzzles.mjs` (`npm run build:puzzles`, ~6 min): legge in streaming le prime 600.000 righe di
+  `lichess_db_puzzle.csv.zst` (zstd di Node ≥ 23), filtra per qualità (popolarità ≥ 85, ≥ 300 partite, deviazione ≤ 90,
+  ≤ 8 semimosse), tema principale (`UI_CONFIG.puzzles.themes`, temi di Lichess) × difficoltà (`levels`, punteggio Lichess),
+  15 per gruppo; verifica ogni mossa con Stockfish; scrive `data/puzzles/puzzles.json` e `SOURCES.md`.
+  `data/puzzles/source/` (esclusa da git) contiene le righe lette e la cache delle verifiche.
+- Regole (`src/analysis/puzzle.js`, parametri `ANALYSIS_CONFIG.puzzles`, nostre):
+  mossa da trovare = prima linea a profondità 18 MultiPV 2 e unica buona (2ª linea ≥ 10 punti di win% peggiore; se la 1ª è
+  matto, la 2ª non deve essere un matto altrettanto veloce); all'ultima mossa basta dare matto. Risposta dell'avversario =
+  prima linea a profondità 14 MultiPV 3 o ≤ 3 punti di win% peggiore. Nell'app, all'ultima mossa vale ogni matto (come Lichess).
+- Formato: `{ id, fen, moves, rating, theme, level, themes, eval, url }`; `fen` è prima della mossa dell'avversario
+  (`moves[0]`), che l'app gioca da sola. `eval` = prima linea nella posizione da risolvere (punto di vista del Bianco).
+- Interfaccia (`src/ui/puzzles.js`, `PuzzleTrainer`, creato da app.js alla prima apertura): scacchiera propria `#pz-board`;
+  mossa sbagliata → analisi della posizione dopo (`refuteDepth` 14) con freccia e linea; indizio = pezzo da muovere
+  (conta come errore); statistiche in localStorage (`pzStats`), filtri `pzTheme`/`pzLevel`. Problemi nuovi prima di quelli risolti.
+- Risultato del 2026-10-21: 588 problemi (matto in 1 "Esperto" ne ha solo 3: pochi candidati); 44 esclusi, quasi tutti per
+  risposte dell'avversario non confermate dal motore.
+
 ### Riproducibilità
 - Prima di ogni revisione e di ogni tentativo di "ritenta": `engine.newGame()` (UCI `ucinewgame`, svuota la
   tabella delle trasposizioni). Senza, a parità di profondità il risultato dipendeva dalle posizioni analizzate prima.
@@ -190,6 +208,7 @@ npm run build:openings # rigenera data/openings/openings.json dopo aver aggiorna
 npm run test:ui        # test dell'interfaccia in Chromium headless (scripts/ui-test/, CHROME_PATH se non trovato)
 npm run bench          # tempi di analisi (default: data/examples/games/kasparov-topalov-1999.pgn)
 npm run build:examples # libreria di partite: scarica le fonti (in data/examples/source/, esclusa da git), verifica, rigenera
+npm run build:puzzles  # problemi: legge il database Lichess (CC0), verifica con Stockfish, rigenera data/puzzles/
 ```
 Richiede Node ≥ 22 (WebSocket integrato per test:ui; glob in `node --test`).
 Prima di chiudere una modifica all'interfaccia: `npm test` e `npm run test:ui` devono passare.
