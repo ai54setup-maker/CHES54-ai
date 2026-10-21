@@ -253,7 +253,7 @@ function showSectionView() {
       store,
       toast,
     });
-    puzzles.show();
+    puzzles.show({ daily: new URLSearchParams(location.search).has('daily') });
   }
 }
 

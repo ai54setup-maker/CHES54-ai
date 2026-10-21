@@ -9,7 +9,7 @@ import { playUci, isCorrectAttempt } from './puzzle.js';
  * @typedef {{ kind: 'explain', title: string, text: string, fen: string, demo?: string[],
  *   arrows?: string[][], marks?: string[],
  *   check?: { mate?: boolean, stalemate?: boolean, inCheck?: boolean,
- *     attacks?: { from: string, targets: string[] }, pinned?: string } }} ExplainStep
+ *     attacks?: { from: string, targets: string[] }, pinned?: string, defended?: string, undefended?: string } }} ExplainStep
  * @typedef {{ kind: 'exercise', text: string, fen: string, solution?: string[], accept?: string[],
  *   tactic?: string, mate?: boolean, success: string }} ExerciseStep
  */
@@ -86,6 +86,13 @@ export function staticErrors(step) {
       }
     }
     if (ck.pinned && !isPinned(c, ck.pinned)) errors.push(`il pezzo in ${ck.pinned} non è inchiodato`);
+    // Difeso / non difeso: un pezzo del suo stesso colore controlla la casa
+    for (const [key, want] of [['undefended', false], ['defended', true]]) {
+      if (!ck[key]) continue;
+      const p = c.get(ck[key]);
+      if (!p) errors.push(`nessun pezzo in ${ck[key]}`);
+      else if ((c.attackers(ck[key], p.color).length > 0) !== want) errors.push(`il pezzo in ${ck[key]} ${want ? 'non ' : ''}è difeso`);
+    }
   } else if (step.kind === 'exercise') {
     if (!!step.solution === !!step.accept) errors.push('un esercizio ha "solution" oppure "accept"');
     const c = new Chess(step.fen);

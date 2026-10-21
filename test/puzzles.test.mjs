@@ -12,6 +12,7 @@ import { ANALYSIS_CONFIG } from '../src/config/analysis.js';
 import { UI_CONFIG } from '../src/config/ui.js';
 import {
   parsePuzzleRow, puzzleStart, playUci, isCorrectAttempt, verifySolverMove, verifyReply, primaryTheme, levelOf,
+  dailyIndex, previousDay,
 } from '../src/analysis/puzzle.js';
 
 const data = JSON.parse(readFileSync(new URL('../data/puzzles/puzzles.json', import.meta.url), 'utf8'));
@@ -78,6 +79,17 @@ test('primaryTheme e levelOf', () => {
   assert.equal(levelOf(1299, levels), 'easy');
   assert.equal(levelOf(1300, levels), 'medium');
   assert.equal(levelOf(2500, levels), 'expert');
+});
+
+test('problema del giorno: stesso indice per la stessa data, giorni diversi danno problemi diversi', () => {
+  assert.equal(dailyIndex('2026-10-21', 200), dailyIndex('2026-10-21', 200));
+  const week = ['2026-10-21', '2026-10-22', '2026-10-23', '2026-10-24', '2026-10-25', '2026-10-26', '2026-10-27'];
+  const idx = week.map((d) => dailyIndex(d, 200));
+  assert.equal(new Set(idx).size, 7);
+  assert.ok(idx.every((i) => i >= 0 && i < 200));
+  assert.equal(previousDay('2026-10-21'), '2026-10-20');
+  assert.equal(previousDay('2026-03-01'), '2026-02-28');
+  assert.equal(previousDay('2027-01-01'), '2026-12-31');
 });
 
 test('puzzles.json: problemi legali, completi, senza doppioni', () => {

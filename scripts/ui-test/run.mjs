@@ -317,6 +317,21 @@ try {
     await b.click('#tab-review');
   });
 
+  await step('problema del giorno: risolto, serie di giorni', async () => {
+    await b.click('#tab-puzzles');
+    await b.waitFor(`document.getElementById('pz-daily-btn').textContent === 'Risolvi'`, 10000);
+    await b.click('#pz-daily-btn');
+    await b.waitFor(`/^Problema del giorno/.test(document.getElementById('pz-meta').textContent)`, 5000);
+    await b.waitFor(`/trova la mossa/.test(document.getElementById('pz-title').textContent)`, 10000);
+    // Soluzione mostrata: il problema del giorno conta come fatto (come su Lichess)
+    await b.click('#pz-solution');
+    await b.waitFor(`document.getElementById('pz-card').dataset.state === 'done'`, 15000);
+    assert.equal(await b.text('#pz-daily-title'), 'Problema del giorno: fatto!');
+    assert.equal(await b.text('#pz-daily-sub'), '1 giorno di fila');
+    assert.equal(await b.text('#pz-daily-btn'), 'Rivedi');
+    await b.click('#tab-review');
+  });
+
   await step('lezioni: indice, spiegazione con dimostrazione, esercizio sbagliato e giusto, lezione completata', async () => {
     await b.click('#tab-lessons');
     await b.waitFor(`document.querySelectorAll('#ls-groups .ls-item').length > 0`, 10000);

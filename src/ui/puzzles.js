@@ -7,7 +7,7 @@ import { Chess } from '../../lib/chess.js';
 import { formatScore } from '../engine/score.js';
 import { ANALYSIS_CONFIG } from '../config/analysis.js';
 import { UI_CONFIG } from '../config/ui.js';
-import { puzzleStart, playUci, isCorrectAttempt } from '../analysis/puzzle.js';
+import { puzzleStart, playUci, isCorrectAttempt, dailyIndex, previousDay } from '../analysis/puzzle.js';
 import { Board } from './board.js';
 import { toItalian, numberedLine } from './notation.js';
 import { piecesOf, checkSquareOf, refutation } from './position.js';
@@ -18,6 +18,11 @@ const THEME_LABEL = Object.fromEntries(CFG.themes.map((t) => [t.id, t.label]));
 const LEVEL_LABEL = Object.fromEntries(CFG.levels.map((l) => [l.id, l.label]));
 const HINT_ICON = '<svg viewBox="0 0 24 24" class="pz-hint-icon"><circle cx="12" cy="12" r="10"/><path d="M12 7v6M12 16.5v.5"/></svg>';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+/** Data locale di oggi, 'AAAA-MM-GG'. */
+const today = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 /** Valutazione a parole: i matti con il colore, i centipawn dal punto di vista del Bianco (come nel resto dell'app). */
 const evalText = (score) => (score.mate != null
@@ -52,12 +57,14 @@ export class PuzzleTrainer {
     this.$('#pz-hint').onclick = () => this.hint();
     this.$('#pz-solution').onclick = () => this.showSolution();
     this.$('#pz-retry').onclick = () => this.retry();
+    this.$('#pz-daily-btn').onclick = () => this.loadDaily();
     this.buildFilters();
   }
 
   // ---------- dati e preferenze ----------
-  async show() {
-    if (this.p) return this.renderPanel();
+  /** @param {{ daily?: boolean }} [opts] daily: apri subito il problema del giorno (link ?daily=1) */
+  async show(opts = {}) {
+    if (this.p && !opts.daily) return this.renderPanel();
     if (!this.loading) {
       this.setStatus('Carico i problemi…');
       this.loading = fetch(CFG.dataUrl)
@@ -71,11 +78,22 @@ export class PuzzleTrainer {
     await this.loading;
     if (!this.data) return this.setStatus('Non riesco a caricare i problemi. Controlla la connessione e riprova.');
     this.renderStats();
-    this.next();
+    if (opts.daily) this.loadDaily();
+    else this.next();
+  }
+
+  dailyPuzzle() {
+    const list = this.data.puzzles.filter((p) => CFG.dailyLevels.includes(p.level));
+    return list[dailyIndex(today(), list.length)];
+  }
+
+  loadDaily() {
+    if (!this.data) return;
+    this.load(this.dailyPuzzle(), { daily: true });
   }
 
   loadStats() {
-    const empty = { solved: [], streak: 0, best: 0, tried: 0, firstTry: 0 };
+    const empty = { solved: [], streak: 0, best: 0, tried: 0, firstTry: 0, dailyLast: null, dailyStreak: 0 };
     try {
       return { ...empty, ...JSON.parse(this.deps.store.get('pzStats', '{}')) };
     } catch {
@@ -146,10 +164,10 @@ export class PuzzleTrainer {
     this.load(pool[Math.floor(Math.random() * pool.length)]);
   }
 
-  async load(puzzle) {
+  async load(puzzle, { daily = false } = {}) {
     const start = puzzleStart({ fen: puzzle.fen, moves: puzzle.moves.split(' ') });
     const gen = (this.p?.gen ?? 0) + 1;
-    this.p = { puzzle, start, chess: new Chess(puzzle.fen), step: 0, status: 'intro', failed: false, wrong: null, gen, hinted: false };
+    this.p = { puzzle, start, chess: new Chess(puzzle.fen), step: 0, status: 'intro', failed: false, wrong: null, gen, hinted: false, daily };
     this.deps.engine()?.cancelAll();
     this.board.setOrientation(start.color);
     this.board.setArrows([]);
@@ -212,6 +230,12 @@ export class PuzzleTrainer {
         if (!s.solved.includes(p.puzzle.id)) s.solved.push(p.puzzle.id);
       } else {
         s.streak = 0;
+      }
+      // Problema del giorno: conta come fatto anche con indizio o soluzione (come su Lichess)
+      const day = today();
+      if (p.daily && s.dailyLast !== day) {
+        s.dailyStreak = s.dailyLast === previousDay(day) ? s.dailyStreak + 1 : 1;
+        s.dailyLast = day;
       }
       this.saveStats();
     }
@@ -318,7 +342,7 @@ export class PuzzleTrainer {
     if (!p) return;
     const { puzzle, start } = p;
     const who = COLOR_NAME[start.color];
-    this.$('#pz-meta').textContent = `${THEME_LABEL[puzzle.theme]} · ${LEVEL_LABEL[puzzle.level]} · punteggio ${puzzle.rating}`;
+    this.$('#pz-meta').textContent = `${p.daily ? 'Problema del giorno · ' : ''}${THEME_LABEL[puzzle.theme]} · ${LEVEL_LABEL[puzzle.level]} · punteggio ${puzzle.rating}`;
     const card = this.$('#pz-card');
     card.dataset.state = p.status === 'solved' ? (p.failed ? 'done' : 'solved') : p.status === 'wrong' ? 'wrong' : flash ?? '';
     const titles = {
@@ -363,6 +387,15 @@ export class PuzzleTrainer {
 
   renderStats() {
     const s = this.stats;
+    const day = today();
+    const doneToday = s.dailyLast === day;
+    const alive = doneToday || s.dailyLast === previousDay(day); // serie ancora valida
+    this.$('#pz-daily').classList.toggle('done', doneToday);
+    this.$('#pz-daily-title').textContent = doneToday ? 'Problema del giorno: fatto!' : 'Problema del giorno';
+    this.$('#pz-daily-sub').textContent = alive && s.dailyStreak
+      ? `${s.dailyStreak} ${s.dailyStreak === 1 ? 'giorno' : 'giorni'} di fila`
+      : 'Uno nuovo ogni giorno, uguale per tutti';
+    this.$('#pz-daily-btn').textContent = doneToday ? 'Rivedi' : 'Risolvi';
     const set = (id, v) => { this.$(id).textContent = v; };
     set('#pz-streak', s.streak);
     set('#pz-best', s.best);

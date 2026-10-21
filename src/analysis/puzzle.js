@@ -121,5 +121,21 @@ export function verifyReply(result, fen, reply, cfg = ANALYSIS_CONFIG.puzzles) {
  */
 export const primaryTheme = (themes, priority) => priority.find((t) => themes.includes(t)) ?? null;
 
+/**
+ * Problema del giorno: stesso per tutti nello stesso giorno, scelto in modo deterministico dalla data
+ * (giorni dal 1970 × un numero primo, modulo il numero di candidati: giorni vicini danno problemi lontani nell'elenco).
+ * @param {string} date 'AAAA-MM-GG'
+ * @param {number} count numero di candidati
+ */
+export function dailyIndex(date, count) {
+  const days = Math.floor(Date.parse(`${date}T00:00:00Z`) / 86400000);
+  return ((days * 7919) % count + count) % count;
+}
+
+/** Il giorno prima di 'AAAA-MM-GG', nello stesso formato. */
+export function previousDay(date) {
+  return new Date(Date.parse(`${date}T00:00:00Z`) - 86400000).toISOString().slice(0, 10);
+}
+
 /** Fascia di difficoltà per il punteggio Lichess. @param {Array<{id:string,min:number,max:number}>} levels */
 export const levelOf = (rating, levels) => levels.find((l) => rating >= l.min && rating < l.max)?.id ?? null;

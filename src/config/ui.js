@@ -69,6 +69,7 @@ export const UI_CONFIG = Object.freeze({
       Object.freeze({ id: 'expert', label: 'Esperto', min: 2300, max: 4000 }),
     ]),
     replyDelayMs: 450, // pausa prima della risposta automatica dell'avversario
+    dailyLevels: Object.freeze(['medium', 'hard']), // problema del giorno: scelto tra queste difficoltà
   }),
 
   // Lezioni (fase G): contenuti in data/lessons/lessons.json, verificati con npm run check:lessons.

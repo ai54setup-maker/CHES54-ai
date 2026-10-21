@@ -175,6 +175,13 @@ le spiegazioni torneranno in fase 4, derivate solo dalle linee del motore.
 - Interfaccia: `src/ui/lessons.js` (`LessonPlayer`), funzioni comuni con i Problemi in `src/ui/position.js`; `Board.setMarks()`
   per le case evidenziate. Lezioni completate in localStorage (`lessonsDone`). Orientamento = lato di chi risolve il primo esercizio.
 
+### Dopo la fase H (2026-10-21)
+- Lezioni: aggiunte "Il pezzo in presa" (controlli statici `defended` / `undefended`), "Matto con due torri", "Lo sfondamento"
+  (13 in tutto). Il matto in 2 con due torri era ambiguo (anche Tb7 matta in 2): sostituito con un matto in 1.
+- Problema del giorno: `dailyIndex(data, n)` in puzzle.js (giorni dal 1970 × 7919 mod n) tra i livelli
+  `UI_CONFIG.puzzles.dailyLevels`; data locale del dispositivo; conta come fatto anche con indizio/soluzione;
+  `pzStats.dailyLast` / `dailyStreak`. Link `?section=problemi&daily=1` (scorciatoia nel manifest).
+
 ### Rifinitura (fase H)
 - Link diretto: `?section=revisione|analisi|lezioni|problemi` (anche i nomi interni); scorciatoie dell'icona in
   `manifest.webmanifest`. Tastiera: ← → nei passi delle lezioni; → prossimo problema (dopo averlo risolto), H indizio.

@@ -11,8 +11,8 @@ Revisione e analisi delle partite di scacchi, direttamente nel browser, con **St
   - brevi spiegazioni degli errori, ognuna con la variante del motore che la dimostra.
 - **Ritenta la mossa:** sugli errori puoi provare a trovare una mossa migliore, e il motore la giudica.
 - **Analisi partita:** ricostruisci una partita mossa per mossa, con le migliori mosse del motore e l'Allenatore.
-- **Lezioni:** 10 lezioni interattive su tattiche, matti di base, principi di apertura e finali, con esercizi.
-- **Problemi:** 588 problemi per tema e difficoltà, dal database pubblico di Lichess.
+- **Lezioni:** 13 lezioni interattive su tattiche, matti di base, principi di apertura e finali, con esercizi.
+- **Problemi:** 588 problemi per tema e difficoltà, dal database pubblico di Lichess, e un problema del giorno.
 
 Anche gli esercizi delle lezioni e le soluzioni dei problemi sono verificati con Stockfish prima di entrare nell'app.
 
@@ -138,9 +138,9 @@ consultati) sono in [`CLAUDE.md`](CLAUDE.md).
 Nessuna fase di build e nessuna dipendenza npm: i file vengono serviti così come sono. Serve **Node.js 22 o successivo**.
 
 ### Lezioni
-10 lezioni brevi in 4 categorie: **tattiche** (forchetta, inchiodatura, infilata, attacco di scoperta), **matti di base**
-(matto della traversa, donna e re, stallo), **principi di apertura** (centro, sviluppo, arrocco, matto del barbiere) e
-**finali di base** (opposizione, regola del quadrato). Ogni lezione alterna spiegazioni, dimostrazioni animate sulla
+13 lezioni brevi in 4 categorie: **tattiche** (pezzo in presa, forchetta, inchiodatura, infilata, attacco di scoperta),
+**matti di base** (matto della traversa, donna e re, stallo, due torri), **principi di apertura** (centro, sviluppo,
+arrocco, matto del barbiere) e **finali di base** (opposizione, regola del quadrato, sfondamento). Ogni lezione alterna spiegazioni, dimostrazioni animate sulla
 scacchiera ed esercizi; le lezioni completate restano segnate.
 - I testi spiegano concetti. Ciò che si vede sulla scacchiera (scacco, matto, stallo, pezzi attaccati o inchiodati) è
   controllato in automatico; **ogni esercizio è verificato con Stockfish** (`npm run check:lessons`, esito in
@@ -157,6 +157,8 @@ sono esclusi. Fonte, criteri ed esclusi in [`data/puzzles/SOURCES.md`](data/puzz
 2. Mossa sbagliata → resta sulla scacchiera e Stockfish mostra come risponderebbe l'avversario; **Riprova**.
 3. **Indizio** evidenzia il pezzo da muovere; **Soluzione** gioca la soluzione. All'ultima mossa vale qualsiasi matto.
 4. Serie, record, problemi risolti e percentuale al primo colpo restano salvati nel browser.
+5. **Problema del giorno:** uguale per tutti nello stesso giorno (difficoltà media o difficile), con i giorni di fila.
+   Si apre anche dal link `?section=problemi&daily=1` o tenendo premuta l'icona dell'app.
 
 ```bash
 npm test                         # test della logica, compresi Stockfish reale e perft (~3 s)

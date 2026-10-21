@@ -1,11 +1,88 @@
 {
   "categories": [
-    { "id": "tactics", "label": "Tattiche" },
-    { "id": "mates", "label": "Matti di base" },
-    { "id": "openings", "label": "Principi di apertura" },
-    { "id": "endgames", "label": "Finali di base" }
+    {
+      "id": "tactics",
+      "label": "Tattiche"
+    },
+    {
+      "id": "mates",
+      "label": "Matti di base"
+    },
+    {
+      "id": "openings",
+      "label": "Principi di apertura"
+    },
+    {
+      "id": "endgames",
+      "label": "Finali di base"
+    }
   ],
   "lessons": [
+    {
+      "id": "hanging",
+      "category": "tactics",
+      "title": "Il pezzo in presa",
+      "summary": "Contare attaccanti e difensori prima di catturare.",
+      "steps": [
+        {
+          "kind": "explain",
+          "title": "Che cos'è",
+          "text": "Un pezzo è \"in presa\" quando è attaccato e nessun pezzo del suo colore lo difende: si può catturare gratis. Qui il cavallo in e5 è attaccato dall'alfiere in c3 e nessun pezzo nero lo protegge.",
+          "fen": "4k3/6pp/8/4n3/8/2B5/6PP/6K1 w - - 0 1",
+          "marks": [
+            "e5"
+          ],
+          "arrows": [
+            [
+              "c3",
+              "e5"
+            ]
+          ],
+          "check": {
+            "attacks": {
+              "from": "c3",
+              "targets": [
+                "e5"
+              ]
+            },
+            "undefended": "e5"
+          }
+        },
+        {
+          "kind": "explain",
+          "title": "Prima di catturare, conta",
+          "text": "Ora il cavallo è difeso dal pedone in f6. Se l'alfiere lo cattura, il pedone riprende: un alfiere per un cavallo, nessun guadagno. Prima di catturare conta sempre chi attacca e chi difende la casa.",
+          "fen": "4k3/6pp/5p2/4n3/8/2B5/6PP/6K1 w - - 0 1",
+          "marks": [
+            "e5",
+            "f6"
+          ],
+          "check": {
+            "defended": "e5"
+          }
+        },
+        {
+          "kind": "exercise",
+          "text": "Tocca al Bianco. Cattura il pezzo in presa.",
+          "fen": "4k3/6pp/8/4n3/8/2B5/6PP/6K1 w - - 0 1",
+          "solution": [
+            "c3e5"
+          ],
+          "tactic": "hanging",
+          "success": "Axe5: il cavallo non era difeso, il Bianco guadagna un pezzo."
+        },
+        {
+          "kind": "exercise",
+          "text": "Tocca al Bianco. L'alfiere attacca due pezzi neri: solo uno si può prendere senza perdere nulla.",
+          "fen": "4k3/6pp/5p2/r3n3/8/2B5/6PP/6K1 w - - 0 1",
+          "solution": [
+            "c3a5"
+          ],
+          "tactic": "hanging",
+          "success": "Axa5! La torre non era difesa. Il cavallo in e5 invece è difeso dal pedone in f6."
+        }
+      ]
+    },
     {
       "id": "fork",
       "category": "tactics",
@@ -17,22 +94,46 @@
           "title": "Che cos'è",
           "text": "Una forchetta è un attacco a due (o più) pezzi nello stesso momento, fatto da un solo pezzo. L'avversario può mettere al sicuro un solo pezzo: l'altro si perde. Il cavallo è il re delle forchette: salta, quindi i suoi attacchi non si possono bloccare mettendo un pezzo in mezzo.",
           "fen": "2q3k1/5ppp/8/3N4/8/8/5PP1/6K1 w - - 0 1",
-          "marks": ["d5"]
+          "marks": [
+            "d5"
+          ]
         },
         {
           "kind": "explain",
           "title": "Ce7+",
           "text": "Dopo Ce7+ il cavallo dà scacco al re in g8 e attacca la donna in c8. Il Nero deve per forza occuparsi dello scacco: alla mossa successiva il Bianco cattura la donna.",
           "fen": "2q3k1/5ppp/8/3N4/8/8/5PP1/6K1 w - - 0 1",
-          "demo": ["d5e7"],
-          "arrows": [["e7", "g8"], ["e7", "c8"]],
-          "check": { "inCheck": true, "attacks": { "from": "e7", "targets": ["g8", "c8"] } }
+          "demo": [
+            "d5e7"
+          ],
+          "arrows": [
+            [
+              "e7",
+              "g8"
+            ],
+            [
+              "e7",
+              "c8"
+            ]
+          ],
+          "check": {
+            "inCheck": true,
+            "attacks": {
+              "from": "e7",
+              "targets": [
+                "g8",
+                "c8"
+              ]
+            }
+          }
         },
         {
           "kind": "exercise",
           "text": "Tocca al Bianco. Trova la forchetta del cavallo.",
           "fen": "r3k3/pp6/8/1N6/8/8/PP6/4K3 w - - 0 1",
-          "solution": ["b5c7"],
+          "solution": [
+            "b5c7"
+          ],
           "tactic": "fork",
           "success": "Cc7+ dà scacco al re e attacca la torre in a8: il re deve spostarsi e la torre cade."
         },
@@ -40,7 +141,9 @@
           "kind": "exercise",
           "text": "Anche la donna può fare forchette. Tocca al Bianco: attacca due pezzi con una mossa sola.",
           "fen": "r7/6pk/8/8/8/8/6PP/4Q1K1 w - - 0 1",
-          "solution": ["e1e4"],
+          "solution": [
+            "e1e4"
+          ],
           "tactic": "fork",
           "success": "De4+ dà scacco al re in h7 e, sulla diagonale lunga, attacca la torre in a8."
         }
@@ -63,15 +166,26 @@
           "title": "Te1",
           "text": "Dopo Te1 la donna in e5 è inchiodata al re in e8: non può lasciare la colonna e. Le resta solo da muoversi lungo la colonna, e il meglio che può fare è darsi in cambio della torre.",
           "fen": "4k3/8/8/4q3/8/8/5PPP/R4K2 w - - 0 1",
-          "demo": ["a1e1"],
-          "arrows": [["e1", "e8"]],
-          "check": { "pinned": "e5" }
+          "demo": [
+            "a1e1"
+          ],
+          "arrows": [
+            [
+              "e1",
+              "e8"
+            ]
+          ],
+          "check": {
+            "pinned": "e5"
+          }
         },
         {
           "kind": "exercise",
           "text": "Tocca al Bianco. Inchioda la donna nera al suo re.",
           "fen": "4k3/3q4/8/8/P7/8/5PPP/5BK1 w - - 0 1",
-          "solution": ["f1b5"],
+          "solution": [
+            "f1b5"
+          ],
           "tactic": "pin",
           "success": "Ab5: la donna in d7 è inchiodata al re in e8. Se cattura l'alfiere, il pedone in a4 riprende."
         }
@@ -94,15 +208,26 @@
           "title": "Th7+",
           "text": "Th7+ dà scacco al re in e7 lungo la settima traversa. Il re deve lasciare la traversa e la torre cattura la donna in a7.",
           "fen": "8/q3k3/8/8/8/8/5PP1/2K4R w - - 0 1",
-          "demo": ["h1h7"],
-          "arrows": [["h7", "a7"]],
-          "check": { "inCheck": true }
+          "demo": [
+            "h1h7"
+          ],
+          "arrows": [
+            [
+              "h7",
+              "a7"
+            ]
+          ],
+          "check": {
+            "inCheck": true
+          }
         },
         {
           "kind": "exercise",
           "text": "Tocca al Bianco. L'alfiere può infilare re e donna sulla stessa diagonale.",
           "fen": "q7/7B/2k5/8/8/8/5PPP/6K1 w - - 0 1",
-          "solution": ["h7e4"],
+          "solution": [
+            "h7e4"
+          ],
           "tactic": "skewer",
           "success": "Ae4+: il re in c6 deve spostarsi dalla diagonale e l'alfiere cattura la donna in a8."
         }
@@ -119,21 +244,38 @@
           "title": "Che cos'è",
           "text": "Un attacco di scoperta nasce quando un pezzo si sposta e libera la linea di un altro pezzo (alfiere, torre o donna) che stava dietro. Così una sola mossa fa due minacce: quella del pezzo che si muove e quella del pezzo scoperto.",
           "fen": "1k6/6q1/8/8/3N4/8/1B4PP/6K1 w - - 0 1",
-          "arrows": [["b2", "g7"]]
+          "arrows": [
+            [
+              "b2",
+              "g7"
+            ]
+          ]
         },
         {
           "kind": "explain",
           "title": "Cc6+",
           "text": "Cc6+ dà scacco al re in b8 e, nello stesso momento, libera la diagonale dell'alfiere in b2, che ora attacca la donna in g7. Il Nero deve parare lo scacco e perde la donna.",
           "fen": "1k6/6q1/8/8/3N4/8/1B4PP/6K1 w - - 0 1",
-          "demo": ["d4c6"],
-          "check": { "inCheck": true, "attacks": { "from": "b2", "targets": ["g7"] } }
+          "demo": [
+            "d4c6"
+          ],
+          "check": {
+            "inCheck": true,
+            "attacks": {
+              "from": "b2",
+              "targets": [
+                "g7"
+              ]
+            }
+          }
         },
         {
           "kind": "exercise",
           "text": "Tocca al Bianco. La torre in d1 aspetta solo che l'alfiere si sposti: ogni mossa dell'alfiere dà scacco, ma una sola vince la donna.",
           "fen": "3k4/8/8/q7/1p1B4/8/6PP/3R2K1 w - - 0 1",
-          "solution": ["d4b6"],
+          "solution": [
+            "d4b6"
+          ],
           "tactic": "discovered",
           "success": "Ab6+! Scacco doppio: la torre in d1, scoperta, e l'alfiere danno scacco insieme. Il re deve spostarsi e l'alfiere cattura la donna in a5."
         }
@@ -150,22 +292,33 @@
           "title": "Il re senza case di fuga",
           "text": "Dopo l'arrocco il re sta dietro i suoi pedoni. Se i pedoni non si sono mossi, il re non ha case libere: una torre o la donna che arriva sull'ultima traversa dà matto.",
           "fen": "6k1/5ppp/8/8/8/8/5PPP/3R2K1 w - - 0 1",
-          "demo": ["d1d8"],
-          "check": { "mate": true }
+          "demo": [
+            "d1d8"
+          ],
+          "check": {
+            "mate": true
+          }
         },
         {
           "kind": "explain",
           "title": "La finestra",
           "text": "Il modo più semplice per difendersi: spingere un pedone davanti al re (qui h6) per aprirgli una casa di fuga, la \"finestra\". Ora Td8+ è soltanto scacco: il re va in h7.",
           "fen": "6k1/5pp1/7p/8/8/8/5PPP/3R2K1 w - - 0 1",
-          "demo": ["d1d8"],
-          "check": { "inCheck": true, "mate": false }
+          "demo": [
+            "d1d8"
+          ],
+          "check": {
+            "inCheck": true,
+            "mate": false
+          }
         },
         {
           "kind": "exercise",
           "text": "Tocca al Bianco: dai matto in una mossa.",
           "fen": "6k1/5ppp/8/8/8/8/1q3PPP/4R1K1 w - - 0 1",
-          "solution": ["e1e8"],
+          "solution": [
+            "e1e8"
+          ],
           "mate": true,
           "success": "Te8#: il re in g8 non ha case di fuga."
         },
@@ -173,7 +326,11 @@
           "kind": "exercise",
           "text": "Matto in 2. La torre in c8 difende l'ultima traversa: le torri doppiate sono più forti.",
           "fen": "2r3k1/5ppp/8/8/8/8/3R1PPP/3R2K1 w - - 0 1",
-          "solution": ["d2d8", "c8d8", "d1d8"],
+          "solution": [
+            "d2d8",
+            "c8d8",
+            "d1d8"
+          ],
           "mate": true,
           "success": "Td8+ Txd8 Txd8#: la prima torre elimina il difensore, la seconda dà matto."
         }
@@ -190,23 +347,69 @@
           "title": "Donna e re insieme",
           "text": "Contro il re da solo, donna e re danno sempre matto. La donna spinge il re avversario verso il bordo della scacchiera, poi il proprio re si avvicina per proteggere la donna o togliere le ultime case.",
           "fen": "k7/8/1K6/8/8/8/8/6Q1 w - - 0 1",
-          "marks": ["a7", "b7", "b8"]
+          "marks": [
+            "a7",
+            "b7",
+            "b8"
+          ]
         },
         {
           "kind": "explain",
           "title": "Attenzione allo stallo",
           "text": "Se il re avversario non è sotto scacco e non ha nessuna mossa legale, è stallo: la partita è patta. Qui Dc7 toglie al re tutte le case senza dargli scacco.",
           "fen": "k7/8/1K6/8/8/8/8/2Q5 w - - 0 1",
-          "demo": ["c1c7"],
-          "check": { "stalemate": true }
+          "demo": [
+            "c1c7"
+          ],
+          "check": {
+            "stalemate": true
+          }
         },
         {
           "kind": "exercise",
           "text": "Tocca al Bianco: dai matto in una mossa (e non dare stallo).",
           "fen": "k7/8/1K6/8/8/8/8/6Q1 w - - 0 1",
-          "solution": ["g1g8"],
+          "solution": [
+            "g1g8"
+          ],
           "mate": true,
           "success": "Matto! Il re in b6 controlla a7 e b7, la donna dà scacco e copre l'ultima casa."
+        }
+      ]
+    },
+    {
+      "id": "two-rooks-mate",
+      "category": "mates",
+      "title": "Matto con due torri",
+      "summary": "La scala: le torri si danno il cambio.",
+      "steps": [
+        {
+          "kind": "explain",
+          "title": "La scala",
+          "text": "Due torri danno matto da sole. Una torre taglia una traversa al re, l'altra dà scacco sulla traversa successiva: il re deve arretrare. Poi le torri si scambiano i ruoli, una traversa alla volta, fino al bordo.",
+          "fen": "8/8/8/4k3/R7/8/8/1R4K1 w - - 0 1",
+          "demo": [
+            "b1b5",
+            "e5e6",
+            "a4a6",
+            "e6e7",
+            "b5b7",
+            "e7e8",
+            "a6a8"
+          ],
+          "check": {
+            "mate": true
+          }
+        },
+        {
+          "kind": "exercise",
+          "text": "La torre in a7 taglia la settima traversa al re. Dai matto in una mossa.",
+          "fen": "3k4/R7/8/8/8/8/8/1R4K1 w - - 0 1",
+          "solution": [
+            "b1b8"
+          ],
+          "mate": true,
+          "success": "Tb8#: la torre in a7 toglie la settima traversa, quella in b8 dà scacco sull'ottava."
         }
       ]
     },
@@ -221,23 +424,47 @@
           "title": "1. Il centro",
           "text": "Le quattro case centrali (d4, e4, d5, e5) sono le più importanti: da lì i pezzi controllano più case. Per questo le prime mosse spesso portano un pedone al centro.",
           "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-          "demo": ["e2e4", "e7e5"],
-          "marks": ["d4", "e4", "d5", "e5"]
+          "demo": [
+            "e2e4",
+            "e7e5"
+          ],
+          "marks": [
+            "d4",
+            "e4",
+            "d5",
+            "e5"
+          ]
         },
         {
           "kind": "explain",
           "title": "2. Lo sviluppo",
           "text": "Cavalli e alfieri devono uscire presto, verso il centro. Una buona regola: in apertura ogni mossa porta in gioco un pezzo nuovo, e non si muove due volte lo stesso pezzo senza un motivo.",
           "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
-          "demo": ["g1f3", "b8c6", "f1c4", "f8c5"]
+          "demo": [
+            "g1f3",
+            "b8c6",
+            "f1c4",
+            "f8c5"
+          ]
         },
         {
           "kind": "explain",
           "title": "3. Il re al sicuro",
           "text": "Con l'arrocco il re va al riparo dietro i pedoni e la torre si avvicina al centro, pronta a entrare in gioco.",
           "fen": "r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4",
-          "demo": ["e1g1"],
-          "arrows": [["e1", "g1"], ["h1", "f1"]]
+          "demo": [
+            "e1g1"
+          ],
+          "arrows": [
+            [
+              "e1",
+              "g1"
+            ],
+            [
+              "h1",
+              "f1"
+            ]
+          ]
         }
       ]
     },
@@ -252,22 +479,49 @@
           "title": "Il punto debole f7",
           "text": "All'inizio della partita la casa f7 è difesa solo dal re. Dopo 1.e4 e5 2.Ac4 Cc6 3.Dh5 la donna e l'alfiere la attaccano insieme.",
           "fen": "r1bqkbnr/pppp1ppp/2n5/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 3 3",
-          "arrows": [["h5", "f7"], ["c4", "f7"]],
-          "check": { "attacks": { "from": "h5", "targets": ["f7", "e5"] } }
+          "arrows": [
+            [
+              "h5",
+              "f7"
+            ],
+            [
+              "c4",
+              "f7"
+            ]
+          ],
+          "check": {
+            "attacks": {
+              "from": "h5",
+              "targets": [
+                "f7",
+                "e5"
+              ]
+            }
+          }
         },
         {
           "kind": "explain",
           "title": "La trappola",
           "text": "Se il Nero attacca la donna con 3...Cf6?? senza pensare a f7, arriva 4.Dxf7#: la donna è protetta dall'alfiere e il re non ha scampo.",
           "fen": "r1bqkbnr/pppp1ppp/2n5/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 3 3",
-          "demo": ["g8f6", "h5f7"],
-          "check": { "mate": true }
+          "demo": [
+            "g8f6",
+            "h5f7"
+          ],
+          "check": {
+            "mate": true
+          }
         },
         {
           "kind": "exercise",
           "text": "Tocca al Nero. Difendi f7 (e non dimenticare che la donna attacca anche e5).",
           "fen": "r1bqkbnr/pppp1ppp/2n5/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 3 3",
-          "accept": ["g7g6", "d8e7", "d8f6", "g8h6"],
+          "accept": [
+            "g7g6",
+            "d8e7",
+            "d8f6",
+            "g8h6"
+          ],
           "success": "Bene: f7 è difeso. Secondo Stockfish le difese buone qui sono g6, De7, Df6 e Ch6."
         }
       ]
@@ -283,20 +537,29 @@
           "title": "Che cos'è",
           "text": "Due re sulla stessa colonna con una sola casa in mezzo si tolgono le case a vicenda. Chi deve muovere è costretto a cedere il passo: si dice che l'altro \"ha l'opposizione\". Qui tocca al Nero, quindi l'opposizione è del Bianco.",
           "fen": "8/8/8/4k3/8/4K3/4P3/8 b - - 0 1",
-          "marks": ["e4"]
+          "marks": [
+            "e4"
+          ]
         },
         {
           "kind": "explain",
           "title": "Il re davanti al pedone",
           "text": "Nei finali di re e pedone contro re, il re di chi ha il pedone deve andare davanti al pedone, non dietro: così apre la strada al pedone e lo accompagna verso la promozione.",
           "fen": "8/8/8/4k3/8/8/4PK2/8 w - - 0 1",
-          "arrows": [["f2", "e3"]]
+          "arrows": [
+            [
+              "f2",
+              "e3"
+            ]
+          ]
         },
         {
           "kind": "exercise",
           "text": "Tocca al Bianco: una sola mossa vince. Prendi l'opposizione.",
           "fen": "8/8/8/4k3/8/8/4PK2/8 w - - 0 1",
-          "solution": ["f2e3"],
+          "solution": [
+            "f2e3"
+          ],
           "success": "Re3! Il re va davanti al pedone e prende l'opposizione: ora tocca al Nero, che deve cedere il passo."
         }
       ]
@@ -312,14 +575,66 @@
           "title": "Il quadrato",
           "text": "Immagina un quadrato che ha come lato la strada del pedone fino alla promozione: qui da a4 ad a8, quindi il quadrato a4–e4–e8–a8. Se il re avversario riesce a entrare nel quadrato (con la sua mossa), prende il pedone in tempo; altrimenti il pedone promuove.",
           "fen": "8/8/8/8/P4k2/8/8/7K b - - 0 1",
-          "marks": ["a4", "e4", "e8", "a8"]
+          "marks": [
+            "a4",
+            "e4",
+            "e8",
+            "a8"
+          ]
         },
         {
           "kind": "exercise",
           "text": "Tocca al Nero. Entra nel quadrato del pedone per fermarlo.",
           "fen": "8/8/8/8/P4k2/8/8/7K b - - 0 1",
-          "accept": ["f4e4", "f4e5"],
+          "accept": [
+            "f4e4",
+            "f4e5"
+          ],
           "success": "Il re è nel quadrato: raggiungerà il pedone prima che promuova. Re4 e Re5 sono le uniche mosse che salvano la partita."
+        }
+      ]
+    },
+    {
+      "id": "breakthrough",
+      "category": "endgames",
+      "title": "Lo sfondamento",
+      "summary": "Tre pedoni contro tre: come crearne uno passato.",
+      "steps": [
+        {
+          "kind": "explain",
+          "title": "Il pedone passato",
+          "text": "Un pedone è \"passato\" quando nessun pedone avversario può fermarlo: davanti a lui e sulle colonne vicine non ci sono pedoni nemici. Nei finali un pedone passato lontano dai re è spesso decisivo.",
+          "fen": "7k/ppp5/8/PPP5/8/8/8/7K w - - 0 1",
+          "marks": [
+            "a5",
+            "b5",
+            "c5",
+            "a7",
+            "b7",
+            "c7"
+          ]
+        },
+        {
+          "kind": "explain",
+          "title": "L'idea",
+          "text": "Con 1.b6 il Bianco sacrifica un pedone per aprire la strada a un altro. Se 1...cxb6 segue 2.a6!: dopo 2...bxa6 il pedone c avanza e nessun pedone nero può più fermarlo.",
+          "fen": "7k/ppp5/8/PPP5/8/8/8/7K w - - 0 1",
+          "demo": [
+            "b5b6",
+            "c7b6",
+            "a5a6",
+            "b7a6",
+            "c5c6"
+          ]
+        },
+        {
+          "kind": "exercise",
+          "text": "Tocca al Bianco: una sola mossa vince. I re sono troppo lontani per aiutare.",
+          "fen": "7k/ppp5/8/PPP5/8/8/8/7K w - - 0 1",
+          "solution": [
+            "b5b6"
+          ],
+          "success": "1.b6! Qualunque cattura del Nero lascia passare un pedone bianco, che arriva a promuovere prima del re nero."
         }
       ]
     }

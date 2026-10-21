@@ -29,6 +29,16 @@
   ],
   "shortcuts": [
     {
+      "name": "Problema del giorno",
+      "url": "./?section=problemi&daily=1",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
       "name": "Lezioni",
       "url": "./?section=lezioni",
       "icons": [
