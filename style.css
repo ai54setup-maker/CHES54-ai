@@ -826,7 +826,7 @@ button { font: inherit; color: inherit; }
 .ls-card { display: flex; flex-direction: column; gap: 10px; border-left: 3px solid var(--line-strong); transition: border-color 0.2s; }
 .ls-card[data-state="solved"] { border-left-color: var(--cls-best); }
 .ls-card[data-state="wrong"] { border-left-color: var(--cls-blunder); }
-.ls-back { align-self: flex-start; padding: 4px 0; text-decoration: none; font-size: 0.85rem; min-height: 32px; }
+.ls-back { align-self: flex-start; padding: 4px 0; text-decoration: none; font-size: 0.85rem; min-height: 40px; }
 .ls-back:hover { color: var(--text); }
 .ls-steps-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .ls-steps-row .hint { margin: 0; }

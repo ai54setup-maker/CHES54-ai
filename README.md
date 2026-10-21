@@ -10,7 +10,11 @@ Revisione e analisi delle partite di scacchi, direttamente nel browser, con **St
   - il grafico della partita e i momenti chiave;
   - brevi spiegazioni degli errori, ognuna con la variante del motore che la dimostra.
 - **Ritenta la mossa:** sugli errori puoi provare a trovare una mossa migliore, e il motore la giudica.
-- **Analisi libera:** muovi i pezzi e vedi le migliori mosse del motore, con le linee complete.
+- **Analisi partita:** ricostruisci una partita mossa per mossa, con le migliori mosse del motore e l'Allenatore.
+- **Lezioni:** 10 lezioni interattive su tattiche, matti di base, principi di apertura e finali, con esercizi.
+- **Problemi:** 588 problemi per tema e difficoltà, dal database pubblico di Lichess.
+
+Anche gli esercizi delle lezioni e le soluzioni dei problemi sono verificati con Stockfish prima di entrare nell'app.
 
 Ogni numero, categoria e spiegazione viene dall'analisi di Stockfish. Le formule sono pubbliche e documentate
 (vedi [Come funziona l'analisi](#come-funziona-lanalisi)). Il motore gira sul tuo dispositivo: non servono server,

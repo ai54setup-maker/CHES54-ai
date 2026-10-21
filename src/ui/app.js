@@ -71,6 +71,14 @@ const state = {
 const BOARD_SECTIONS = ['review', 'analysis'];
 const SECTIONS = [...BOARD_SECTIONS, 'lessons', 'puzzles'];
 state.section = SECTIONS.includes(store.get('section', '')) ? store.get('section', '') : state.mode;
+// Link diretto a una sezione (anche dalle scorciatoie dell'icona dell'app): ?section=lezioni / problemi / analisi / revisione
+const SECTION_ALIASES = { revisione: 'review', analisi: 'analysis', lezioni: 'lessons', problemi: 'puzzles' };
+const linked = new URLSearchParams(location.search).get('section');
+const linkedSection = SECTION_ALIASES[linked] ?? linked;
+if (SECTIONS.includes(linkedSection)) {
+  state.section = linkedSection;
+  if (BOARD_SECTIONS.includes(linkedSection)) state.mode = linkedSection;
+}
 const onBoard = () => BOARD_SECTIONS.includes(state.section);
 // Analisi "dal vivo" della posizione mostrata; gen cambia a ogni nuova richiesta (le risposte vecchie si ignorano)
 const live = { fen: null, pending: true, result: null, highlighted: null, gen: 0 };
@@ -1217,7 +1225,7 @@ $('btn-flip').onclick = () => {
 
 document.addEventListener('keydown', (e) => {
   if (e.target.closest('input, textarea, select, dialog') || e.altKey || e.ctrlKey || e.metaKey) return;
-  if (!onBoard()) return;
+  if (!onBoard()) return (state.section === 'lessons' ? lessons : puzzles)?.onKey(e);
   if (state.mode === 'review' && !reviewDone()) return;
   const actions = {
     ArrowLeft: () => (state.retry ? exitRetry() : goTo(cur() - 1)),

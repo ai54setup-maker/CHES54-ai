@@ -250,6 +250,14 @@ export class LessonPlayer {
     else this.showIndex();
   }
 
+  /** Tastiera: ← → per i passi della lezione. */
+  onKey(e) {
+    if (!this.s || !['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+    e.preventDefault();
+    if (e.key === 'ArrowLeft') this.go(this.s.index - 1);
+    else this.next();
+  }
+
   // ---------- pannello ----------
   render() {
     const s = this.s;

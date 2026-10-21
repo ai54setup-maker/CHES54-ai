@@ -293,6 +293,17 @@ export class PuzzleTrainer {
     this.onSolved();
   }
 
+  /** Tastiera: → prossimo problema (dopo averlo risolto), H indizio. */
+  onKey(e) {
+    if (!this.p) return;
+    if (e.key === 'ArrowRight' && this.p.status === 'solved') {
+      e.preventDefault();
+      this.next();
+    } else if (e.key === 'h') {
+      this.hint();
+    }
+  }
+
   // ---------- pannello ----------
   setStatus(text) {
     this.$('#pz-title').textContent = text;

@@ -1,7 +1,7 @@
 {
   "name": "CHES54.ai",
   "short_name": "CHES54",
-  "description": "Analisi scacchistica con Stockfish: inserisci le mosse e scopri le migliori.",
+  "description": "Scacchi con Stockfish: revisione e analisi delle partite, lezioni interattive e problemi.",
   "lang": "it",
   "start_url": "./",
   "scope": "./",
@@ -10,8 +10,53 @@
   "background_color": "#060b18",
   "theme_color": "#060b18",
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Lezioni",
+      "url": "./?section=lezioni",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Problemi",
+      "url": "./?section=problemi",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Revisione",
+      "url": "./?section=revisione",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
   ]
 }

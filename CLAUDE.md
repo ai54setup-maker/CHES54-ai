@@ -44,7 +44,7 @@ Nuove sezioni Lezioni e Problemi + aspetto più "premium". Revisione e Analisi p
 | E | Nuovo logo (cavallo formato da "5" e "4") e nuovo layout: barra laterale / barra in basso, 4 sezioni, tema scuro blu notte + ciano | ✅ completata |
 | F | Risolvi problemi: selezione dal database di puzzle Lichess (CC0), ogni soluzione riverificata da Stockfish | ✅ completata |
 | G | Lezioni interattive (tattiche, matti di base, principi di apertura, finali di base), posizioni verificate da Stockfish | ✅ completata |
-| H | Rifinitura, telefono, offline, documentazione | da fare |
+| H | Rifinitura, telefono, offline, documentazione | ✅ completata |
 
 Esperienza principale: **Revisione** (PGN → analisi) + **Analisi partita** (ricostruzione mossa per mossa, con Allenatore;
 l'analisi libera da FEN è l'opzione "Parti da una posizione").
@@ -174,6 +174,14 @@ le spiegazioni torneranno in fase 4, derivate solo dalle linee del motore.
   sono…", "le uniche mosse che salvano…", sono il risultato della verifica).
 - Interfaccia: `src/ui/lessons.js` (`LessonPlayer`), funzioni comuni con i Problemi in `src/ui/position.js`; `Board.setMarks()`
   per le case evidenziate. Lezioni completate in localStorage (`lessonsDone`). Orientamento = lato di chi risolve il primo esercizio.
+
+### Rifinitura (fase H)
+- Link diretto: `?section=revisione|analisi|lezioni|problemi` (anche i nomi interni); scorciatoie dell'icona in
+  `manifest.webmanifest`. Tastiera: ← → nei passi delle lezioni; → prossimo problema (dopo averlo risolto), H indizio.
+- Versione 3.0.0 (`UI_CONFIG.about.version`, package.json).
+- test:ui, ultima prova: **spegne il server** e ricarica l'app (l'emulazione offline di Chrome non vale per il service
+  worker: con quella il test passava anche se il service worker scaricava dalla rete). Controprova: un file non in cache
+  non arriva. Problemi, lezioni e Stockfish devono funzionare dalla cache.
 
 ### Riproducibilità
 - Prima di ogni revisione e di ogni tentativo di "ritenta": `engine.newGame()` (UCI `ucinewgame`, svuota la

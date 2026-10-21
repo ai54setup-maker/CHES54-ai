@@ -510,8 +510,41 @@ try {
     await b.viewport(1280, 900);
   });
 
+  await step('link diretto a una sezione e tastiera nelle lezioni', async () => {
+    await b.send('Page.navigate', { url: `${url}?section=lezioni` });
+    await b.waitFor(`document.querySelectorAll('#ls-groups .ls-item').length > 0`, 10000);
+    assert.equal(await b.text('.tabs .active'), 'Lezioni');
+    await b.click('#ls-groups .ls-item[data-id="pin"]');
+    await b.key('ArrowRight', 'ArrowRight', 39);
+    assert.equal(await b.text('#ls-step-count'), 'Passo 2 di 3');
+    await b.key('ArrowLeft', 'ArrowLeft', 37);
+    assert.equal(await b.text('#ls-step-count'), 'Passo 1 di 3');
+  });
+
   await step('nessun errore nella console', async () => {
     assert.deepEqual(b.errors, []);
+  });
+
+  // Ultima prova: spegne davvero il server (l'emulazione "offline" del browser non vale per il service worker).
+  await step('offline: a server spento lezioni, problemi e motore funzionano dalla cache', async () => {
+    await b.waitFor(`navigator.serviceWorker && navigator.serviceWorker.controller !== null`, 30000);
+    server.kill();
+    await new Promise((r) => (server.exitCode !== null ? r() : server.once('exit', r)));
+    await b.send('Page.navigate', { url: `${url}?section=problemi` });
+    await b.waitFor(`document.readyState === 'complete'`, 15000);
+    // Controprova: un file mai salvato in cache non arriva
+    assert.equal(await b.ev(`fetch('README.md', { cache: 'no-store' }).then((r) => r.ok, () => false)`), false);
+    await b.waitFor(`/trova la mossa/.test(document.getElementById('pz-title')?.textContent ?? '')`, 15000);
+    await b.click('#tab-lessons');
+    await b.waitFor(`document.querySelectorAll('#ls-groups .ls-item').length > 0`, 10000);
+    // Il motore (worker + wasm) parte dalla cache e risponde con una mossa
+    const best = await b.ev(`new Promise((resolve) => {
+      const w = new Worker('engine/stockfish.js');
+      w.onmessage = (e) => { if (String(e.data).startsWith('bestmove')) { w.terminate(); resolve(String(e.data)); } };
+      w.postMessage('uci'); w.postMessage('position startpos'); w.postMessage('go depth 8');
+      setTimeout(() => resolve('timeout'), 15000);
+    })`);
+    assert.match(best, /^bestmove [a-h][1-8][a-h][1-8]/);
   });
 } finally {
   await b.close();
