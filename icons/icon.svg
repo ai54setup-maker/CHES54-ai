@@ -1,37 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <g id="king">
-      <!-- croce: le estremità sono nodi di circuito -->
-      <rect x="244" y="104" width="24" height="70"/>
-      <rect x="212" y="124" width="88" height="24"/>
-      <circle cx="256" cy="102" r="16"/>
-      <circle cx="210" cy="136" r="16"/>
-      <circle cx="302" cy="136" r="16"/>
-      <!-- testa sfaccettata, collare, corpo, base -->
-      <path d="M176 184H336L314 264H198Z"/>
-      <path d="M200 276H312L306 298H206Z"/>
-      <path d="M208 310H304L334 386H178Z"/>
-      <path d="M166 398H346L358 410V426H154V410Z"/>
+    <linearGradient id="fill" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#8ff6ff"/><stop offset="0.45" stop-color="#2ee6ff"/><stop offset="1" stop-color="#0aa3d6"/>
+    </linearGradient>
+    <radialGradient id="tile" cx="0.5" cy="0.28" r="0.85">
+      <stop offset="0" stop-color="#13244a"/><stop offset="0.6" stop-color="#0a1430"/><stop offset="1" stop-color="#050a18"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5fe9ff" stop-opacity="0.35"/><stop offset="0.5" stop-color="#5fe9ff" stop-opacity="0.06"/><stop offset="1" stop-color="#5fe9ff" stop-opacity="0.18"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="14"/></filter>
+    <g id="mark" fill-rule="evenodd" stroke-linejoin="round" stroke-width="7">
+      <path d="M243.7 68.2L253.2 119.3L353.2 177C369.1 186.1 372.7 199.6 367 209.4L328.3 197.6L357.2 226.4C352.4 231.8 342.3 232.5 326.5 223.3L235 170.5L228 182.7C267.7 192.7 291.5 227.5 273.9 258C256.3 288.5 222.3 288.4 191.8 270.8C168.6 257.4 155.2 238.3 150.1 219L181.8 206.4C185.2 223 194.6 235 206.7 242C225 252.6 240.2 251.6 246.6 240.6C253.6 228.4 244.9 215.3 229.1 206.1C214.5 197.7 199.4 195.5 187.4 196.7L177.5 182.8Z"/>
+      <path d="M192.8 297.4L279.2 297.4C274.4 335.8 328.8 361.4 325.6 411L372 411L372 433.4L325.6 433.4L325.6 455.8L290.4 455.8L290.4 433.4L140 433.4C143.2 374.2 162.4 329.4 192.8 297.4ZM232.8 332.6L260 332.6C264.8 363 287.2 383.8 290.4 411L186.4 411C191.2 377.4 210.4 350.2 232.8 332.6Z"/>
     </g>
-
-    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="12"/>
-    </filter>
   </defs>
-  <rect width="512" height="512" rx="112" fill="#070d1c"/>
-  <rect x="3" y="3" width="506" height="506" rx="109" fill="none" stroke="#14254a" stroke-width="6"/>
-  <use href="#king" fill="#1fe5ff" opacity="0.45" filter="url(#glow)"/>
-  <use href="#king" fill="#1fe5ff"/>
-  <!-- rete neurale incisa nel pezzo -->
-  <g stroke="#070d1c" stroke-width="9" stroke-linecap="round" fill="none">
-    <path d="M222 210L256 240L290 210M256 240V352M256 352L230 372M256 352L282 372"/>
-  </g>
-  <g fill="#070d1c">
-    <circle cx="222" cy="210" r="12"/>
-    <circle cx="290" cy="210" r="12"/>
-    <circle cx="256" cy="352" r="11"/>
-  </g>
-  <circle cx="256" cy="240" r="15" fill="#070d1c"/>
-  <circle cx="256" cy="240" r="8" fill="#ffffff"/>
-
+  <rect width="512" height="512" rx="112" fill="url(#tile)"/>
+  <rect x="2" y="2" width="508" height="508" rx="110" fill="none" stroke="url(#rim)" stroke-width="3"/>
+  <use href="#mark" fill="#1fd8ff" stroke="#1fd8ff" opacity="0.38" filter="url(#glow)"/>
+  <use href="#mark" fill="url(#fill)" stroke="url(#fill)"/>
 </svg>

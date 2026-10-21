@@ -9,6 +9,7 @@ seguenti. Provenienza e licenze verificate il 2026-10-18.
 | Rete neurale NNUE incorporata in Stockfish | inclusa nel file `.wasm` | Linmiao Xu ("linrock"), secondo l'intestazione di `engine/stockfish.js` | Non indicata separatamente nelle fonti consultate; distribuita dentro i binari GPL-3.0 di Stockfish | `engine/stockfish.wasm` |
 | chess.js | npm `chess.js@1.4.0`, file `dist/esm/chess.js` (rimossa solo la riga `sourceMappingURL`) | © 2025 Jeff Hlywa | BSD-2-Clause, testo in [`lib/LICENSE-chess.js.txt`](lib/LICENSE-chess.js.txt) | `lib/chess.js` |
 | Pezzi "cburnett" | dal progetto Lichess (<https://github.com/lichess-org/lila>, file COPYING.md) | Colin M.L. Burnett | GPLv2 o successiva (usata qui come GPLv3) | `pieces/` |
+| Font Inter | Google Fonts, sottoinsieme latino del font variabile (pesi 400–800), `inter/v20`, scaricato il 2026-10-21; SHA-256 `c940764593d0fe5d596be327ca7558855e018039fb78509aa21921fd3644c3e4` | © 2016 The Inter Project Authors (<https://github.com/rsms/inter>) | SIL Open Font License 1.1, testo in [`fonts/OFL.txt`](fonts/OFL.txt) | `fonts/` |
 | Dataset delle aperture | <https://github.com/lichess-org/chess-openings>, commit `a6189a3` | Contributori di lichess-org/chess-openings | CC0 1.0 (pubblico dominio), testo in [`data/openings/source/COPYING.txt`](data/openings/source/COPYING.txt) | `data/openings/` |
 | Partite di esempio | Morphy – Duke Karl/Count Isouard (Parigi 1858); Kasparov – Topalov (Wijk aan Zee 1999) | — | Le mosse di una partita sono fatti, non opere protette | `data/examples/` |
 

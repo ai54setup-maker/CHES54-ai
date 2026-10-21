@@ -5,25 +5,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>CHES54.ai</title>
   <meta name="description" content="CHES54.ai – revisione e analisi delle partite di scacchi con Stockfish, direttamente nel browser.">
-  <meta name="theme-color" content="#14161b">
+  <meta name="theme-color" content="#060b18">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="preload" href="fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="topbar">
-    <div class="logo"><img src="icons/icon.svg" alt="CHES54.ai" class="logo-icon"><span class="logo-text">CHES<span>54</span><small>.ai</small></span></div>
-    <nav class="tabs" role="tablist" aria-label="Modalità">
-      <button type="button" role="tab" id="tab-review" data-mode="review">Revisione</button>
-      <button type="button" role="tab" id="tab-analysis" data-mode="analysis">Analisi partita</button>
+  <div class="app">
+  <!-- Navigazione: barra laterale su schermi larghi, barra in basso sul telefono -->
+  <aside class="sidebar">
+    <div class="brand"><img src="icons/icon.svg" alt="" class="brand-icon"><span class="logo-text">CHES<span>54</span><small>.ai</small></span></div>
+    <nav class="tabs" role="tablist" aria-label="Sezioni">
+      <button type="button" role="tab" id="tab-review" data-mode="review" data-sub="Analisi completa di una partita con Stockfish">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v16h16"/><path d="M8 15l3.5-4 3 2.5L20 7"/></svg><span>Revisione</span></button>
+      <button type="button" role="tab" id="tab-analysis" data-mode="analysis" data-sub="Ricostruisci la tua partita mossa per mossa">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M3.5 12h17M12 3.5v17"/><path d="M3.5 3.5h8.5v8.5H3.5zM12 12h8.5v8.5H12z" class="fill"/></svg><span>Analisi partita</span></button>
+      <button type="button" role="tab" id="tab-lessons" data-mode="lessons" data-sub="Tattiche e principi, una lezione alla volta">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v5c0 1.6 2.5 3.2 5.5 3.2s5.5-1.6 5.5-3.2v-5"/><path d="M21.5 9v5"/></svg><span>Lezioni</span></button>
+      <button type="button" role="tab" id="tab-puzzles" data-mode="puzzles" data-sub="Problemi verificati da Stockfish">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" class="fill"/></svg><span>Problemi</span></button>
     </nav>
-    <button id="btn-theme" class="icon-btn" title="Cambia tema" aria-label="Cambia tema">◐</button>
+    <div class="sidebar-foot">
+      <button type="button" class="link-btn" id="btn-about-side">Informazioni e licenze</button>
+    </div>
+  </aside>
+
+  <div class="main">
+  <header class="topbar">
+    <div class="brand mobile-only"><img src="icons/icon.svg" alt="" class="brand-icon"><span class="logo-text">CHES<span>54</span><small>.ai</small></span></div>
+    <div class="section-head">
+      <h1 id="section-title">Revisione</h1>
+      <p id="section-sub"></p>
+    </div>
+    <button id="btn-theme" class="icon-btn" title="Cambia tema" aria-label="Cambia tema">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
+    </button>
   </header>
 
-  <main class="layout">
+  <main class="layout" id="view-board">
     <section class="board-area">
       <div class="player-tag" id="tag-top"></div>
       <div class="board-row">
@@ -170,6 +193,30 @@
     </section>
   </main>
 
+  <!-- Lezioni (fase G) -->
+  <section class="view" id="view-lessons" hidden>
+    <div class="card hero-card">
+      <div class="hero-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v5c0 1.6 2.5 3.2 5.5 3.2s5.5-1.6 5.5-3.2v-5"/><path d="M21.5 9v5"/></svg></div>
+      <span class="pill">In arrivo</span>
+      <h2>Lezioni interattive</h2>
+      <p>Spiegazione, posizione sulla scacchiera ed esercizio: forchetta, inchiodatura, infilata, attacco di scoperta,
+        matti di base, principi di apertura e finali di base. Ogni posizione è verificata con Stockfish.</p>
+    </div>
+  </section>
+
+  <!-- Problemi (fase F) -->
+  <section class="view" id="view-puzzles" hidden>
+    <div class="card hero-card">
+      <div class="hero-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" class="fill"/></svg></div>
+      <span class="pill">In arrivo</span>
+      <h2>Risolvi problemi</h2>
+      <p>Centinaia di problemi dal database pubblico di Lichess, divisi per tema e difficoltà. Ogni soluzione viene
+        riverificata dal nostro Stockfish prima di entrare nell'app.</p>
+    </div>
+  </section>
+  </div><!-- .main -->
+  </div><!-- .app -->
+
   <!-- Promozione -->
   <dialog id="dlg-promo" class="dialog">
     <h2>Promuovi il pedone a…</h2>
@@ -221,7 +268,7 @@
       Il motore Stockfish (GPLv3) è compilato dal sorgente disponibile qui:
       <a id="about-sf-source" target="_blank" rel="noopener"></a>.</p>
     <p><b>Componenti di terze parti:</b> Stockfish 17.1 (GPLv3, gli sviluppatori di Stockfish; build JavaScript
-      © Chess.com, LLC), chess.js (BSD-2-Clause, © Jeff Hlywa), pezzi "cburnett" (GPLv2+, Colin M.L. Burnett),
+      © Chess.com, LLC), chess.js (BSD-2-Clause, © Jeff Hlywa), pezzi "cburnett" (GPLv2+, Colin M.L. Burnett), font Inter (SIL OFL 1.1, The Inter Project Authors),
       dataset delle aperture lichess-org/chess-openings (CC0).
       <a href="THIRD-PARTY-NOTICES.md" target="_blank" rel="noopener">Dettagli</a>.</p>
     <p>CHES54.ai non è affiliato a Chess.com né a Lichess e non è approvato da loro.</p>

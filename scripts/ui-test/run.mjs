@@ -231,6 +231,34 @@ try {
     assert.equal(await b.text('#review-summary'), summary);
   });
 
+  await step('sezioni Lezioni e Problemi: vista propria, ripristino, barra in basso sul telefono', async () => {
+    await b.click('#tab-lessons');
+    assert.equal(await b.text('.tabs .active'), 'Lezioni');
+    assert.equal(await b.text('#section-title'), 'Lezioni');
+    assert.equal(await b.ev(`document.getElementById('view-board').hidden`), true);
+    assert.equal(await b.ev(`document.getElementById('view-lessons').hidden`), false);
+    await b.send('Page.reload');
+    await b.waitFor(`!!document.querySelector('.tabs .active')`);
+    assert.equal(await b.text('.tabs .active'), 'Lezioni');
+    await b.click('#tab-puzzles');
+    assert.equal(await b.ev(`document.getElementById('view-puzzles').hidden`), false);
+    await b.viewport(375, 812, true);
+    await sleep(300);
+    assert.equal(await b.ev(`document.documentElement.scrollWidth <= 375`), true);
+    const tabs = await b.ev(`[...document.querySelectorAll('.tabs button')].map((el) => {
+      const r = el.getBoundingClientRect();
+      return { h: r.height, inside: r.left >= 0 && r.right <= 375 && r.bottom <= 812 };
+    })`);
+    assert.equal(tabs.length, 4);
+    assert.ok(tabs.every((t) => t.h >= 40 && t.inside), JSON.stringify(tabs));
+    await shot('08-mobile-puzzles');
+    await b.viewport(1280, 900);
+    // Ritorno alla Revisione: la partita analizzata è ancora lì
+    await b.click('#tab-review');
+    assert.equal(await b.ev(`document.getElementById('view-board').hidden`), false);
+    assert.equal(await b.ev(`document.getElementById('review-summary').hidden`), false);
+  });
+
   await step('informazioni e licenze (avvisi GPLv3)', async () => {
     await b.click('#btn-about');
     const about = await b.text('#dlg-about');

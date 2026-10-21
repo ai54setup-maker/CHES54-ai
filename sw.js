@@ -1,6 +1,6 @@
 // Service worker: salva l'app (motore compreso) per usarla anche offline.
 // Cambia VERSION quando aggiorni i file, così i telefoni scaricano la nuova versione.
-const VERSION = 'ches54-v12';
+const VERSION = 'ches54-v13';
 const FILES = [
   './',
   'index.html',
@@ -25,7 +25,10 @@ const FILES = [
   'data/examples/index.json',
   'LICENSE',
   'THIRD-PARTY-NOTICES.md',
+  'fonts/inter-latin.woff2',
   'icons/icon.svg',
+  'icons/favicon.svg',
+  'icons/apple-touch-icon.png',
   'icons/icon-192.png',
   'icons/icon-512.png',
   ...['w', 'b'].flatMap((c) => ['K', 'Q', 'R', 'B', 'N', 'P'].map((p) => `pieces/${c}${p}.svg`)),

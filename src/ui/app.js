@@ -63,7 +63,13 @@ const state = {
   redo: [], // mosse annullate (UCI), per "Ripeti"
   coach: { on: store.get('coach', '1') === '1', level: store.get('coachLevel', 'solution') === 'hint' ? 'hint' : 'solution' },
   coachPick: null, // suggerimento scelto (indice) nella posizione mostrata: freccia e variante
+  // Sezione mostrata: le due con la scacchiera di analisi (= mode) oppure Lezioni / Problemi.
+  section: null,
 };
+const BOARD_SECTIONS = ['review', 'analysis'];
+const SECTIONS = [...BOARD_SECTIONS, 'lessons', 'puzzles'];
+state.section = SECTIONS.includes(store.get('section', '')) ? store.get('section', '') : state.mode;
+const onBoard = () => BOARD_SECTIONS.includes(state.section);
 // Analisi "dal vivo" della posizione mostrata; gen cambia a ogni nuova richiesta (le risposte vecchie si ignorano)
 const live = { fen: null, pending: true, result: null, highlighted: null, gen: 0 };
 let engine = null;
@@ -205,10 +211,24 @@ function goTo(i) {
   render({ animate });
 }
 
+/** Cambia sezione. Revisione e Analisi partita usano setMode(); Lezioni e Problemi hanno una vista propria. */
+function setSection(section) {
+  if (BOARD_SECTIONS.includes(section)) return setMode(section);
+  state.section = section;
+  store.set('section', section);
+  if (state.retry) exitRetry(false);
+  // L'analisi dal vivo si ferma (una revisione in corso invece continua) e riparte al ritorno.
+  if (state.review.status !== 'running') engine?.cancelAll();
+  live.fen = null;
+  render();
+}
+
 function setMode(mode) {
   if (state.retry) exitRetry(false);
   state.mode = mode;
+  state.section = mode; // anche quando il cambio parte dall'app (es. variante dalla revisione)
   store.set('mode', mode);
+  store.set('section', mode);
   if (mode === 'analysis' && state.setupDone) setOrientation(state.side);
   render();
 }
@@ -244,7 +264,8 @@ function requestLive() {
   const busy = state.review.status === 'running' || state.retry?.phase === 'thinking'
     || state.retry?.phase === 'waiting' // durante "ritenta" le linee restano nascoste
     || (state.mode === 'review' && !reviewDone()) // nessuna partita caricata: niente da analizzare
-    || (state.mode === 'analysis' && !state.setupDone);
+    || (state.mode === 'analysis' && !state.setupDone)
+    || !onBoard(); // Lezioni / Problemi: la scacchiera di analisi non è visibile
   if (!live.pending || busy || engineFailed || !engine) return renderLive();
   live.pending = false;
   live.gen++;
@@ -429,10 +450,18 @@ function render({ animate = false } = {}) {
 
 function renderTabs() {
   for (const b of document.querySelectorAll('.tabs [data-mode]')) {
-    const on = b.dataset.mode === state.mode;
+    const on = b.dataset.mode === state.section;
     b.classList.toggle('active', on);
     b.setAttribute('aria-selected', String(on));
+    if (on) {
+      $('section-title').textContent = b.textContent.trim();
+      $('section-sub').textContent = b.dataset.sub;
+    }
   }
+  $('view-board').hidden = !onBoard();
+  $('view-lessons').hidden = state.section !== 'lessons';
+  $('view-puzzles').hidden = state.section !== 'puzzles';
+  document.body.dataset.section = state.section;
 }
 
 function renderVisibility() {
@@ -1119,7 +1148,7 @@ function toast(msg) {
 // ---------- tema e orientamento ----------
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
-  document.querySelector('meta[name="theme-color"]').content = theme === 'light' ? '#ffffff' : '#14161b';
+  document.querySelector('meta[name="theme-color"]').content = theme === 'light' ? '#f5f7fb' : '#060b18';
 }
 
 function setOrientation(color) {
@@ -1149,7 +1178,7 @@ function buildSegmented(el, options, current, onPick) {
 }
 
 // ---------- eventi ----------
-for (const b of document.querySelectorAll('.tabs [data-mode]')) b.onclick = () => setMode(b.dataset.mode);
+for (const b of document.querySelectorAll('.tabs [data-mode]')) b.onclick = () => setSection(b.dataset.mode);
 
 $('nav-first').onclick = () => (state.retry ? exitRetry() : goTo(0));
 $('nav-prev').onclick = () => (state.retry ? exitRetry() : goTo(cur() - 1));
@@ -1162,6 +1191,7 @@ $('btn-flip').onclick = () => {
 
 document.addEventListener('keydown', (e) => {
   if (e.target.closest('input, textarea, select, dialog') || e.altKey || e.ctrlKey || e.metaKey) return;
+  if (!onBoard()) return;
   if (state.mode === 'review' && !reviewDone()) return;
   const actions = {
     ArrowLeft: () => (state.retry ? exitRetry() : goTo(cur() - 1)),
@@ -1335,7 +1365,9 @@ $('btn-review-this').onclick = () => {
   $('pgn-text').value = gameToPgn(state.free);
   updateGameSelect();
   state.mode = 'review';
+  state.section = 'review';
   store.set('mode', 'review');
+  store.set('section', 'review');
   startReview();
 };
 $('io-close').onclick = () => $('dlg-io').close();
@@ -1371,6 +1403,7 @@ $('btn-about').onclick = () => {
   Object.assign($('about-sf-source'), { href: a.stockfishSourceUrl, textContent: a.stockfishSourceUrl });
   $('dlg-about').showModal();
 };
+$('btn-about-side').onclick = () => $('btn-about').click();
 $('about-close').onclick = () => $('dlg-about').close();
 
 $('btn-theme').onclick = () => {

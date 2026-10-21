@@ -37,6 +37,15 @@ La scheda Revisione non va cambiata nel funzionamento: solo aggiunte.
 | C | Allenatore: suggerimenti tattici dimostrati da Stockfish | ✅ completata |
 | D | Rifinitura per telefono, prestazioni, documentazione | ✅ completata |
 
+### Terza serie di fasi (richiesta del 2026-10-21)
+Nuove sezioni Lezioni e Problemi + aspetto più "premium". Revisione e Analisi partita non cambiano nel funzionamento.
+| Fase | Contenuto | Stato |
+|---|---|---|
+| E | Nuovo logo (cavallo formato da "5" e "4") e nuovo layout: barra laterale / barra in basso, 4 sezioni, tema scuro blu notte + ciano | ✅ completata |
+| F | Risolvi problemi: selezione dal database di puzzle Lichess (CC0), ogni soluzione riverificata da Stockfish | da fare |
+| G | Lezioni interattive (tattiche, matti di base, principi di apertura, finali di base), posizioni verificate da Stockfish | da fare |
+| H | Rifinitura, telefono, offline, documentazione | da fare |
+
 Esperienza principale: **Revisione** (PGN → analisi) + **Analisi partita** (ricostruzione mossa per mossa, con Allenatore;
 l'analisi libera da FEN è l'opzione "Parti da una posizione").
 
@@ -106,7 +115,7 @@ le spiegazioni torneranno in fase 4, derivate solo dalle linee del motore.
   almeno altrettanto esigente per profondità e tempo). Un risultato peggiore non sostituisce uno migliore.
 
 ### Interfaccia (fase 3)
-- Due schede: **Revisione** (PGN o Libreria → analisi → riepilogo, grafico, scheda mossa, "ritenta") e **Analisi partita**
+- Due schede (dalla fase E: due delle quattro sezioni): **Revisione** (PGN o Libreria → analisi → riepilogo, grafico, scheda mossa, "ritenta") e **Analisi partita**
   (vedi fase B; `data-mode="analysis"` resta il nome interno). Giocare una mossa diversa in revisione apre una variante
   in Analisi partita (sostituisce la partita che c'era: comportamento della Revisione invariato).
 - Tutte le valutazioni mostrate sono dal punto di vista del Bianco.
@@ -117,6 +126,20 @@ le spiegazioni torneranno in fase 4, derivate solo dalle linee del motore.
   ultima revisione (JSON con l'analisi).
 - Tastiera: ← → Home End, F gira la scacchiera.
 - Le icone delle categorie sono originali (cerchio + simbolo di annotazione standard): non copiare grafica di Chess.com/Lichess.
+
+### Layout e sezioni (fase E)
+- `index.html`: `.app` = `.sidebar` (logo, `nav.tabs` con 4 pulsanti `data-mode`, link informazioni) + `.main` (intestazione con
+  `#section-title`/`#section-sub` presi dal pulsante attivo: testo + `data-sub`; viste `#view-board`, `#view-lessons`, `#view-puzzles`).
+- Sotto 860 px la barra laterale diventa la barra di navigazione in basso (`--bottom-nav-h`), con icona + etichetta.
+- `state.section` (salvata in localStorage, chiave `section`) ∈ review | analysis | lessons | puzzles; `state.mode` resta
+  review | analysis (stato interno della scacchiera). `setMode()` aggiorna anche la sezione; `setSection()` per Lezioni/Problemi
+  ferma l'analisi dal vivo (`cancelAll`, salvo revisione in corso) e `requestLive()` non parte finché `!onBoard()`.
+- Tema: variabili in `:root` (scuro) e `:root[data-theme="light"]`; `--accent-ink` = testo sopra il colore principale
+  (mai colori scritti a mano sopra `--accent`). Font Inter incluso in `fonts/` (offline).
+- Logo: `icons/icon.svg` (icona completa, gradiente e alone), `icons/favicon.svg` (piatta, per 16–32 px), `icons/mark.svg`
+  (solo il cavallo), `icons/apple-touch-icon.png` (quadrata, senza angoli), `icon-192/512.png`, `logo-CHES54.svg/png`.
+  Le PNG si rigenerano facendo uno screenshot dell'SVG con Chromium headless alla dimensione esatta.
+  Il cavallo: "5" ruotato di 30° = testa (punta = orecchio, barra = muso con la bocca, pancia = guancia); "4" = collo e petto.
 
 ### Riproducibilità
 - Prima di ogni revisione e di ogni tentativo di "ritenta": `engine.newGame()` (UCI `ucinewgame`, svuota la
@@ -265,7 +288,7 @@ Parametri in `explanations` di `src/config/analysis.js`. Solo per Inaccuracy/Mis
 
 ### Rifinitura (fase D)
 - Telefono (375 px, verificato da test:ui): libreria a tutto schermo, nessuno scorrimento orizzontale, elementi toccabili
-  ≥ 40 px; sotto 420 px l'intestazione mostra solo l'icona del logo.
+  ≥ 40 px; sotto 860 px l'intestazione mostra solo l'icona del logo (fase E).
 - `test/sw.test.mjs`: ogni modulo di `src/` deve essere in `FILES` di sw.js.
 
 ### Decisioni valutate e scartate
