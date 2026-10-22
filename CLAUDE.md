@@ -248,7 +248,7 @@ le spiegazioni torneranno in fase 4, derivate solo dalle linee del motore.
   visibili (`sponsorImages()` in sw.js), quindi per aggiungerne uno non si tocca il codice.
 - Solo link normali `target="_blank" rel="sponsored noopener noreferrer"`: nessuno script o widget esterno, CSP invariata.
 - Testi: "progetto gratuito e indipendente"; il test vieta "non profit", "ONLUS", "associazione", "beneficenza", "charity".
-- Stato al 2026-10-22: i due sponsor (Piadineria Morgan, Scaroni A. Srl) sono visibili con link e descrizioni provvisorie ricavate dalle informazioni dell'utente (attività e città), senza logo: in attesa dei loghi e delle frasi definitive.
+- Stato al 2026-10-22: i due sponsor (Piadineria Morgan, Scaroni A. Srl) sono visibili con link, loghi (WebP da PNG dati dall'utente, solo ridimensionati) e descrizioni provvisorie ricavate dalle informazioni dell'utente: in attesa delle frasi definitive.
 - test:ui simula sponsors.json (Fetch + `Network.setBypassServiceWorker`): scheda con logo e senza, stessa altezza, rel dei link.
 
 ### Audio e nome CHES54.com (2026-10-22)
