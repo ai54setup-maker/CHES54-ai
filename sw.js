@@ -1,6 +1,6 @@
 // Service worker: salva l'app (motore compreso) per usarla anche offline.
 // Cambia VERSION quando aggiorni i file, così i telefoni scaricano la nuova versione.
-const VERSION = 'ches54-v28';
+const VERSION = 'ches54-v29';
 const FILES = [
   './',
   'index.html',
@@ -15,7 +15,7 @@ const FILES = [
     'analysis/advantage.js', 'analysis/tactics.js', 'analysis/puzzle.js', 'analysis/lesson.js', 'analysis/online-games.js', 'analysis/my-mistakes.js', 'analysis/play.js', 'analysis/share.js', 'analysis/opening-tree.js', 'analysis/opening-study.js',
     'ui/app.js', 'ui/board.js', 'ui/notation.js', 'ui/classification.js', 'ui/evalbar.js',
     'ui/eval-graph.js', 'ui/engine-lines.js', 'ui/move-list.js', 'ui/summary.js', 'ui/explanations.js',
-    'ui/library.js', 'ui/coach.js', 'ui/puzzles.js', 'ui/lessons.js', 'ui/position.js', 'ui/online-games.js', 'ui/backup.js', 'ui/play.js', 'ui/audio.js', 'ui/openings.js', 'i18n/i18n.js', 'i18n/en.js',
+    'ui/library.js', 'ui/coach.js', 'ui/puzzles.js', 'ui/lessons.js', 'ui/position.js', 'ui/online-games.js', 'ui/backup.js', 'ui/play.js', 'ui/audio.js', 'ui/openings.js', 'ui/support.js', 'i18n/i18n.js', 'i18n/en.js',
   ].map((f) => `src/${f}`),
   'lib/chess.js',
   'engine/stockfish.js',
@@ -32,6 +32,7 @@ const FILES = [
   'data/openings/ideas.json',
   'data/openings/ideas.en.json',
   'data/lessons/lessons.json',
+  'data/sponsors/sponsors.json',
   'data/lessons/lessons.en.json',
   'LICENSE',
   'THIRD-PARTY-NOTICES.md',
@@ -44,8 +45,16 @@ const FILES = [
   ...['w', 'b'].flatMap((c) => ['K', 'Q', 'R', 'B', 'N', 'P'].map((p) => `pieces/${c}${p}.svg`)),
 ];
 
+// Immagini degli sponsor visibili, lette da sponsors.json: si aggiungono sponsor senza modificare questo file
+function sponsorImages(cache) {
+  return fetch('data/sponsors/sponsors.json')
+    .then((r) => r.json())
+    .then((d) => cache.addAll(d.sponsors.filter((s) => s.hidden !== true).flatMap((s) => [s.logo, s.photo]).filter(Boolean).map((f) => `data/sponsors/${f}`)))
+    .catch(() => {}); // un'immagine mancante non deve bloccare l'installazione
+}
+
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(FILES).then(() => sponsorImages(c))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {

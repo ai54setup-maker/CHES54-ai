@@ -837,6 +837,68 @@ try {
     await b.waitFor(`window.__ches54Audio.moveSounds > ${sounds}`, 3000);
   });
 
+  await step('sostieni CHES54: barra laterale, cuore sul telefono, Informazioni, donazione e sponsor (dati simulati)', async () => {
+    // sponsors.json simulato: uno sponsor con logo, uno senza (scheda con il solo nome), uno nascosto
+    const png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+    const sponsors = { sponsors: [
+      { id: 'demo-logo', name: 'Demo Logo', city: 'Brescia', description: { it: 'Descrizione di prova.', en: 'Test description.' }, url: 'https://example.com/a', logo: 'demo.png' },
+      { id: 'demo-nome', name: 'Demo Nome', city: 'Desenzano del Garda (BS)', description: { it: 'Un\'altra descrizione di prova, un po\' più lunga della prima per controllare che le schede restino alte uguali.', en: 'Another test description.' }, url: 'https://example.com/b', logo: null },
+      { id: 'nascosto', name: 'Nascosto', hidden: true },
+    ] };
+    await b.send('Network.enable');
+    await b.send('Network.setBypassServiceWorker', { bypass: true });
+    await b.send('Fetch.enable', { patterns: [{ urlPattern: '*/data/sponsors/*' }] });
+    b.on('Fetch.requestPaused', ({ requestId, request }) => {
+      const json = request.url.includes('sponsors.json');
+      b.send('Fetch.fulfillRequest', {
+        requestId, responseCode: 200,
+        responseHeaders: [{ name: 'Content-Type', value: json ? 'application/json' : 'image/png' }],
+        body: json ? Buffer.from(JSON.stringify(sponsors)).toString('base64') : png,
+      });
+    });
+    try {
+      await b.click('#btn-support-side');
+      await b.waitFor(`!document.getElementById('view-support').hidden && document.querySelectorAll('#sp-grid .sp-card').length === 2`, 5000);
+      assert.equal(await b.text('#section-title'), 'Sostieni CHES54');
+      assert.equal(await b.ev(`document.getElementById('btn-support-side').classList.contains('active')`), true);
+      const donate = await b.ev(`(() => { const a = document.getElementById('sp-donate'); return [a.href, a.target, a.rel]; })()`);
+      assert.deepEqual(donate, ['https://buymeacoffee.com/54aisetup', '_blank', 'sponsored noopener noreferrer']);
+      const cards = await b.ev(`[...document.querySelectorAll('#sp-grid .sp-card')].map((c) => ({
+        id: c.dataset.id, logo: !!c.querySelector('.sp-logo img'), nameOnly: !!c.querySelector('.sp-nologo'),
+        href: c.querySelector('a').href, target: c.querySelector('a').target, rel: c.querySelector('a').rel, h: Math.round(c.getBoundingClientRect().height),
+      }))`);
+      assert.deepEqual(cards.map((c) => [c.id, c.logo, c.nameOnly]), [['demo-logo', true, false], ['demo-nome', false, true]]);
+      for (const c of cards) {
+        assert.match(c.href, /^https:\/\//);
+        assert.equal(c.target, '_blank');
+        assert.equal(c.rel, 'sponsored noopener noreferrer');
+      }
+      assert.equal(cards[0].h, cards[1].h, 'schede di altezze diverse');
+      assert.equal(await b.ev(`document.querySelector('#sp-grid .sp-logo img').naturalWidth`), 1); // logo caricato
+      assert.equal(await b.ev(`getComputedStyle(document.getElementById('btn-support')).display`), 'none'); // cuore solo sul telefono
+      await shot('21-support');
+      // Telefono: cuore in alto (la barra in basso resta a 6 voci), nessuno scorrimento orizzontale
+      await b.viewport(375, 812, true);
+      await b.click('#tab-puzzles');
+      await b.realClick('#btn-support');
+      await b.waitFor(`!document.getElementById('view-support').hidden`, 3000);
+      assert.equal(await b.ev(`document.documentElement.scrollWidth <= 375`), true);
+      assert.ok(await b.ev(`document.getElementById('btn-support').getBoundingClientRect().height`) >= 40);
+      await shot('22-support-mobile');
+      await b.viewport(1280, 900);
+      // Dalla finestra Informazioni
+      await b.click('#tab-review');
+      await b.ev(`document.getElementById('btn-about').click()`);
+      await b.click('#about-support');
+      await b.waitFor(`!document.getElementById('view-support').hidden && !document.getElementById('dlg-about').open`, 3000);
+      await b.click('#tab-review');
+    } finally {
+      await b.send('Fetch.disable');
+      await b.send('Network.setBypassServiceWorker', { bypass: false });
+      await b.send('Network.disable');
+    }
+  });
+
   await step('versione inglese: nessun testo italiano visibile nelle sezioni, notazione inglese', async () => {
     await b.click('#tab-review');
     await b.click('#btn-lang');
@@ -880,6 +942,10 @@ try {
     await b.waitFor(`/^Your turn/.test(document.getElementById('op-st-title').textContent)`, 5000);
     await check('Openings study');
     await b.click('#op-back-btn');
+    await b.click('#btn-support-side');
+    await b.waitFor(`!document.getElementById('view-support').hidden`, 5000);
+    assert.equal(await b.text('#sp-donate'), 'Buy me a coffee ☕');
+    await check('Support');
     await b.click('#tab-review');
     await b.ev(`document.getElementById('btn-library')?.click()`);
     await b.waitFor(`document.querySelectorAll('#dlg-library .lib-item').length > 0`, 10000);
@@ -925,6 +991,9 @@ try {
     await b.waitFor(`/trova la mossa/.test(document.getElementById('pz-title')?.textContent ?? '')`, 15000);
     await b.click('#tab-lessons');
     await b.waitFor(`document.querySelectorAll('#ls-groups .ls-item').length > 0`, 10000);
+    await b.click('#btn-support-side');
+    await b.waitFor(`!document.getElementById('view-support').hidden && /^Offrimi/.test(document.getElementById('sp-donate').textContent)`, 5000);
+    assert.equal(await b.ev(`fetch('data/sponsors/sponsors.json').then((r) => r.ok, () => false)`), true); // sponsor dalla cache
     // Il motore (worker + wasm) parte dalla cache e risponde con una mossa
     const best = await b.ev(`new Promise((resolve) => {
       const w = new Worker('engine/stockfish.js');

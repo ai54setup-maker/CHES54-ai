@@ -142,6 +142,11 @@ export const UI_CONFIG = Object.freeze({
     sourceUrl: 'https://github.com/ai54setup-maker/CHES54-ai', // repository pubblico con il codice sorgente
     stockfishSourceUrl: 'https://github.com/nmrugg/stockfish.js/tree/v17.1.0', // meglio un tuo fork, vedi docs/licenze.md
   }),
+  // Pagina "Sostieni CHES54": link per le donazioni (Buy Me a Coffee) e file degli sponsor
+  support: Object.freeze({
+    donateUrl: 'https://buymeacoffee.com/54aisetup',
+    sponsorsUrl: 'data/sponsors/sponsors.json',
+  }),
   storagePrefix: 'ches54:',
   toastMs: 1800,
 });

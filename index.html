@@ -37,6 +37,7 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" class="fill"/></svg><span>Problemi</span></button>
     </nav>
     <div class="sidebar-foot">
+      <button type="button" class="support-link" id="btn-support-side" data-sub="Un progetto gratuito e indipendente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/></svg><span>Sostieni CHES54</span></button>
       <button type="button" class="link-btn" id="btn-about-side">Informazioni e licenze</button>
     </div>
   </aside>
@@ -65,6 +66,7 @@
         </div>
       </div>
     </div>
+    <button id="btn-support" class="icon-btn support-btn" title="Sostieni CHES54" aria-label="Sostieni CHES54"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/></svg></button>
     <button id="btn-lang" class="icon-btn lang-btn" title="Lingua / Language" aria-label="Lingua / Language">EN</button>
     <button id="btn-theme" class="icon-btn" title="Cambia tema" aria-label="Cambia tema">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
@@ -350,6 +352,26 @@
       Stockfish; statistiche reali dal database delle partite di Lichess (CC0). Nomi delle aperture in inglese, come nel dataset.</p>
   </main>
 
+  <!-- Sostieni CHES54: src/ui/support.js, sponsor da data/sponsors/sponsors.json -->
+  <main class="view sp-view" id="view-support" hidden>
+    <section class="card sp-hero">
+      <h2>CHES54 è un progetto gratuito e indipendente</h2>
+      <ul class="sp-why">
+        <li>Nessun account</li>
+        <li>Niente pubblicità invasiva</li>
+        <li>Nessun tracciamento</li>
+        <li>Tutto gira nel tuo browser, anche Stockfish</li>
+      </ul>
+      <p>Mantenerlo costa il dominio (circa 10 $ all'anno) e tante ore di sviluppo.</p>
+      <a class="btn primary sp-donate" id="sp-donate">Offrimi un caffè ☕</a>
+      <p class="hint">Si apre in una nuova scheda, su un sito esterno con le sue regole sulla privacy.</p>
+    </section>
+    <section class="sp-sponsors" id="sp-sponsors" hidden>
+      <h2 class="sp-title">Sponsor – grazie a</h2>
+      <div class="sp-grid" id="sp-grid"></div>
+    </section>
+  </main>
+
   <!-- Lezioni (fase G): src/ui/lessons.js -->
   <main class="view" id="view-lessons" hidden>
     <div id="ls-index">
@@ -521,7 +543,9 @@
     <p><b>Privacy.</b> Nessun account, nessun cookie, nessuna statistica di utilizzo. Partite, progressi e preferenze
       restano solo nel tuo browser (memoria locale del sito) e non vengono inviati a nessuno: anche Stockfish gira sul tuo
       dispositivo. Solo se usi «Le mie partite» il nome utente che scrivi viene inviato a Lichess o Chess.com per
-      chiedere le tue partite pubbliche. Per cancellare tutto basta cancellare i dati del sito dalle impostazioni del browser.</p>
+      chiedere le tue partite pubbliche. Per cancellare tutto basta cancellare i dati del sito dalle impostazioni del browser.
+      I link della pagina «Sostieni CHES54» (donazioni e sponsor) portano a siti esterni, con le loro regole sulla privacy:
+      CHES54 non usa script o widget di quei siti.</p>
     <div class="data-box">
       <p><b>I tuoi dati.</b> Senza account i progressi restano in questo browser. Per spostarli su un altro dispositivo:
         esporta un file qui e importalo là.</p>
@@ -531,6 +555,11 @@
         <button type="button" class="btn danger" id="data-clear">Cancella tutto</button>
       </div>
       <div class="data-msg" id="data-msg" aria-live="polite"></div>
+    </div>
+    <div class="data-box sp-about">
+      <p><b>Sostieni CHES54.</b> Il sito è gratuito e lo resterà. Se ti è utile puoi offrirmi un caffè per coprire il dominio
+        e il tempo di sviluppo.</p>
+      <div class="toolbar two"><span></span><button type="button" class="btn" id="about-support">Sostieni CHES54</button></div>
     </div>
     <p>CHES54.com non è affiliato a Chess.com né a Lichess e non è approvato da loro.</p>
     <div class="toolbar two"><span></span><button type="button" class="btn" id="about-close">Chiudi</button></div>

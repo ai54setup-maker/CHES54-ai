@@ -1024,3 +1024,36 @@ button { font: inherit; color: inherit; }
   .tabs button span[data-short]::after { font-size: 0.62rem; }
 }
 #op-st-meta { text-transform: none; letter-spacing: 0.02em; }
+
+/* ---------- Sostieni CHES54 ---------- */
+.support-link {
+  display: flex; align-items: center; gap: 8px; width: 100%; min-height: 40px; margin-bottom: 6px; padding: 8px 10px;
+  border: 0; border-radius: 10px; background: none; color: var(--muted); font: inherit; font-size: 0.84rem; cursor: pointer; text-align: left;
+}
+.support-link svg, .support-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+.support-link:hover, .support-link:focus-visible, .support-link.active { color: var(--text); background: var(--accent-soft); outline: none; }
+.support-link:hover svg, .support-link.active svg, .support-btn.active svg { fill: #f472b6; stroke: #f472b6; }
+.sp-view { max-width: 960px; display: flex; flex-direction: column; gap: 22px; }
+.sp-hero { display: flex; flex-direction: column; gap: 12px; padding: 22px; }
+.sp-hero h2 { margin: 0; font-size: 1.2rem; }
+.sp-hero p { margin: 0; line-height: 1.55; }
+.sp-hero .hint { margin: 0; }
+.sp-why { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+.sp-why li { display: flex; gap: 8px; align-items: baseline; font-size: 0.94rem; }
+.sp-why li::before { content: "✓"; color: var(--accent); font-weight: 800; }
+.sp-donate { align-self: flex-start; text-decoration: none; font-size: 1rem; padding: 12px 22px; min-height: 44px; display: inline-flex; align-items: center; }
+.sp-title { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px 2px; }
+.sp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.sp-card { display: flex; flex-direction: column; gap: 8px; padding: 16px; height: 100%; }
+.sp-photo { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 10px; }
+.sp-logo { height: 120px; border-radius: 12px; background: #f5f8fc; display: flex; align-items: center; justify-content: center; padding: 14px; }
+.sp-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.sp-nologo { background: linear-gradient(135deg, #0b1630, #13244a); border: 1px solid var(--accent); }
+.sp-nologo span { color: #e9f6ff; font-weight: 800; font-size: 1.15rem; text-align: center; letter-spacing: 0.02em; }
+.sp-name { margin: 4px 0 0; font-size: 1rem; }
+.sp-city { margin: 0; color: var(--accent); font-size: 0.82rem; }
+.sp-desc { margin: 0; color: var(--muted); font-size: 0.88rem; line-height: 1.5; flex: 1; }
+.sp-visit { align-self: flex-start; text-decoration: none; color: var(--text); min-height: 40px; display: inline-flex; align-items: center; }
+.sp-about .toolbar { margin-top: 8px; }
+.topbar .support-btn { display: none; }
+@media (max-width: 860px) { .topbar .support-btn { display: grid; } }

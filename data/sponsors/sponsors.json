@@ -1,0 +1,24 @@
+{
+  "sponsors": [
+    {
+      "id": "piadineria-morgan",
+      "name": "Piadineria Morgan",
+      "city": "Via Anelli 48, Desenzano del Garda (BS)",
+      "description": { "it": "", "en": "" },
+      "url": "",
+      "logo": null,
+      "photo": null,
+      "hidden": true
+    },
+    {
+      "id": "scaroni",
+      "name": "Scaroni A. Srl",
+      "city": "Montichiari (BS)",
+      "description": { "it": "", "en": "" },
+      "url": "",
+      "logo": null,
+      "photo": null,
+      "hidden": true
+    }
+  ]
+}

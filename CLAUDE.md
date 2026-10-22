@@ -235,6 +235,22 @@ le spiegazioni torneranno in fase 4, derivate solo dalle linee del motore.
 - test:ui "aperture": gruppo 1.Cf3, ricerca "gambetto di donna", "Se 2...dxc4 → Accepted", nomi univoci, colore, Impara con
   diramazione, 3.Rd2 fuori teoria (rosso, Da4+, valutazioni), Analisi partita, Ripasso con 1 errore, ricaricamento, 375 px.
 
+### Sostieni CHES54 (2026-10-22)
+- Sezione `support` (`#view-support`, link `?section=sostieni`), **non** nella barra delle sezioni: voce discreta con cuore in
+  fondo alla barra laterale (`#btn-support-side`), cuore in alto solo sotto 860 px (`#btn-support`, la barra in basso resta a 6
+  voci), riquadro nella finestra Informazioni (`#about-support`). `renderTabs()` imposta titolo e sottotitolo a mano.
+- `src/ui/support.js`: `validateSponsors(data, exists)` e `visibleSponsors(data)` (pure, testate in `test/sponsors.test.mjs`),
+  `SupportPage` (schede degli sponsor). Link per le donazioni in `UI_CONFIG.support.donateUrl` (Buy Me a Coffee).
+- **Sponsor da `data/sponsors/sponsors.json`** (istruzioni in `data/sponsors/README.md`): `id`, `name`, `city`,
+  `description {it, en}`, `url` https, `logo` / `photo` (file nella stessa cartella o `null`), `hidden`. Gli sponsor nascosti
+  richiedono solo id e nome e non compaiono; senza logo la scheda mostra il nome su fondo blu notte. Il test controlla anche il
+  peso delle immagini (logo ≤ 200 KB, foto ≤ 400 KB). Il service worker mette in cache da solo le immagini degli sponsor
+  visibili (`sponsorImages()` in sw.js), quindi per aggiungerne uno non si tocca il codice.
+- Solo link normali `target="_blank" rel="sponsored noopener noreferrer"`: nessuno script o widget esterno, CSP invariata.
+- Testi: "progetto gratuito e indipendente"; il test vieta "non profit", "ONLUS", "associazione", "beneficenza", "charity".
+- Stato al 2026-10-22: i due sponsor (Piadineria Morgan, Scaroni A. Srl) sono `hidden: true` in attesa di logo, descrizioni e link.
+- test:ui simula sponsors.json (Fetch + `Network.setBypassServiceWorker`): scheda con logo e senza, stessa altezza, rel dei link.
+
 ### Audio e nome CHES54.com (2026-10-22)
 - Nome visibile **CHES54.com** (prima CHES54.ai): titolo, logo testuale, manifest, Informazioni, PGN della sezione Gioca,
   `logo-CHES54.svg/png`. I backup esportati con `app: 'CHES54.ai'` restano importabili (`OLD_APPS` in backup.js).
