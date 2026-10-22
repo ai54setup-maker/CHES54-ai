@@ -4,7 +4,7 @@
   "private": true,
   "license": "GPL-3.0-or-later",
   "type": "module",
-  "description": "CHES54.ai – analisi scacchistica con Stockfish nel browser",
+  "description": "CHES54.com – analisi scacchistica con Stockfish nel browser",
   "scripts": {
     "start": "python3 server.py",
     "test": "node --test \"test/*.test.mjs\"",

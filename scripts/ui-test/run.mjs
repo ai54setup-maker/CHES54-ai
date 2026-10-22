@@ -636,7 +636,7 @@ try {
     await sleep(400);
     assert.equal(await b.ev(`document.documentElement.scrollWidth <= 375`), true);
     const small = await b.ev(`[...document.querySelectorAll('#analysis-tools .btn, #move-form .btn, .navbar .btn, #coach-level button, .coach-hint, .switch, .tabs button')]
-      .filter((el) => el.getBoundingClientRect().height < 40).length`);
+      .filter((el) => el.getClientRects().length && el.getBoundingClientRect().height < 40).length`); // solo elementi visibili
     assert.equal(small, 0, 'pulsanti troppo piccoli per il dito');
     await shot('09-game-mobile');
     await b.click('#btn-reset');
@@ -674,7 +674,7 @@ try {
       document.getElementById('data-export').click();
     })`);
     const backup = JSON.parse(exported);
-    assert.equal(backup.app, 'CHES54.ai');
+    assert.equal(backup.app, 'CHES54.com');
     assert.ok('lessonsDone' in backup.data, 'mancano i progressi delle lezioni');
     // Importazione: un backup con tutte le lezioni base completate
     backup.data.lessonsDone = JSON.stringify(['hanging', 'fork', 'pin']);
@@ -697,6 +697,41 @@ try {
     await b.send('DOM.setFileInputFiles', { nodeId: n2, files: [file] });
     await b.waitFor(`/non è un backup di CHES54/.test(document.getElementById('data-msg').textContent)`, 5000);
     await b.ev(`document.getElementById('about-close').click()`);
+  });
+
+  await step('audio: musica lofi (accesa, ripresa dopo il ricaricamento, spenta) e suono delle mosse', async () => {
+    const stats = `({ ...window.__ches54Audio })`;
+    await b.click('#tab-analysis');
+    await b.click('#btn-audio');
+    assert.equal(await b.ev(`document.getElementById('audio-panel').hidden`), false);
+    assert.equal(await b.ev(`document.getElementById('sfx-on').checked`), true);  // suoni accesi di base
+    assert.equal(await b.ev(`document.getElementById('music-on').checked`), false); // musica spenta di base
+    await b.click('#music-on');
+    await b.waitFor(`document.getElementById('btn-audio').classList.contains('playing')`, 3000);
+    const before = (await b.ev(stats)).musicSteps;
+    await sleep(1500);
+    assert.ok((await b.ev(stats)).musicSteps >= before + 4, 'la musica non programma nuove note');
+    // Ricaricamento: la preferenza resta e la musica riparte al primo tocco
+    await b.send('Page.reload');
+    await b.waitFor(`document.readyState === 'complete' && !!document.querySelector('.tabs .active')`, 10000);
+    assert.equal(await b.ev(`document.getElementById('btn-audio').classList.contains('playing')`), false);
+    await b.mouse(640, 450);
+    await b.waitFor(`document.getElementById('btn-audio').classList.contains('playing')`, 3000);
+    await b.click('#btn-audio');
+    await b.click('#music-on');
+    assert.equal(await b.ev(`document.getElementById('btn-audio').classList.contains('playing')`), false);
+    await b.ev(`document.body.click()`); // chiude il pannello
+    assert.equal(await b.ev(`document.getElementById('audio-panel').hidden`), true);
+    // Suono di una mossa (Analisi partita: nuova partita, 1.e4)
+    await b.click('#btn-reset');
+    await sleep(200);
+    await b.click('#setup-color button:nth-child(1)');
+    await b.click('#btn-setup-start');
+    await sleep(300);
+    const sounds = (await b.ev(stats)).moveSounds;
+    await b.clickSquare('e2'); await b.clickSquare('e4');
+    await b.waitFor(`document.getElementById('movelist').textContent.includes('e4')`, 3000);
+    await b.waitFor(`window.__ches54Audio.moveSounds > ${sounds}`, 3000);
   });
 
   await step('versione inglese: nessun testo italiano visibile nelle sezioni, notazione inglese', async () => {

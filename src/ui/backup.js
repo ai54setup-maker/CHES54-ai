@@ -4,9 +4,10 @@
 /** Chiavi di localStorage dell'app (senza prefisso). Solo queste si esportano e si importano. */
 export const BACKUP_KEYS = Object.freeze([
   'coach', 'coachLevel', 'depth', 'evals', 'free', 'lessonsDone', 'mode', 'multipv', 'myMistakes', 'onlineSource',
-  'lang', 'onlineUser', 'pgn', 'playGame', 'pzLevel', 'pzStats', 'pzTheme', 'review', 'reviewDepth', 'section', 'setupDone', 'side', 'theme',
+  'lang', 'musicOn', 'musicVol', 'onlineUser', 'pgn', 'playGame', 'sfxOn', 'pzLevel', 'pzStats', 'pzTheme', 'review', 'reviewDepth', 'section', 'setupDone', 'side', 'theme',
 ]);
-const APP = 'CHES54.ai';
+const APP = 'CHES54.com';
+const OLD_APPS = ['CHES54.ai']; // backup esportati prima del cambio di nome: restano validi
 export const MAX_BACKUP_BYTES = 5 * 1024 * 1024;
 
 /**
@@ -28,15 +29,15 @@ export function makeBackup(store, version, now = new Date()) {
  * @throws {Error} con un messaggio per l'utente
  */
 export function readBackup(text) {
-  if (text.length > MAX_BACKUP_BYTES) throw new Error('Il file è troppo grande per essere un backup di CHES54.ai.');
+  if (text.length > MAX_BACKUP_BYTES) throw new Error('Il file è troppo grande per essere un backup di CHES54.com.');
   let obj;
   try {
     obj = JSON.parse(text);
   } catch {
     throw new Error('Il file non è un backup valido (JSON non leggibile).');
   }
-  if (!obj || obj.app !== APP || typeof obj.data !== 'object' || obj.data === null || Array.isArray(obj.data)) {
-    throw new Error('Il file non è un backup di CHES54.ai.');
+  if (!obj || !(obj.app === APP || OLD_APPS.includes(obj.app)) || typeof obj.data !== 'object' || obj.data === null || Array.isArray(obj.data)) {
+    throw new Error('Il file non è un backup di CHES54.com.');
   }
   const entries = [];
   let ignored = 0;
@@ -44,7 +45,7 @@ export function readBackup(text) {
     if (BACKUP_KEYS.includes(k) && typeof v === 'string') entries.push([k, v]);
     else ignored++;
   }
-  if (!entries.length) throw new Error('Il backup non contiene dati di CHES54.ai.');
+  if (!entries.length) throw new Error('Il backup non contiene dati di CHES54.com.');
   return { entries, ignored, exportedAt: typeof obj.exportedAt === 'string' ? obj.exportedAt : '' };
 }
 

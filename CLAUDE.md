@@ -1,4 +1,4 @@
-# CLAUDE.md — CHES54.ai
+# CLAUDE.md — CHES54.com (nome precedente: CHES54.ai)
 
 Web app (PWA) di analisi scacchistica con Stockfish nel browser. Obiettivo: arrivare al livello di
 Game Review di Chess.com / analisi di Lichess e pubblicarla. Licenza del progetto: **GPLv3**.
@@ -181,6 +181,19 @@ le spiegazioni torneranno in fase 4, derivate solo dalle linee del motore.
 - Problema del giorno: `dailyIndex(data, n)` in puzzle.js (giorni dal 1970 × 7919 mod n) tra i livelli
   `UI_CONFIG.puzzles.dailyLevels`; data locale del dispositivo; conta come fatto anche con indizio/soluzione;
   `pzStats.dailyLast` / `dailyStreak`. Link `?section=problemi&daily=1` (scorciatoia nel manifest).
+
+### Audio e nome CHES54.com (2026-10-22)
+- Nome visibile **CHES54.com** (prima CHES54.ai): titolo, logo testuale, manifest, Informazioni, PGN della sezione Gioca,
+  `logo-CHES54.svg/png`. I backup esportati con `app: 'CHES54.ai'` restano importabili (`OLD_APPS` in backup.js).
+- `src/ui/audio.js`: tutto generato con la Web Audio API (nessun file audio → niente copyright di terzi, funziona offline).
+  Suoni dei pezzi: `playMoveSound({ capture, check })`, chiamato da `Board.setPosition` quando una mossa **animata** cambia
+  la posizione (confronto dei pezzi, non dell'ultima mossa). Musica lofi: giro Rem9–Sol13–Domaj9–Lam9 a 72 BPM con swing,
+  piano elettrico, basso, batteria morbida, fruscio di vinile, riverbero, melodia pentatonica casuale; programmazione con
+  lookahead (setInterval 100 ms, 300 ms di anticipo).
+- Pannello audio in alto (`#btn-audio`, `#audio-panel`): musica on/off + volume, suoni on/off; preferenze `musicOn`,
+  `musicVol`, `sfxOn` (in BACKUP_KEYS). Musica spenta di base; se era accesa riparte al primo gesto (regola dei browser).
+  `window.__ches54Audio` = contatori per i test.
+- `setMode(mode, { animate })`: una mossa giocata durante la revisione apre la variante con animazione e suono.
 
 ### Versione inglese (2026-10-22)
 - `src/i18n/i18n.js`: `t('testo italiano {param}', { param })` → testo nella lingua attiva; **il testo italiano è la chiave**,
@@ -416,5 +429,5 @@ Parametri in `explanations` di `src/config/analysis.js`. Solo per Inaccuracy/Mis
 - Componenti e provenienza verificati per hash: `engine/` = npm stockfish@17.1.0 build lite-single-03e3232
   (sorgente: nmrugg/stockfish.js tag v17.1.0); `lib/chess.js` = npm chess.js@1.4.0 dist/esm (senza sourceMappingURL).
 - Licenze: tutto GPLv3; obblighi e rischi in `docs/licenze.md`; avvisi legali nella finestra "Informazioni e licenze"
-  (`UI_CONFIG.about`: copyright e sourceUrl DA COMPLETARE da parte dell'utente).
+  (`UI_CONFIG.about`: copyright e sourceUrl compilati dall'utente, repository pubblico ai54setup-maker/CHES54-ai).
 - Non copiare grafica, palette o suoni di Chess.com/Lichess; icone e testi originali.

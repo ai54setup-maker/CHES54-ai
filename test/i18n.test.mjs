@@ -52,7 +52,7 @@ function htmlKeys(html) {
 }
 
 // Testi che restano uguali in inglese (nomi propri, sigle) o che non sono testo dell'interfaccia
-const SAME = new Set(['CHES', '.ai', 'CHES54.ai', 'Lichess', 'Chess.com', 'FEN / PGN', 'GNU General Public License versione 3',
+const SAME = new Set(['CHES', '.com', 'CHES54.com', 'Lichess', 'Chess.com', 'FEN / PGN', 'GNU General Public License versione 3',
   'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1', 'Stockfish', 'EN']);
 
 // Etichette passate a t() come variabili (configurazione e mappe interne)

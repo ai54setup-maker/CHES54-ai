@@ -35,7 +35,7 @@ export function playPgn(g) {
   if (!c) throw new Error('Partita non valida');
   const engine = `Stockfish (livello ${g.level})`;
   c.setHeader('Event', 'Partita contro Stockfish');
-  c.setHeader('Site', 'CHES54.ai');
+  c.setHeader('Site', 'CHES54.com');
   c.setHeader('Date', g.date.replace(/-/g, '.'));
   c.setHeader('White', g.color === 'w' ? 'Tu' : engine);
   c.setHeader('Black', g.color === 'b' ? 'Tu' : engine);

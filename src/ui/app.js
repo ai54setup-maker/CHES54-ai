@@ -1,4 +1,4 @@
-// CHES54.ai – interfaccia: revisione della partita e analisi della partita mossa per mossa.
+// CHES54.com – interfaccia: revisione della partita e analisi della partita mossa per mossa.
 // Qui ci sono solo lo stato dell'interfaccia e il collegamento tra i moduli: motore (src/engine),
 // logica di analisi (src/analysis) e componenti grafici (src/ui). Nessuna formula scacchistica.
 
@@ -30,6 +30,7 @@ import { Library } from './library.js';
 import { PuzzleTrainer } from './puzzles.js';
 import { LessonPlayer } from './lessons.js';
 import { OnlineGames } from './online-games.js';
+import { startMusic, stopMusic, setMusicVolume, setSoundEffects, isMusicPlaying } from './audio.js';
 import { PlayGame } from './play.js';
 import { t, fmtNum, locale, getLang, setLang, detectLang, translateDom } from '../i18n/i18n.js';
 import { sharePgn, encodeShare, decodeShare } from '../analysis/share.js';
@@ -188,7 +189,7 @@ function playMove(move) {
     Object.assign(state, { variation: null, redo: [], setupDone: true });
     store.set('setupDone', '1');
     saveFree();
-    setMode('analysis');
+    setMode('analysis', { animate: true });
     toast(t('Variante: ora sei in Analisi partita'));
     return true;
   }
@@ -283,14 +284,15 @@ function showSectionView() {
   }
 }
 
-function setMode(mode) {
+/** @param {{ animate?: boolean }} [renderOpts] animate: la mossa appena giocata scorre (e suona) anche cambiando sezione */
+function setMode(mode, renderOpts = {}) {
   if (state.retry) exitRetry(false);
   state.mode = mode;
   state.section = mode; // anche quando il cambio parte dall'app (es. variante dalla revisione)
   store.set('mode', mode);
   store.set('section', mode);
   if (mode === 'analysis' && state.setupDone) setOrientation(state.side);
-  render();
+  render(renderOpts);
 }
 
 // ---------- motore: analisi della posizione mostrata ----------
@@ -1079,8 +1081,8 @@ function renderGameMoveCard(a) {
   const el = $('game-move-card');
   const i = cur();
   if (i === 0) {
-    el.innerHTML = `<div class="mc-title">Posizione iniziale</div>
-      <p class="hint">Gioca la prima mossa: trascina un pezzo oppure scrivila qui sotto (es. e4, Cf3, O-O).</p>`;
+    el.innerHTML = `<div class="mc-title">${t('Posizione iniziale')}</div>
+      <p class="hint">${t('Gioca la prima mossa: trascina un pezzo oppure scrivila qui sotto (es. e4, Cf3, O-O).')}</p>`;
     return;
   }
   const m = a.moves[i - 1];
@@ -1617,6 +1619,57 @@ $('data-clear').onclick = () => dataMessage(t('Cancellare progressi, partite e p
   [t('Annulla'), '', () => dataMessage('')],
 ]);
 $('about-close').onclick = () => $('dlg-about').close();
+
+// ---------- audio: musica lofi e suoni dei pezzi (src/ui/audio.js) ----------
+const audioPrefs = {
+  music: store.get('musicOn', '0') === '1',
+  vol: Math.min(100, Math.max(0, Number(store.get('musicVol', '45')) || 0)),
+  sfx: store.get('sfxOn', '1') === '1',
+};
+setSoundEffects(audioPrefs.sfx);
+setMusicVolume(audioPrefs.vol / 100);
+$('music-on').checked = audioPrefs.music;
+$('music-vol').value = String(audioPrefs.vol);
+$('sfx-on').checked = audioPrefs.sfx;
+const renderAudioButton = () => $('btn-audio').classList.toggle('playing', isMusicPlaying());
+$('btn-audio').onclick = (e) => {
+  e.stopPropagation();
+  const open = $('audio-panel').hidden;
+  $('audio-panel').hidden = !open;
+  $('btn-audio').setAttribute('aria-expanded', String(open));
+};
+document.addEventListener('click', (e) => {
+  if (!$('audio-panel').hidden && !e.target.closest('.audio-wrap')) {
+    $('audio-panel').hidden = true;
+    $('btn-audio').setAttribute('aria-expanded', 'false');
+  }
+});
+$('music-on').onchange = (e) => {
+  audioPrefs.music = e.target.checked;
+  store.set('musicOn', audioPrefs.music ? '1' : '0');
+  if (audioPrefs.music) startMusic();
+  else stopMusic();
+  renderAudioButton();
+};
+$('music-vol').oninput = (e) => {
+  audioPrefs.vol = Number(e.target.value);
+  store.set('musicVol', String(audioPrefs.vol));
+  setMusicVolume(audioPrefs.vol / 100);
+};
+$('sfx-on').onchange = (e) => {
+  audioPrefs.sfx = e.target.checked;
+  store.set('sfxOn', audioPrefs.sfx ? '1' : '0');
+  setSoundEffects(audioPrefs.sfx);
+};
+// Musica lasciata accesa l'ultima volta: riparte al primo gesto (i browser non permettono l'audio prima)
+if (audioPrefs.music) {
+  const resume = () => {
+    if (audioPrefs.music && !isMusicPlaying()) startMusic();
+    renderAudioButton();
+  };
+  document.addEventListener('pointerdown', resume, { once: true });
+  document.addEventListener('keydown', resume, { once: true });
+}
 
 $('btn-lang').textContent = getLang() === 'it' ? 'EN' : 'IT';
 $('btn-lang').onclick = () => {

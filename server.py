@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Server locale di CHES54.ai: serve i file dell'app sul computer e sulla rete Wi-Fi."""
+"""Server locale di CHES54.com: serve i file dell'app sul computer e sulla rete Wi-Fi."""
 import errno
 import http.server
 import os
@@ -51,8 +51,8 @@ try:
 except OSError as e:
     if e.errno not in (errno.EADDRINUSE, 10048):
         raise
-    # La porta è occupata: di solito è CHES54.ai già avviato in un'altra finestra.
-    print(f"\n  ♟  La porta {PORT} è già in uso: CHES54.ai è probabilmente già aperto.")
+    # La porta è occupata: di solito è CHES54.com già avviato in un'altra finestra.
+    print(f"\n  ♟  La porta {PORT} è già in uso: CHES54.com è probabilmente già aperto.")
     print(f"  Apro http://localhost:{PORT} nel browser.")
     print(f"  Se la pagina non si carica, chiudi l'altro programma o usa un'altra porta:")
     print(f"      python3 server.py {PORT + 1}\n", flush=True)
@@ -62,7 +62,7 @@ except OSError as e:
 
 with httpd:
     ip = lan_ip()
-    print("\n  ♟  CHES54.ai è in esecuzione!\n")
+    print("\n  ♟  CHES54.com è in esecuzione!\n")
     print(f"  Sul computer:   http://localhost:{PORT}")
     if ip:
         print(f"  Sul telefono:   http://{ip}:{PORT}   (stessa rete Wi-Fi)")

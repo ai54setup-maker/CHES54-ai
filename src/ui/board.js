@@ -1,5 +1,7 @@
 // Scacchiera interattiva: rendering, drag & drop, click-click, frecce e animazioni.
 
+import { playMoveSound } from './audio.js';
+
 const FILES = 'abcdefgh';
 
 export class Board {
@@ -69,6 +71,13 @@ export class Board {
 
   setPosition(position, lastMove, checkSquare, animate = true) {
     const prev = this.position;
+    // Suono quando una mossa animata cambia davvero la posizione (non quando si salta a una posizione o si torna
+    // indietro; nemmeno se si ridisegna la stessa posizione). Confronto dei pezzi, non solo dell'ultima mossa:
+    // la stessa mossa può ripetersi in una partita nuova.
+    const key = (list) => list.map((p) => p.square + p.color + p.type).sort().join();
+    if (animate && lastMove && prev.length && key(prev) !== key(position)) {
+      playMoveSound({ capture: position.length < prev.length, check: !!checkSquare });
+    }
     this.position = position;
     this.lastMove = lastMove;
     this.checkSquare = checkSquare;

@@ -1,10 +1,10 @@
-<p align="center"><img src="logo-CHES54.png" alt="CHES54.ai" width="600"></p>
+<p align="center"><img src="logo-CHES54.png" alt="CHES54.com" width="600"></p>
 
-# ♟ CHES54.ai
+# ♟ CHES54.com
 
 Revisione e analisi delle partite di scacchi, direttamente nel browser, con **Stockfish 17.1**.
 
-**Provalo online: <https://ches54.com>** (nessun account, nessuna installazione; si può aggiungere alla schermata Home come app).
+**Provalo online: <https://ches54.com>** (nessun account, nessuna installazione; vedi [come installarla sul telefono](#pubblicarla-online)).
 
 - **Revisione partita:** incolli il PGN di una partita (da Chess.com, Lichess o qualsiasi altro programma) e ottieni:
   - la valutazione di ogni mossa e la sua categoria, da Brillante a Errore grave;
@@ -19,6 +19,8 @@ Revisione e analisi delle partite di scacchi, direttamente nel browser, con **St
 - **I tuoi errori:** gli errori delle tue revisioni diventano esercizi da ripassare.
 - **Condividi:** un link riapre la stessa revisione (la partita sta nel link, non su un server).
 - **I tuoi dati:** nessun account; esporta e importa un file per passare a un altro dispositivo.
+- **Musica e suoni:** una base lofi rilassante generata dal vivo nel browser (originale, senza copyright) e il suono dei
+  pezzi a ogni mossa; si regolano con il pulsante ♪ in alto.
 - **Lezioni:** 13 lezioni interattive su tattiche, matti di base, principi di apertura e finali, con esercizi.
 - **Problemi:** 588 problemi per tema e difficoltà, dal database pubblico di Lichess, e un problema del giorno.
 
@@ -102,10 +104,14 @@ un quinto, `M3` vuol dire che il Bianco dà matto in 3, `-M3` che lo dà il Nero
 
 ## Pubblicarla online
 
-L'app è un sito statico: basta caricare la cartella.
+L'app è un sito statico: basta pubblicare la cartella così com'è, senza build.
 
-- **Netlify Drop:** <https://app.netlify.com/drop> → trascina la cartella `ches54-ai`.
-- **GitHub Pages:** crea un repository, fai il push, poi Settings → Pages → *Deploy from a branch* → `main` / root.
+- **Sito ufficiale (<https://ches54.com>): Cloudflare Pages**, progetto `ches54-ai` collegato a questo repository (branch
+  `main`, nessun comando di build, cartella di uscita `/`). Ogni `git push` su `main` pubblica in automatico.
+  Cloudflare applica il file [`_headers`](_headers): divieto di mostrare il sito dentro altri siti e `no-cache` su `sw.js`
+  (così i dispositivi ricevono subito gli aggiornamenti).
+- Altri hosting statici (Netlify, GitHub Pages…) funzionano, ma **GitHub Pages ignora `_headers`**: senza quelle
+  intestazioni il sito perde la protezione dal clickjacking e il service worker può restare in cache più a lungo.
 
 Dal link online l'app si può **installare sul telefono**: su iPhone tasto Condividi → Aggiungi alla schermata Home;
 su Android menu ⋮ → Installa app.
@@ -222,7 +228,7 @@ le confronta mossa per mossa, controlla legalità e risultato, calcola l'apertur
 
 ## Crediti e licenze
 
-CHES54.ai è software libero, distribuito con licenza **GNU GPL versione 3** ([`LICENSE`](LICENSE)).
+CHES54.com è software libero, distribuito con licenza **GNU GPL versione 3** ([`LICENSE`](LICENSE)).
 
 - [Stockfish](https://stockfishchess.org/), gli sviluppatori di Stockfish (GPLv3); build WebAssembly di
   [stockfish.js](https://github.com/nmrugg/stockfish.js) (GPLv3)
@@ -233,9 +239,9 @@ CHES54.ai è software libero, distribuito con licenza **GNU GPL versione 3** ([`
 
 Dettagli e versioni in [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md).
 
-CHES54.ai non è affiliato a Chess.com né a Lichess e non è approvato da loro.
+CHES54.com non è affiliato a Chess.com né a Lichess e non è approvato da loro.
 
 ---
 
-*CHES54.ai è uno strumento di analisi e allenamento. Usarlo durante partite online o tornei in corso è contro il
+*CHES54.com è uno strumento di analisi e allenamento. Usarlo durante partite online o tornei in corso è contro il
 regolamento delle piattaforme e delle federazioni.*

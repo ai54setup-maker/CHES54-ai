@@ -1,6 +1,6 @@
 # Componenti di terze parti
 
-CHES54.ai è distribuito con licenza GNU GPL versione 3 (vedi [`LICENSE`](LICENSE)) e include i componenti
+CHES54.com è distribuito con licenza GNU GPL versione 3 (vedi [`LICENSE`](LICENSE)) e include i componenti
 seguenti. Provenienza e licenze verificate il 2026-10-18.
 
 | Componente | Versione / provenienza | Autori | Licenza | Dove si trova |
@@ -18,5 +18,5 @@ Formule usate (win%, precisione, soglie degli errori): riprese dal codice sorgen
 (<https://github.com/lichess-org/lila>, <https://github.com/lichess-org/scalachess>), AGPL-3.0. Qui sono
 reimplementate: non viene copiato codice di Lichess. Dettagli e commit in [`CLAUDE.md`](CLAUDE.md).
 
-CHES54.ai non è affiliato a Chess.com né a Lichess, e non è approvato da loro. I nomi sono citati solo per
+CHES54.com non è affiliato a Chess.com né a Lichess, e non è approvato da loro. I nomi sono citati solo per
 indicare la compatibilità con i file PGN esportati da queste piattaforme.

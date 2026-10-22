@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>CHES54.ai</title>
-  <meta name="description" content="CHES54.ai – revisione e analisi delle partite di scacchi con Stockfish, direttamente nel browser.">
+  <title>CHES54.com</title>
+  <meta name="description" content="CHES54.com – revisione e analisi delle partite di scacchi con Stockfish, direttamente nel browser.">
   <meta name="theme-color" content="#060b18">
   <!-- Sicurezza: solo file di questo sito; 'wasm-unsafe-eval' serve a Stockfish (WebAssembly). Nessuno script esterno. -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self' https://lichess.org https://api.chess.com; img-src 'self' data:; style-src 'self'; font-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
@@ -21,7 +21,7 @@
   <div class="app">
   <!-- Navigazione: barra laterale su schermi larghi, barra in basso sul telefono -->
   <aside class="sidebar">
-    <div class="brand"><img src="icons/icon.svg" alt="" class="brand-icon"><span class="logo-text">CHES<span>54</span><small>.ai</small></span></div>
+    <div class="brand"><img src="icons/icon.svg" alt="" class="brand-icon"><span class="logo-text">CHES<span>54</span><small>.com</small></span></div>
     <nav class="tabs" role="tablist" aria-label="Sezioni">
       <button type="button" role="tab" id="tab-review" data-mode="review" data-sub="Analisi completa di una partita con Stockfish">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v16h16"/><path d="M8 15l3.5-4 3 2.5L20 7"/></svg><span>Revisione</span></button>
@@ -41,10 +41,27 @@
 
   <div class="main">
   <header class="topbar">
-    <div class="brand mobile-only"><img src="icons/icon.svg" alt="" class="brand-icon"><span class="logo-text">CHES<span>54</span><small>.ai</small></span></div>
+    <div class="brand mobile-only"><img src="icons/icon.svg" alt="" class="brand-icon"><span class="logo-text">CHES<span>54</span><small>.com</small></span></div>
     <div class="section-head">
       <h1 id="section-title">Revisione</h1>
       <p id="section-sub"></p>
+    </div>
+    <div class="audio-wrap">
+      <button id="btn-audio" class="icon-btn audio-btn" title="Musica e suoni" aria-label="Musica e suoni" aria-expanded="false" aria-controls="audio-panel">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5.5l11-2V16"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/></svg>
+        <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
+      </button>
+      <div class="audio-panel" id="audio-panel" hidden>
+        <div class="audio-row">
+          <div><b>Musica lofi</b><span>Base rilassante generata dal vivo nel browser: originale, senza copyright</span></div>
+          <label class="switch"><input type="checkbox" id="music-on" aria-label="Musica lofi"></label>
+        </div>
+        <label class="audio-vol"><span>Volume</span><input type="range" id="music-vol" min="0" max="100" step="1" aria-label="Volume della musica"></label>
+        <div class="audio-row">
+          <div><b>Suoni dei pezzi</b><span>Mosse, catture e scacchi</span></div>
+          <label class="switch"><input type="checkbox" id="sfx-on" aria-label="Suoni dei pezzi"></label>
+        </div>
+      </div>
     </div>
     <button id="btn-lang" class="icon-btn lang-btn" title="Lingua / Language" aria-label="Lingua / Language">EN</button>
     <button id="btn-theme" class="icon-btn" title="Cambia tema" aria-label="Cambia tema">
@@ -401,7 +418,7 @@
 
   <!-- Informazioni e licenze -->
   <dialog id="dlg-about" class="dialog wide">
-    <h2>CHES54.ai <small id="about-version"></small></h2>
+    <h2>CHES54.com <small id="about-version"></small></h2>
     <p id="about-copyright"></p>
     <p>Questo programma è software libero: puoi ridistribuirlo e/o modificarlo secondo i termini della
       <a href="LICENSE" target="_blank" rel="noopener">GNU General Public License versione 3</a>, o (a tua scelta)
@@ -429,7 +446,7 @@
       </div>
       <div class="data-msg" id="data-msg" aria-live="polite"></div>
     </div>
-    <p>CHES54.ai non è affiliato a Chess.com né a Lichess e non è approvato da loro.</p>
+    <p>CHES54.com non è affiliato a Chess.com né a Lichess e non è approvato da loro.</p>
     <div class="toolbar two"><span></span><button type="button" class="btn" id="about-close">Chiudi</button></div>
   </dialog>
 

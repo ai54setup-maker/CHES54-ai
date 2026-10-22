@@ -7,7 +7,7 @@ const fakeStore = (obj) => ({ get: (k, d) => (k in obj ? obj[k] : d) });
 
 test('makeBackup: solo le chiavi dell\'app presenti', () => {
   const b = makeBackup(fakeStore({ theme: 'light', lessonsDone: '["fork"]', altro: 'x' }), '3.0.0', new Date('2026-10-22T10:00:00Z'));
-  assert.equal(b.app, 'CHES54.ai');
+  assert.equal(b.app, 'CHES54.com');
   assert.deepEqual(b.data, { theme: 'light', lessonsDone: '["fork"]' });
   assert.equal(b.exportedAt, '2026-10-22T10:00:00.000Z');
   assert.equal(backupFileName(new Date('2026-10-22T10:00:00Z')), 'ches54-backup-2026-10-22.json');

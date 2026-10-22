@@ -1,4 +1,4 @@
-# Licenze, marchi e API: cosa sapere prima di pubblicare CHES54.ai
+# Licenze, marchi e API: cosa sapere prima di pubblicare CHES54.com
 
 > Queste note riassumono le licenze e i termini d'uso consultati il **2026-10-18** (fonti in fondo).
 > Non sono una consulenza legale: per un uso commerciale o in caso di dubbi, chiedi a un legale.
