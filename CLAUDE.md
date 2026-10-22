@@ -182,6 +182,15 @@ le spiegazioni torneranno in fase 4, derivate solo dalle linee del motore.
   `UI_CONFIG.puzzles.dailyLevels`; data locale del dispositivo; conta come fatto anche con indizio/soluzione;
   `pzStats.dailyLast` / `dailyStreak`. Link `?section=problemi&daily=1` (scorciatoia nel manifest).
 
+### I tuoi errori (2026-10-22)
+- Riepilogo della revisione: "Salva come esercizi gli errori di Bianco/Nero" (colore dell'utente riconosciuto se coincide con
+  il nome cercato in "partite online"). Solo Errori ed Errori gravi con una mossa migliore. localStorage `myMistakes`
+  (max `UI_CONFIG.myMistakes.max`), con l'analisi della posizione prima ridotta (`slimEval`).
+- Ripasso nella sezione Problemi (`PuzzleTrainer`, `p.kind === 'mine'`): la mossa migliore è giusta subito; le altre le giudica
+  `judgeMove` (retry.js, estratta da evaluateAttempt) con le regole della revisione: giusta se non è Imprecisione/Errore/Errore grave.
+  La mossa della partita è sempre sbagliata. Scatole: giusta al primo colpo → +1, altrimenti 0; a `LEARNED_BOX` (3) imparato.
+  Il ripasso non tocca la serie dei problemi.
+
 ### Partite online (2026-10-22)
 - `src/analysis/online-games.js` (puro: nomi utente validi `^[A-Za-z0-9][A-Za-z0-9_-]{1,29}$`, indirizzi, riassunti) +
   `src/ui/online-games.js` (finestra `#dlg-online`). Lichess: `/api/games/user/{u}` con **`Accept: application/x-chess-pgn`**

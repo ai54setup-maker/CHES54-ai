@@ -11,6 +11,9 @@ import { puzzleStart, playUci, isCorrectAttempt, dailyIndex, previousDay } from 
 import { Board } from './board.js';
 import { toItalian, numberedLine } from './notation.js';
 import { piecesOf, checkSquareOf, refutation } from './position.js';
+import { reviewQueue, recordResult, isGoodAttempt, LEARNED_BOX } from '../analysis/my-mistakes.js';
+import { judgeMove } from '../analysis/retry.js';
+import { CLASS_INFO } from './classification.js';
 
 const CFG = UI_CONFIG.puzzles;
 const COLOR_NAME = { w: 'Bianco', b: 'Nero' };
@@ -28,6 +31,19 @@ const today = () => {
 const evalText = (score) => (score.mate != null
   ? `il ${COLOR_NAME[score.mate > 0 ? 'w' : 'b']} dà matto in ${Math.abs(score.mate)}`
   : `${formatScore(score)} (+ vantaggio Bianco, − vantaggio Nero)`);
+
+/** Esercizi "I tuoi errori" salvati in localStorage (vedi src/analysis/my-mistakes.js). */
+export function loadMistakes(store) {
+  try {
+    const v = JSON.parse(store.get('myMistakes', '[]'));
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
+export function saveMistakes(store, list) {
+  store.set('myMistakes', JSON.stringify(list));
+}
 
 export class PuzzleTrainer {
   /**
@@ -58,13 +74,17 @@ export class PuzzleTrainer {
     this.$('#pz-solution').onclick = () => this.showSolution();
     this.$('#pz-retry').onclick = () => this.retry();
     this.$('#pz-daily-btn').onclick = () => this.loadDaily();
+    this.$('#pz-mine-btn').onclick = () => this.loadMine();
     this.buildFilters();
   }
 
   // ---------- dati e preferenze ----------
   /** @param {{ daily?: boolean }} [opts] daily: apri subito il problema del giorno (link ?daily=1) */
   async show(opts = {}) {
-    if (this.p && !opts.daily) return this.renderPanel();
+    if (this.p && !opts.daily) {
+      this.renderStats(); // gli errori da ripassare possono essere cambiati (salvati da una revisione)
+      return this.renderPanel();
+    }
     if (!this.loading) {
       this.setStatus('Carico i problemi…');
       this.loading = fetch(CFG.dataUrl)
@@ -150,6 +170,7 @@ export class PuzzleTrainer {
   // ---------- svolgimento ----------
   /** Prossimo problema: prima quelli non ancora risolti, a caso tra quelli che rispettano i filtri. */
   next() {
+    if (this.p?.kind === 'mine' && reviewQueue(loadMistakes(this.deps.store)).some((x) => x.id !== this.p.item.id)) return this.loadMine();
     if (!this.data) return;
     this.renderFilters();
     const list = this.matching();
@@ -164,10 +185,64 @@ export class PuzzleTrainer {
     this.load(pool[Math.floor(Math.random() * pool.length)]);
   }
 
+  /** Ripasso: il primo esercizio della coda (diverso da quello appena fatto). */
+  loadMine() {
+    const queue = reviewQueue(loadMistakes(this.deps.store));
+    const item = queue.find((x) => x.id !== this.p?.item?.id) ?? queue[0];
+    if (!item) {
+      this.deps.toast('Niente da ripassare: salva gli errori dal riepilogo di una revisione');
+      return;
+    }
+    const chess = new Chess(item.fen);
+    const color = chess.turn();
+    this.p = {
+      kind: 'mine', item, puzzle: null, chess, step: 0, status: 'play', failed: false, wrong: null, hinted: false,
+      gen: (this.p?.gen ?? 0) + 1, start: { fen: item.fen, color, solution: [item.best], lastMove: null },
+    };
+    this.deps.engine()?.cancelAll();
+    this.board.setOrientation(color);
+    this.board.setArrows([]);
+    this.board.setBadge(null);
+    this.drawPosition(null, false);
+    this.renderPanel();
+  }
+
+  /** Ripasso: la mossa migliore è giusta subito; un'altra la giudica Stockfish con le regole della revisione. */
+  async onMineMove(uci, move) {
+    const p = this.p;
+    const { item } = p;
+    const engine = this.deps.engine();
+    p.judged = null;
+    if (uci === item.best) return this.mineCorrect(uci, null);
+    if (uci === item.played || !engine) return this.onWrong(item.fen, uci);
+    p.status = 'judging';
+    this.renderPanel();
+    try {
+      const judged = await judgeMove({ fenBefore: item.fen, before: item.before, prevPly: item.prevPly, settings: item.settings, move, engine });
+      if (this.p !== p) return;
+      if (isGoodAttempt(judged)) return this.mineCorrect(uci, judged);
+      p.judged = judged;
+      p.status = 'play';
+      this.onWrong(item.fen, uci);
+    } catch {
+      if (this.p !== p) return;
+      p.status = 'play';
+      this.renderPanel();
+    }
+  }
+
+  mineCorrect(uci, judged) {
+    const p = this.p;
+    p.judged = judged;
+    this.drawPosition(playUci(p.chess, uci), true);
+    p.step = 1;
+    this.onSolved();
+  }
+
   async load(puzzle, { daily = false } = {}) {
     const start = puzzleStart({ fen: puzzle.fen, moves: puzzle.moves.split(' ') });
     const gen = (this.p?.gen ?? 0) + 1;
-    this.p = { puzzle, start, chess: new Chess(puzzle.fen), step: 0, status: 'intro', failed: false, wrong: null, gen, hinted: false, daily };
+    this.p = { kind: 'puzzle', puzzle, start, chess: new Chess(puzzle.fen), step: 0, status: 'intro', failed: false, wrong: null, gen, hinted: false, daily };
     this.deps.engine()?.cancelAll();
     this.board.setOrientation(start.color);
     this.board.setArrows([]);
@@ -195,6 +270,7 @@ export class PuzzleTrainer {
     const promotion = needsPromo ? await this.deps.askPromotion(p.chess.turn()) : undefined;
     if (needsPromo && !promotion) return this.drawPosition(null, false);
     const uci = from + to + (promotion ?? '');
+    if (p.kind === 'mine') return this.onMineMove(uci, { from, to, promotion });
     const expected = p.start.solution[p.step];
     const isFinal = p.step === p.start.solution.length - 1;
     const fenBefore = p.chess.fen();
@@ -219,6 +295,18 @@ export class PuzzleTrainer {
   onSolved() {
     const p = this.p;
     p.status = 'solved';
+    if (p.kind === 'mine') {
+      // Ripasso: aggiorna la scatola dell'esercizio (le statistiche dei problemi non cambiano)
+      if (!p.counted) {
+        p.counted = true;
+        const list = loadMistakes(this.deps.store).map((x) => (x.id === p.item.id ? recordResult(x, !p.failed) : x));
+        saveMistakes(this.deps.store, list);
+        p.item = list.find((x) => x.id === p.item.id) ?? p.item;
+      }
+      this.renderPanel();
+      this.renderStats();
+      return;
+    }
     const s = this.stats;
     if (!p.counted) {
       p.counted = true;
@@ -268,7 +356,7 @@ export class PuzzleTrainer {
     const p = this.p;
     if (p.failed) return;
     p.failed = true;
-    if (this.stats.streak) {
+    if (p.kind === 'puzzle' && this.stats.streak) { // il ripasso degli errori non tocca la serie dei problemi
       this.stats.streak = 0;
       this.saveStats();
       this.renderStats();
@@ -340,6 +428,7 @@ export class PuzzleTrainer {
   renderPanel(flash) {
     const p = this.p;
     if (!p) return;
+    if (p.kind === 'mine') return this.renderMinePanel();
     const { puzzle, start } = p;
     const who = COLOR_NAME[start.color];
     this.$('#pz-meta').textContent = `${p.daily ? 'Problema del giorno · ' : ''}${THEME_LABEL[puzzle.theme]} · ${LEVEL_LABEL[puzzle.level]} · punteggio ${puzzle.rating}`;
@@ -385,8 +474,61 @@ export class PuzzleTrainer {
     );
   }
 
+  renderMinePanel() {
+    const p = this.p;
+    const { item } = p;
+    const who = COLOR_NAME[p.start.color];
+    const card = this.$('#pz-card');
+    card.dataset.state = p.status === 'solved' ? (p.failed ? 'done' : 'solved') : p.status === 'wrong' ? 'wrong' : '';
+    const queue = reviewQueue(loadMistakes(this.deps.store));
+    this.$('#pz-meta').textContent = `I tuoi errori · ${queue.length} da ripassare`;
+    const titles = {
+      play: `Tocca al ${who}: trova una mossa migliore`,
+      judging: 'Stockfish valuta la mossa…',
+      wrong: 'Non ancora',
+      showing: 'Ecco la mossa migliore',
+      solved: p.failed ? 'Soluzione vista' : 'Risolto!',
+    };
+    this.$('#pz-title').textContent = titles[p.status] ?? '';
+    const fb = this.$('#pz-feedback');
+    fb.replaceChildren();
+    const para = (text, cls = '') => fb.appendChild(Object.assign(document.createElement('p'), { textContent: text, className: cls }));
+    const moveNo = `${item.moveNumber}${p.start.color === 'w' ? '.' : '…'}`;
+    para(`Nella partita ${item.label} hai giocato ${moveNo} ${toItalian(item.playedSan)}: ${CLASS_INFO[item.classification].label}.`, 'pz-note');
+    if (p.status === 'play' && p.hinted) para('Indizio: muovi il pezzo evidenziato.', 'pz-note');
+    if (p.status === 'wrong') {
+      if (p.wrong.fenBefore && p.wrong.san === toItalian(item.playedSan)) para('È la stessa mossa della partita.');
+      else if (p.judged) para(`${p.wrong.san}: ${CLASS_INFO[p.judged.classification].label} secondo Stockfish (perdita ${p.judged.winLoss.toFixed(1).replace('.', ',')} punti di win%).`);
+      else para(`${p.wrong.san} non è la mossa migliore.`);
+      if (p.wrong.reply) para(`Stockfish risponde: ${p.wrong.reply.line} (valutazione ${p.wrong.reply.score}).`, 'pz-note');
+    }
+    if (p.status === 'solved') {
+      if (p.judged) para(`Buona mossa: ${CLASS_INFO[p.judged.classification].label} secondo Stockfish.`);
+      const best = item.before.lines[0];
+      para(`Mossa migliore: ${toItalian(item.bestSan)} (${formatScore(best.score)}) · ${numberedLine(item.fen, best.pv, 6)}`, 'pz-note');
+      if (!p.failed) {
+        para(item.box >= LEARNED_BOX ? 'Imparato! Questo esercizio esce dal ripasso.' : `Risposte giuste di fila: ${item.box} di ${LEARNED_BOX}.`, 'pz-note');
+      }
+    }
+    this.$('#pz-hint').hidden = p.status !== 'play' || p.hinted;
+    this.$('#pz-solution').hidden = !['play', 'wrong'].includes(p.status);
+    this.$('#pz-retry').hidden = p.status !== 'wrong';
+    const more = queue.some((x) => x.id !== item.id);
+    this.$('#pz-next').textContent = more ? (p.status === 'solved' ? 'Prossimo errore' : 'Salta') : 'Torna ai problemi';
+    this.$('#pz-next').classList.toggle('primary', p.status === 'solved');
+    this.$('#pz-source').textContent = `Esercizio dalla tua partita ${item.label}, revisione di Stockfish a profondità ${item.settings?.depth ?? ''}. `
+      + 'Una mossa è giusta se, con le regole della revisione, non è un\'imprecisione né un errore.';
+  }
+
   renderStats() {
     const s = this.stats;
+    const all = loadMistakes(this.deps.store);
+    const queue = reviewQueue(all);
+    const learned = all.length - queue.length;
+    this.$('#pz-mine-sub').textContent = all.length
+      ? `${queue.length} da ripassare${learned ? ` · ${learned} imparati` : ''}`
+      : 'Salvali dal riepilogo di una revisione';
+    this.$('#pz-mine-btn').disabled = !queue.length;
     const day = today();
     const doneToday = s.dailyLast === day;
     const alive = doneToday || s.dailyLast === previousDay(day); // serie ancora valida

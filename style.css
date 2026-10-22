@@ -863,3 +863,7 @@ button { font: inherit; color: inherit; }
 .lib-item[data-outcome="win"] { border-left: 3px solid var(--cls-best); }
 .lib-item[data-outcome="loss"] { border-left: 3px solid var(--cls-blunder); }
 .lib-item[data-outcome="draw"] { border-left: 3px solid var(--muted); }
+
+/* Salva gli errori come esercizi (riepilogo della revisione) */
+.sum-save { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.sum-save > span { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; }

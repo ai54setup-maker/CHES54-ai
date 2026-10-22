@@ -78,6 +78,11 @@ export const UI_CONFIG = Object.freeze({
     chessComMonths: 3, // archivi mensili di Chess.com letti al massimo per trovarle
   }),
 
+  // "I tuoi errori": esercizi dagli errori delle revisioni (in localStorage, chiave myMistakes).
+  myMistakes: Object.freeze({
+    max: 300, // esercizi conservati al massimo (si tolgono prima quelli imparati, poi i più vecchi)
+  }),
+
   // Lezioni (fase G): contenuti in data/lessons/lessons.json, verificati con npm run check:lessons.
   lessons: Object.freeze({
     dataUrl: 'data/lessons/lessons.json',

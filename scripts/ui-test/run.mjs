@@ -384,6 +384,28 @@ try {
     }
   });
 
+  await step('i tuoi errori: salvati dalla revisione, ripassati, giudicati da Stockfish', async () => {
+    // Revisione di Mario_77 (Bianco) – Bea del passo precedente: il Nero ha sbagliato con 3...Cf6??
+    await b.waitFor(`!!document.querySelector('[data-save="b"]')`, 5000);
+    assert.match(await b.text('[data-save="w"]'), /\(tu\)/); // Mario_77 è il nome cercato online
+    await b.click('[data-save="b"]');
+    await b.waitFor(`/salvati/.test(document.querySelector('[data-save="b"]').textContent)`, 5000);
+    await b.click('#tab-puzzles');
+    await b.waitFor(`/1 da ripassare/.test(document.getElementById('pz-mine-sub').textContent)`, 10000);
+    await b.click('#pz-mine-btn');
+    await b.waitFor(`/I tuoi errori/.test(document.getElementById('pz-meta').textContent)`, 5000);
+    const sq = (s) => b.clickSquare(s, 'pz-board', true); // tocca al Nero
+    await sq('g8'); await sq('f6'); // la stessa mossa della partita
+    await b.waitFor(`document.getElementById('pz-card').dataset.state === 'wrong'`, 10000);
+    assert.match(await b.text('#pz-feedback'), /stessa mossa della partita/);
+    await b.click('#pz-retry');
+    await sq('d8'); await sq('e7'); // De7: non è la prima scelta, ma Stockfish la giudica buona
+    await b.waitFor(`document.getElementById('pz-card').dataset.state === 'done' || document.getElementById('pz-card').dataset.state === 'solved'`, 60000);
+    assert.match(await b.text('#pz-feedback'), /Buona mossa/);
+    await shot('14-mistakes');
+    await b.click('#tab-review');
+  });
+
   await step('lezioni: indice, spiegazione con dimostrazione, esercizio sbagliato e giusto, lezione completata', async () => {
     await b.click('#tab-lessons');
     await b.waitFor(`document.querySelectorAll('#ls-groups .ls-item').length > 0`, 10000);

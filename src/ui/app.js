@@ -30,6 +30,8 @@ import { Library } from './library.js';
 import { PuzzleTrainer } from './puzzles.js';
 import { LessonPlayer } from './lessons.js';
 import { OnlineGames } from './online-games.js';
+import { mistakesFromReview, mergeMistakes } from '../analysis/my-mistakes.js';
+import { loadMistakes, saveMistakes } from './puzzles.js';
 
 const $ = (id) => document.getElementById(id);
 const COLOR_NAME = { w: 'Bianco', b: 'Nero' };
@@ -714,11 +716,40 @@ function moveDetailsHtml(m) {
   return html + explanationsHtml(m.explanations ?? explainMove(m));
 }
 
+// ---------- "I tuoi errori": esercizi dagli errori della revisione (praticati in Problemi) ----------
+let savedMistakeIds = null; // id già salvati (si legge localStorage una volta sola)
+
+function saveInfo(a) {
+  savedMistakeIds ??= new Set(loadMistakes(store).map((x) => x.id));
+  const h = a.headers ?? {};
+  const user = (store.get('onlineUser', '') || '').toLowerCase();
+  const me = user && h.White?.toLowerCase() === user ? 'w' : user && h.Black?.toLowerCase() === user ? 'b' : null;
+  const counts = {};
+  const saved = {};
+  for (const c of ['w', 'b']) {
+    const items = mistakesFromReview(a, c, '');
+    counts[c] = items.length;
+    saved[c] = items.length > 0 && items.every((x) => savedMistakeIds.has(x.id));
+  }
+  return { counts, saved, me };
+}
+
+function saveMyMistakes(a, color) {
+  const h = a.headers ?? {};
+  const label = `${h.White || 'Bianco'} – ${h.Black || 'Nero'}${h.UTCDate || h.Date ? `, ${(h.UTCDate || h.Date).replace(/\./g, '-')}` : ''}`;
+  const { list, added } = mergeMistakes(loadMistakes(store), mistakesFromReview(a, color, label), UI_CONFIG.myMistakes.max);
+  saveMistakes(store, list);
+  savedMistakeIds = new Set(list.map((x) => x.id));
+  toast(added ? `${added} ${added === 1 ? 'esercizio aggiunto' : 'esercizi aggiunti'}: li trovi in Problemi → I tuoi errori` : 'Erano già salvati');
+  renderReviewCards();
+}
+
 function renderReviewCards() {
   if (!reviewDone()) return;
   const a = state.review.analysis;
   if (!state.retry) {
-    renderSummary($('review-summary'), a, retryCandidates(a).length);
+    renderSummary($('review-summary'), a, retryCandidates(a).length, saveInfo(a));
+    for (const b of $('review-summary').querySelectorAll('[data-save]')) b.onclick = () => saveMyMistakes(a, b.dataset.save);
     $('btn-retry-all').onclick = () => {
       const first = retryCandidates(a)[0];
       if (first != null) startRetry(first);
