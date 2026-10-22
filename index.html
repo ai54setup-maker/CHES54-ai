@@ -7,7 +7,7 @@
   <meta name="description" content="CHES54.ai – revisione e analisi delle partite di scacchi con Stockfish, direttamente nel browser.">
   <meta name="theme-color" content="#060b18">
   <!-- Sicurezza: solo file di questo sito; 'wasm-unsafe-eval' serve a Stockfish (WebAssembly). Nessuno script esterno. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self'; font-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self' https://lichess.org https://api.chess.com; img-src 'self' data:; style-src 'self'; font-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
@@ -83,6 +83,9 @@
         <p class="hint first">Incolla il PGN esportato da Chess.com, Lichess o da un altro programma, oppure apri un file.</p>
         <textarea id="pgn-text" rows="7" spellcheck="false" aria-label="Testo PGN"
                   placeholder='[White "…"]&#10;[Black "…"]&#10;&#10;1. e4 e5 2. Cf3 …'></textarea>
+        <button type="button" class="btn primary wide on-open" id="btn-online">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.6 3.6 5.4 3.6 8.5s-1.1 5.9-3.6 8.5c-2.5-2.6-3.6-5.4-3.6-8.5S9.5 6.1 12 3.5z"/></svg>
+          Le mie partite da Lichess o Chess.com</button>
         <div class="toolbar two">
           <label class="btn file-btn">Apri file .pgn<input type="file" id="pgn-file" accept=".pgn,text/plain" hidden></label>
           <button type="button" class="btn" id="btn-library">Libreria partite</button>
@@ -304,6 +307,28 @@
       (<a href="data/examples/SOURCES.md" target="_blank" rel="noopener">fonti</a>).</p>
   </dialog>
 
+  <!-- Partite online (Lichess / Chess.com): src/ui/online-games.js -->
+  <dialog id="dlg-online" class="dialog wide library" aria-labelledby="on-title">
+    <div class="lib-head">
+      <h2 id="on-title">Le tue partite online</h2>
+      <button type="button" class="icon-btn lib-close on-close" aria-label="Chiudi">✕</button>
+    </div>
+    <div class="segmented" id="on-source" role="radiogroup" aria-label="Sito">
+      <button type="button" role="radio" data-source="lichess">Lichess</button>
+      <button type="button" role="radio" data-source="chesscom">Chess.com</button>
+    </div>
+    <form class="on-form" id="on-form" autocomplete="off">
+      <input type="text" class="lib-search" id="on-user" placeholder="Nome utente" aria-label="Nome utente"
+             autocapitalize="off" spellcheck="false" maxlength="30">
+      <button type="submit" class="btn primary">Cerca</button>
+    </form>
+    <div class="lib-count hint" id="on-count" aria-live="polite"></div>
+    <div class="input-error" id="on-error" role="alert"></div>
+    <ul class="lib-list" id="on-list"></ul>
+    <p class="hint lib-note">Le partite sono pubbliche: le chiediamo direttamente a Lichess o Chess.com con il nome che
+      scrivi. Nessun login e nessuna password; nessun dato passa da noi.</p>
+  </dialog>
+
   <!-- FEN / PGN (analisi partita) -->
   <dialog id="dlg-io" class="dialog wide">
     <h2>Posizione e partita</h2>
@@ -339,7 +364,8 @@
       <a href="THIRD-PARTY-NOTICES.md" target="_blank" rel="noopener">Dettagli</a>.</p>
     <p><b>Privacy.</b> Nessun account, nessun cookie, nessuna statistica di utilizzo. Partite, progressi e preferenze
       restano solo nel tuo browser (memoria locale del sito) e non vengono inviati a nessuno: anche Stockfish gira sul tuo
-      dispositivo. Per cancellare tutto basta cancellare i dati del sito dalle impostazioni del browser.</p>
+      dispositivo. Solo se usi «Le mie partite» il nome utente che scrivi viene inviato a Lichess o Chess.com per
+      chiedere le tue partite pubbliche. Per cancellare tutto basta cancellare i dati del sito dalle impostazioni del browser.</p>
     <p>CHES54.ai non è affiliato a Chess.com né a Lichess e non è approvato da loro.</p>
     <div class="toolbar two"><span></span><button type="button" class="btn" id="about-close">Chiudi</button></div>
   </dialog>

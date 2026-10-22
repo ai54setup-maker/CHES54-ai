@@ -42,8 +42,10 @@ export async function launch(browserPath, port) {
   let id = 0;
   const pending = new Map();
   const errors = [];
+  const listeners = new Map(); // evento CDP → callback (es. Fetch.requestPaused per simulare risposte di rete)
   ws.addEventListener('message', (e) => {
     const m = JSON.parse(e.data);
+    if (m.method && listeners.has(m.method)) listeners.get(m.method)(m.params);
     if (m.id && pending.has(m.id)) { pending.get(m.id)(m); pending.delete(m.id); }
     if (m.method === 'Runtime.exceptionThrown') errors.push(m.params.exceptionDetails.exception?.description ?? m.params.exceptionDetails.text);
     if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') errors.push(m.params.args.map((a) => a.value ?? a.description).join(' '));
@@ -67,6 +69,7 @@ export async function launch(browserPath, port) {
     send,
     ev,
     errors,
+    on: (method, cb) => (cb ? listeners.set(method, cb) : listeners.delete(method)),
     text: (sel) => ev(`document.querySelector(${JSON.stringify(sel)})?.innerText.replace(/\\s+/g, ' ').trim() ?? null`),
     click: (sel) => ev(`document.querySelector(${JSON.stringify(sel)}).click()`),
     async waitFor(expr, ms = 60000) {

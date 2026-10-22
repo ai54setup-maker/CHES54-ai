@@ -72,6 +72,12 @@ export const UI_CONFIG = Object.freeze({
     dailyLevels: Object.freeze(['medium', 'hard']), // problema del giorno: scelto tra queste difficoltà
   }),
 
+  // Import delle partite da Lichess e Chess.com (API pubbliche, senza login).
+  onlineGames: Object.freeze({
+    max: 20, //           partite mostrate
+    chessComMonths: 3, // archivi mensili di Chess.com letti al massimo per trovarle
+  }),
+
   // Lezioni (fase G): contenuti in data/lessons/lessons.json, verificati con npm run check:lessons.
   lessons: Object.freeze({
     dataUrl: 'data/lessons/lessons.json',

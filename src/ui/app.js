@@ -29,6 +29,7 @@ import { explainMove } from '../analysis/explain.js';
 import { Library } from './library.js';
 import { PuzzleTrainer } from './puzzles.js';
 import { LessonPlayer } from './lessons.js';
+import { OnlineGames } from './online-games.js';
 
 const $ = (id) => document.getElementById(id);
 const COLOR_NAME = { w: 'Bianco', b: 'Nero' };
@@ -1261,6 +1262,15 @@ const library = new Library($('dlg-library'), (pgnText) => {
   startReview();
 });
 $('btn-library').onclick = () => library.open();
+const onlineGames = new OnlineGames($('dlg-online'), {
+  store,
+  onPick: (pgnText) => {
+    $('pgn-text').value = pgnText;
+    updateGameSelect();
+    startReview();
+  },
+});
+$('btn-online').onclick = () => onlineGames.open();
 
 $('move-form').addEventListener('submit', (e) => {
   e.preventDefault();

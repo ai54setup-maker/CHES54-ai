@@ -332,6 +332,58 @@ try {
     await b.click('#tab-review');
   });
 
+  await step('partite online: errori, Lichess e Chess.com (risposte simulate), revisione della partita scelta', async () => {
+    const pgn = (w, bl, res, date) => `[Event "Rated blitz game"]\n[Site "https://lichess.org/x"]\n[White "${w}"]\n[Black "${bl}"]\n[Result "${res}"]\n[UTCDate "${date}"]\n[TimeControl "180+2"]\n\n1. e4 e5 2. Bc4 Nc6 3. Qh5 Nf6 4. Qxf7# ${res}\n`;
+    const replies = {
+      'https://lichess.org/api/games/user/Mario_77': ['application/x-chess-pgn', pgn('Mario_77', 'Anna', '1-0', '2026.10.21') + '\n' + pgn('Luca', 'Mario_77', '1-0', '2026.10.20')],
+      'https://api.chess.com/pub/player/mario_77/games/archives': ['application/json', JSON.stringify({ archives: ['https://api.chess.com/pub/player/mario_77/games/2026/10', 'https://api.chess.com/pub/player/mario_77/games/2026/11'] })],
+      'https://api.chess.com/pub/player/mario_77/games/2026/10': ['application/json', JSON.stringify({ games: [{ rules: 'chess', end_time: 2, pgn: pgn('Mario_77', 'Bea', '1-0', '2026.10.18') }] })],
+    };
+    await b.send('Fetch.enable', { patterns: [{ urlPattern: 'https://lichess.org/*' }, { urlPattern: 'https://api.chess.com/*' }] });
+    const asked = [];
+    b.on('Fetch.requestPaused', ({ requestId, request }) => {
+      const base = request.url.split('?')[0];
+      asked.push({ url: base, accept: request.headers.Accept ?? request.headers.accept });
+      const r = replies[base];
+      b.send('Fetch.fulfillRequest', {
+        requestId, responseCode: r ? 200 : 404,
+        responseHeaders: [{ name: 'Content-Type', value: r?.[0] ?? 'application/json' }, { name: 'Access-Control-Allow-Origin', value: '*' }],
+        body: Buffer.from(r?.[1] ?? '{"error":"Not found"}').toString('base64'),
+      });
+    });
+    try {
+      await b.click('#tab-review');
+      await b.ev(`document.getElementById('btn-new-review')?.click()`);
+      const search = (user) => b.ev(`(() => { document.getElementById('on-user').value = ${JSON.stringify(user)}; document.getElementById('on-form').requestSubmit(); })()`);
+      await b.ev(`document.getElementById('btn-online').click()`);
+      await b.click('#on-source [data-source="lichess"]');
+      await search('../admin');
+      assert.match(await b.text('#on-error'), /nome utente valido/);
+      assert.equal(asked.length, 0); // un nome non valido non parte nemmeno
+      await search('nessuno');
+      await b.waitFor(`/non trovato/.test(document.getElementById('on-error').textContent)`, 5000);
+      await search('Mario_77');
+      await b.waitFor(`document.querySelectorAll('#on-list .lib-item').length === 2`, 5000);
+      assert.equal(asked.at(-1).accept, 'application/x-chess-pgn');
+      assert.equal(await b.ev(`document.querySelector('#on-list .lib-item').dataset.outcome`), 'win');
+      assert.equal(await b.ev(`document.querySelectorAll('#on-list .lib-item')[1].dataset.outcome`), 'loss');
+      await shot('13-online');
+      await b.click('#on-source [data-source="chesscom"]');
+      await search('Mario_77');
+      await b.waitFor(`document.querySelectorAll('#on-list .lib-item').length === 1`, 5000);
+      assert.match(await b.text('#on-list'), /Bea/);
+      await b.click('#on-list .lib-item');
+      await b.waitFor(`!document.getElementById('review-summary').hidden`, 60000);
+      assert.match(await b.text('#review-summary'), /Mario_77.*Bea/);
+    } finally {
+      b.on('Fetch.requestPaused', null);
+      await b.send('Fetch.disable');
+      // Il 404 dell'utente inesistente è voluto: il browser lo registra in console
+      // (anche il mese 2026/11 di Chess.com, che manca apposta: va saltato)
+      b.errors.splice(0, b.errors.length, ...b.errors.filter((e) => !e.includes('/api/games/user/nessuno') && !e.includes('/games/2026/11')));
+    }
+  });
+
   await step('lezioni: indice, spiegazione con dimostrazione, esercizio sbagliato e giusto, lezione completata', async () => {
     await b.click('#tab-lessons');
     await b.waitFor(`document.querySelectorAll('#ls-groups .ls-item').length > 0`, 10000);

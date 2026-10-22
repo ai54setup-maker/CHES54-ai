@@ -182,6 +182,14 @@ le spiegazioni torneranno in fase 4, derivate solo dalle linee del motore.
   `UI_CONFIG.puzzles.dailyLevels`; data locale del dispositivo; conta come fatto anche con indizio/soluzione;
   `pzStats.dailyLast` / `dailyStreak`. Link `?section=problemi&daily=1` (scorciatoia nel manifest).
 
+### Partite online (2026-10-22)
+- `src/analysis/online-games.js` (puro: nomi utente validi `^[A-Za-z0-9][A-Za-z0-9_-]{1,29}$`, indirizzi, riassunti) +
+  `src/ui/online-games.js` (finestra `#dlg-online`). Lichess: `/api/games/user/{u}` con **`Accept: application/x-chess-pgn`**
+  (senza, risponde una pagina HTML 404). Chess.com: archivi mensili; il mese in corso può essere elencato ma dare 404 → si salta.
+- **Lichess risponde 404 ai browser "HeadlessChrome"** (filtro anti-bot): per prove reali da riga di comando impostare uno
+  User-Agent da Chrome normale. test:ui simula le due API con il dominio CDP `Fetch` (`b.on('Fetch.requestPaused', …)`).
+- CSP: `connect-src` include solo lichess.org e api.chess.com. Il service worker non intercetta richieste verso altri siti.
+
 ### Sicurezza per il sito pubblico (2026-10-22)
 - CSP in `<meta>` di index.html: solo file del sito, `'wasm-unsafe-eval'` per Stockfish, niente script o stili inline.
   Quindi **mai `style="…"` dentro HTML generato** (usare `el.style` da JS, come in eval-graph.js e nella barra del vantaggio)

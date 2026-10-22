@@ -854,3 +854,12 @@ button { font: inherit; color: inherit; }
 .pz-daily-text span { font-size: 0.82rem; color: var(--muted); }
 .pz-daily .btn { min-width: 96px; }
 .pz-daily.done .btn.primary { background: transparent; color: var(--text); border-color: var(--line-strong); box-shadow: none; }
+
+/* Partite online */
+.btn.on-open { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 2px 0 10px; }
+.btn.on-open svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; }
+.on-form { display: flex; gap: 8px; }
+.on-form .lib-search { flex: 1; min-width: 0; }
+.lib-item[data-outcome="win"] { border-left: 3px solid var(--cls-best); }
+.lib-item[data-outcome="loss"] { border-left: 3px solid var(--cls-blunder); }
+.lib-item[data-outcome="draw"] { border-left: 3px solid var(--muted); }
