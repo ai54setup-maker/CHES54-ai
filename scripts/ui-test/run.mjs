@@ -8,7 +8,9 @@
 // Avvia server.py su una porta libera, apre l'app e verifica i flussi principali.
 
 import { spawn } from 'node:child_process';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
@@ -597,6 +599,42 @@ try {
     await shot('10-setup-mobile');
     await b.click('#setup-back');
     await b.viewport(1280, 900);
+  });
+
+  await step('i tuoi dati: esportazione e importazione di un backup', async () => {
+    await b.click('#tab-review');
+    await b.ev(`document.getElementById('btn-about').click()`);
+    // Esportazione: si legge il file prodotto (senza scaricarlo davvero)
+    await b.send('Browser.setDownloadBehavior', { behavior: 'deny' }); // niente file scaricati davvero durante il test
+    const exported = await b.ev(`new Promise((resolve) => {
+      const orig = URL.createObjectURL;
+      URL.createObjectURL = (blob) => { URL.createObjectURL = orig; blob.text().then(resolve); return orig(blob); };
+      document.getElementById('data-export').click();
+    })`);
+    const backup = JSON.parse(exported);
+    assert.equal(backup.app, 'CHES54.ai');
+    assert.ok('lessonsDone' in backup.data, 'mancano i progressi delle lezioni');
+    // Importazione: un backup con tutte le lezioni base completate
+    backup.data.lessonsDone = JSON.stringify(['hanging', 'fork', 'pin']);
+    const file = join(tmpdir(), `ches54-backup-test-${process.pid}.json`);
+    writeFileSync(file, JSON.stringify(backup));
+    const { root: docRoot } = (await b.send('DOM.getDocument')).result;
+    const { nodeId } = (await b.send('DOM.querySelector', { nodeId: docRoot.nodeId, selector: '#data-import' })).result;
+    await b.send('DOM.setFileInputFiles', { nodeId, files: [file] });
+    await b.waitFor(`/Sostituisci i miei dati/.test(document.getElementById('data-msg').textContent)`, 5000);
+    await b.ev(`[...document.querySelectorAll('#data-msg button')].find((x) => x.textContent === 'Sostituisci i miei dati').click()`);
+    await sleep(500);
+    await b.waitFor(`document.readyState === 'complete' && !!document.querySelector('.tabs .active')`, 10000);
+    await b.click('#tab-lessons');
+    await b.waitFor(`/^3 di /.test(document.getElementById('ls-progress-text').textContent)`, 10000);
+    // Un file estraneo viene rifiutato con un messaggio
+    writeFileSync(file, '{"app":"Altro"}');
+    await b.ev(`document.getElementById('btn-about').click()`);
+    const { root: r2 } = (await b.send('DOM.getDocument')).result;
+    const { nodeId: n2 } = (await b.send('DOM.querySelector', { nodeId: r2.nodeId, selector: '#data-import' })).result;
+    await b.send('DOM.setFileInputFiles', { nodeId: n2, files: [file] });
+    await b.waitFor(`/non è un backup di CHES54/.test(document.getElementById('data-msg').textContent)`, 5000);
+    await b.ev(`document.getElementById('about-close').click()`);
   });
 
   await step('link diretto a una sezione e tastiera nelle lezioni', async () => {

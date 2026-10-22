@@ -867,3 +867,11 @@ button { font: inherit; color: inherit; }
 /* Salva gli errori come esercizi (riepilogo della revisione) */
 .sum-save { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 .sum-save > span { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; }
+
+/* I tuoi dati (backup) */
+.data-box { border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin: 0 0 14px; background: rgba(0, 0, 0, 0.12); }
+.data-box p { margin: 0 0 10px; }
+.data-box .toolbar.three { margin-top: 0; }
+.data-msg p { margin: 10px 0 0; color: var(--text); font-size: 0.9rem; }
+.data-msg:empty { display: none; }
+.data-msg .toolbar { margin-top: 8px; }

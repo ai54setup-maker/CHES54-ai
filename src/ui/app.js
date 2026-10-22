@@ -32,6 +32,7 @@ import { LessonPlayer } from './lessons.js';
 import { OnlineGames } from './online-games.js';
 import { mistakesFromReview, mergeMistakes } from '../analysis/my-mistakes.js';
 import { loadMistakes, saveMistakes } from './puzzles.js';
+import { BACKUP_KEYS, makeBackup, readBackup, backupFileName } from './backup.js';
 
 const $ = (id) => document.getElementById(id);
 const COLOR_NAME = { w: 'Bianco', b: 'Nero' };
@@ -1481,6 +1482,57 @@ $('btn-about').onclick = () => {
   $('dlg-about').showModal();
 };
 $('btn-about-side').onclick = () => $('btn-about').click();
+// ---------- backup dei dati (finestra Informazioni) ----------
+function dataMessage(text, actions = []) {
+  const box = $('data-msg');
+  box.replaceChildren(Object.assign(document.createElement('p'), { textContent: text }));
+  if (actions.length) {
+    const row = Object.assign(document.createElement('div'), { className: 'toolbar two' });
+    for (const [label, cls, fn] of actions) {
+      const b = Object.assign(document.createElement('button'), { type: 'button', className: `btn ${cls}`, textContent: label });
+      b.onclick = fn;
+      row.append(b);
+    }
+    box.append(row);
+  }
+}
+function replaceStoredData(entries) {
+  try {
+    for (const k of BACKUP_KEYS) localStorage.removeItem(UI_CONFIG.storagePrefix + k);
+    for (const [k, v] of entries) localStorage.setItem(UI_CONFIG.storagePrefix + k, v);
+  } catch {
+    return dataMessage('Il browser non permette di salvare i dati (memoria piena o bloccata).');
+  }
+  location.reload();
+}
+$('data-export').onclick = () => {
+  const blob = new Blob([JSON.stringify(makeBackup(store, UI_CONFIG.about.version), null, 1)], { type: 'application/json' });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: backupFileName() });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  dataMessage(`File ${a.download} scaricato.`);
+};
+$('data-import').addEventListener('change', async (e) => {
+  const file = e.target.files?.[0];
+  e.target.value = '';
+  if (!file) return;
+  try {
+    const { entries, exportedAt } = readBackup(await file.text());
+    const when = exportedAt ? ` del ${new Date(exportedAt).toLocaleDateString('it-IT')}` : '';
+    dataMessage(`Backup${when}: ${entries.length} elementi. Importandolo sostituisci i dati attuali di questo browser.`, [
+      ['Sostituisci i miei dati', 'primary', () => replaceStoredData(entries)],
+      ['Annulla', '', () => dataMessage('')],
+    ]);
+  } catch (err) {
+    dataMessage(err.message);
+  }
+});
+$('data-clear').onclick = () => dataMessage('Cancellare progressi, partite e preferenze salvati in questo browser?', [
+  ['Sì, cancella tutto', 'danger', () => replaceStoredData([])],
+  ['Annulla', '', () => dataMessage('')],
+]);
 $('about-close').onclick = () => $('dlg-about').close();
 
 $('btn-theme').onclick = () => {

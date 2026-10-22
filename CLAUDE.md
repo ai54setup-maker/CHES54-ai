@@ -182,6 +182,11 @@ le spiegazioni torneranno in fase 4, derivate solo dalle linee del motore.
   `UI_CONFIG.puzzles.dailyLevels`; data locale del dispositivo; conta come fatto anche con indizio/soluzione;
   `pzStats.dailyLast` / `dailyStreak`. Link `?section=problemi&daily=1` (scorciatoia nel manifest).
 
+### Backup dei dati (2026-10-22)
+- `src/ui/backup.js` (puro): `BACKUP_KEYS` = tutte le chiavi di localStorage dell'app (**aggiungere qui ogni chiave nuova**),
+  `makeBackup` / `readBackup` (solo chiavi note e valori di testo, max 5 MB, file estranei rifiutati). Finestra Informazioni:
+  Esporta / Importa (conferma nella pagina, poi ricarica) / Cancella tutto.
+
 ### I tuoi errori (2026-10-22)
 - Riepilogo della revisione: "Salva come esercizi gli errori di Bianco/Nero" (colore dell'utente riconosciuto se coincide con
   il nome cercato in "partite online"). Solo Errori ed Errori gravi con una mossa migliore. localStorage `myMistakes`

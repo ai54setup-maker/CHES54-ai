@@ -371,6 +371,16 @@
       restano solo nel tuo browser (memoria locale del sito) e non vengono inviati a nessuno: anche Stockfish gira sul tuo
       dispositivo. Solo se usi «Le mie partite» il nome utente che scrivi viene inviato a Lichess o Chess.com per
       chiedere le tue partite pubbliche. Per cancellare tutto basta cancellare i dati del sito dalle impostazioni del browser.</p>
+    <div class="data-box">
+      <p><b>I tuoi dati.</b> Senza account i progressi restano in questo browser. Per spostarli su un altro dispositivo:
+        esporta un file qui e importalo là.</p>
+      <div class="toolbar three">
+        <button type="button" class="btn" id="data-export">Esporta i dati</button>
+        <label class="btn file-btn">Importa un backup<input type="file" id="data-import" accept=".json,application/json" hidden></label>
+        <button type="button" class="btn danger" id="data-clear">Cancella tutto</button>
+      </div>
+      <div class="data-msg" id="data-msg" aria-live="polite"></div>
+    </div>
     <p>CHES54.ai non è affiliato a Chess.com né a Lichess e non è approvato da loro.</p>
     <div class="toolbar two"><span></span><button type="button" class="btn" id="about-close">Chiudi</button></div>
   </dialog>
