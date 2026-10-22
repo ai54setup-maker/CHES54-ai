@@ -92,9 +92,14 @@ export class Board {
     this.renderArrows();
   }
 
-  /** Case evidenziate con un anello (spiegazioni delle lezioni). @param {string[]} squares */
-  setMarks(squares) {
+  /**
+   * Case evidenziate: anello ciano (spiegazioni delle lezioni) o rosso (mossa fuori teoria nelle Aperture).
+   * @param {string[]} squares
+   * @param {'mark'|'bad'} [cls]
+   */
+  setMarks(squares, cls = 'mark') {
     this.marks = squares;
+    this.markClass = cls;
     this.renderSquares();
   }
 
@@ -132,7 +137,7 @@ export class Board {
         if (this.lastMove && (sq === this.lastMove.from || sq === this.lastMove.to)) d.classList.add('last');
         if (sq === this.selected) d.classList.add('sel');
         if (sq === this.checkSquare) d.classList.add('check');
-        if (this.marks.includes(sq)) d.classList.add('mark');
+        if (this.marks.includes(sq)) d.classList.add(this.markClass ?? 'mark');
         const dest = dests.find((m) => m.to === sq);
         if (dest) d.classList.add('dest', ...(dest.capture ? ['capture'] : []));
         if (y === 7) d.insertAdjacentHTML('beforeend', `<span class="coord file">${sq[0]}</span>`);

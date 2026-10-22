@@ -24,7 +24,8 @@ test('nomi, gruppi, SAN e cadenze', () => {
   assert.deepEqual(splitName('Sicilian Defense: Najdorf Variation, English Attack'), { family: 'Sicilian Defense', variation: 'Najdorf Variation, English Attack' });
   assert.deepEqual(splitName('Amar Opening'), { family: 'Amar Opening', variation: '' });
   assert.equal(groupOf('e4'), 'e4');
-  assert.equal(groupOf('Nf3'), 'other');
+  assert.equal(groupOf('Nf3'), 'Nf3');
+  assert.equal(groupOf('g3'), 'other');
   assert.equal(normSan('Qxf7#'), 'Qxf7');
   assert.equal(normSan('Bb5+'), 'Bb5');
   assert.equal(speedOf('60+0'), 'bullet');
@@ -90,7 +91,7 @@ test('ripasso: l\'app gioca l\'avversario, chi si allena le sue mosse', () => {
 test('file generati: catalogo e albero coerenti, valutazioni di Stockfish presenti', { skip: !existsSync(new URL('../data/openings/tree/index.json', import.meta.url)) }, () => {
   const idx = JSON.parse(readFileSync(new URL('../data/openings/tree/index.json', import.meta.url), 'utf8'));
   const trees = {};
-  for (const g of ['e4', 'd4', 'c4', 'other']) trees[g] = JSON.parse(readFileSync(new URL(`../data/openings/tree/tree-${g}.json`, import.meta.url), 'utf8')).nodes;
+  for (const g of ['e4', 'd4', 'c4', 'Nf3', 'other']) trees[g] = JSON.parse(readFileSync(new URL(`../data/openings/tree/tree-${g}.json`, import.meta.url), 'utf8')).nodes;
   const get = (id) => (id === 'root' ? idx.root : trees[id.split(':')[0]][id]);
   assert.ok(idx.families.length >= 100);
   let checked = 0;

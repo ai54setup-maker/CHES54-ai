@@ -253,7 +253,25 @@ let puzzles = null;
 let lessons = null;
 let play = null;
 let openings = null;
-const getOpenings = () => (openings ??= new OpeningsExplorer($('view-openings'), { store, toast, askPromotion }));
+const getOpenings = () => (openings ??= new OpeningsExplorer($('view-openings'), {
+  store, toast, askPromotion,
+  engine: () => (engineFailed ? null : engine),
+  openInAnalysis: openMovesInAnalysis,
+}));
+
+/** "Continua da qui in Analisi partita" (dalle Aperture): la partita con queste mosse diventa la linea principale. */
+function openMovesInAnalysis(ucis, color) {
+  let g = createGame();
+  for (const [i, uci] of ucis.entries()) g = withMoveAt(g, i, uciToMove(uci)) ?? g;
+  Object.assign(state, { free: g, variation: null, redo: [], side: color, setupDone: true });
+  state.cursors.analysis = g.plies.length;
+  store.set('side', color);
+  store.set('setupDone', '1');
+  saveFree();
+  setMode('analysis');
+  setOrientation(color);
+  render();
+}
 function showSectionView() {
   if (state.section === 'openings') getOpenings().show();
   if (state.section === 'play') {
@@ -677,7 +695,10 @@ function renderLive() {
     { bar: $('evalbar'), fill: $('evalbar-fill'), label: $('evalbar-label') },
     { score: ps.over ? null : score, mateWinner: ps.mateWinner ?? null, draw: !!ps.draw, orientation: state.orientation },
   );
-  if (state.mode === 'analysis' && state.setupDone) renderAdvantage(lineAnalysis(currentGame()));
+  if (state.mode === 'analysis' && state.setupDone) {
+    renderAdvantage(lineAnalysis(currentGame()));
+    renderOpeningOut();
+  }
 }
 
 function markHighlighted() {
@@ -1012,6 +1033,27 @@ $('opening-open').onclick = async () => {
   await getOpenings().openKey(key);
 };
 
+/** La posizione mostrata è appena uscita dalla teoria (quella prima era nel dataset delle aperture)? */
+function justLeftBook() {
+  const i = cur();
+  if (!openingBook || i === 0) return false;
+  const g = currentGame();
+  const prev = i === 1 ? g.startFen : g.plies[i - 2].fenAfter;
+  return openingBook.isBook(prev) && !openingBook.isBook(displayed().fen);
+}
+
+/** Fuori dalla teoria: la risposta consigliata la dà Stockfish (analisi dal vivo della posizione mostrata). */
+function renderOpeningOut() {
+  const out = $('opening-out');
+  if (!justLeftBook()) return void (out.hidden = true);
+  const fen = displayed().fen;
+  const best = live.fen === fen ? live.result?.lines?.[0] : null;
+  out.hidden = false;
+  out.textContent = best
+    ? t('Fuori dalla teoria del dataset: Stockfish consiglia {move} ({score}).', { move: toItalian(new Chess(fen).move(uciToMove(best.pv[0])).san), score: formatScore(best.score) })
+    : t('Fuori dalla teoria del dataset: Stockfish sta cercando la mossa migliore…');
+}
+
 function renderOpenings(a) {
   const card = $('opening-card');
   const fen = displayed().fen;
@@ -1019,8 +1061,17 @@ function renderOpenings(a) {
   if (!bookMovesMemo.has(fen)) bookMovesMemo.set(fen, openingBook.bookMoves(fen));
   const moves = bookMovesMemo.get(fen);
   const here = openingBook.nameOf(fen) ?? (cur() > 0 && openingBook.isBook(fen) ? a.opening : null);
-  card.hidden = !moves.length && !here;
+  const out = justLeftBook();
+  card.hidden = !moves.length && !here && !out;
+  renderOpeningOut();
   if (card.hidden) return;
+  if (out) {
+    $('opening-name').textContent = t('Fuori dalla teoria');
+    $('opening-count').textContent = '';
+    $('opening-moves').replaceChildren();
+    $('opening-moves').dataset.key = '';
+    return;
+  }
   $('opening-name').textContent = here ? `${here.eco} · ${here.name}` : t('Posizione iniziale');
   $('opening-count').textContent = moves.length ? t(moves.length === 1 ? '{n} continuazione' : '{n} continuazioni', { n: moves.length }) : t('fine della teoria');
   const key = `${fen}|${moves.length}`;

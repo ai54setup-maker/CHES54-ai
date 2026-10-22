@@ -173,6 +173,7 @@
       <div class="card opening-card" id="opening-card" hidden>
         <div class="card-head"><h2>Teoria delle aperture</h2><span class="depth-info" id="opening-count"></span></div>
         <p class="opening-name" id="opening-name"></p>
+        <p class="opening-out" id="opening-out" hidden></p>
         <div class="opening-moves" id="opening-moves"></div>
         <button type="button" class="btn wide" id="opening-open">Apri nella sezione Aperture</button>
         <p class="hint">Mosse del dataset lichess-org/chess-openings (CC0), senza statistiche: l'ordine non indica la più giocata.
@@ -267,71 +268,86 @@
     </section>
   </main>
 
-  <!-- Aperture: src/ui/openings.js -->
-  <main class="layout" id="view-openings" hidden>
-    <section class="board-area">
-      <div class="board-row">
-        <div class="board-wrap"><div id="op-board" class="board"></div></div>
-      </div>
-      <div class="op-nav">
-        <button type="button" class="btn" id="op-start" title="Posizione iniziale" aria-label="Posizione iniziale">⏮</button>
-        <button type="button" class="btn" id="op-back" title="Indietro" aria-label="Indietro">◀</button>
-        <button type="button" class="btn" id="op-flip" title="Gira la scacchiera" aria-label="Gira la scacchiera">⇅</button>
-      </div>
-      <p class="op-path" id="op-path"></p>
+  <!-- Aperture: src/ui/openings.js — tre schermate: catalogo › apertura › studio -->
+  <main class="view op-view" id="view-openings" hidden>
+    <div class="op-top">
+      <button type="button" class="btn op-back" id="op-back-btn" hidden>‹ Catalogo</button>
+      <nav class="op-crumbs" id="op-crumbs" aria-label="Dove sei"></nav>
+    </div>
+
+    <!-- ① Catalogo -->
+    <section class="op-screen" id="op-s-catalog">
+      <input type="search" class="lib-search" id="op-search" placeholder="Cerca un'apertura: Siciliana, Najdorf…" aria-label="Cerca un'apertura" autocomplete="off" spellcheck="false">
+      <div class="chips" id="op-groups" role="group" aria-label="Prima mossa"></div>
+      <button type="button" class="btn primary op-review-all" id="op-review-all" hidden></button>
+      <div class="op-cards" id="op-cards"></div>
     </section>
 
-    <section class="panel">
-      <div class="card op-band-card">
-        <div class="field-label first">Il tuo punteggio Lichess</div>
-        <div class="segmented small" id="op-band" role="radiogroup" aria-label="Fascia di punteggio"></div>
-        <p class="hint">Punteggi Lichess, non Elo FIDE. Statistiche da 10 milioni di partite di Lichess (CC0).</p>
-      </div>
-
-      <!-- Allenamento -->
-      <div class="card pz-card" id="op-train" hidden aria-live="polite">
-        <div class="pz-meta" id="op-train-meta"></div>
-        <h2 class="pz-title" id="op-train-title"></h2>
-        <div class="pz-feedback" id="op-train-feedback"></div>
-        <div class="toolbar two">
-          <button type="button" class="btn" id="op-train-retry" hidden>Riprova</button>
-          <button type="button" class="btn" id="op-train-solution" hidden>Soluzione</button>
-          <button type="button" class="btn" id="op-train-exit">Esci dal ripasso</button>
+    <!-- ② Pagina dell'apertura -->
+    <section class="op-screen" id="op-s-family" hidden>
+      <div class="card op-fam-head">
+        <div class="pz-meta" id="op-fam-eco"></div>
+        <h2 class="pz-title" id="op-fam-name"></h2>
+        <p class="op-fam-sub" id="op-fam-sub"></p>
+        <p class="op-fam-moves" id="op-fam-moves"></p>
+        <div class="op-ideas" id="op-fam-ideas" hidden></div>
+        <div class="op-fam-actions">
+          <div><div class="field-label first">Studio con</div>
+            <div class="segmented" id="op-color" role="radiogroup" aria-label="Colore"></div></div>
+          <div class="toolbar two">
+            <button type="button" class="btn primary" id="op-learn-btn">Impara dall'inizio</button>
+            <button type="button" class="btn" id="op-review-btn">Ripasso</button>
+          </div>
         </div>
       </div>
-
-      <!-- Posizione -->
-      <div class="card op-pos" id="op-pos">
-        <div class="pz-meta" id="op-eco"></div>
-        <h2 class="pz-title" id="op-name"></h2>
-        <div class="op-ideas" id="op-ideas" hidden></div>
-        <p class="op-sf" id="op-sf"></p>
-        <div class="op-moves-head"><b>Mosse da qui</b><span class="hint" id="op-moves-note"></span></div>
-        <ol class="op-moves" id="op-moves"></ol>
-        <p class="hint" id="op-extra"></p>
-        <p class="hint">Valutazioni di Stockfish dal punto di vista del Bianco (+ vantaggio Bianco, − vantaggio Nero). Barre: vinte, patte e perse da chi muove, nella tua fascia.</p>
-        <div class="op-train-start" id="op-train-start">
-          <div class="segmented small" id="op-color" role="radiogroup" aria-label="Colore per il ripasso"></div>
-          <button type="button" class="btn primary" id="op-train-btn">Ripassa questa variante</button>
-        </div>
+      <div class="card">
+        <div class="card-head"><h2>Varianti</h2><span class="depth-info" id="op-fam-count"></span></div>
+        <p class="hint first">Tocca una variante per studiarla. «Se …» indica le risposte dell'avversario.</p>
+        <div class="op-tree" id="op-tree"></div>
       </div>
-
-      <!-- Catalogo -->
-      <div class="card op-catalog" id="op-catalog">
-        <div class="card-head"><h2>Catalogo delle aperture</h2><span class="depth-info" id="op-count"></span></div>
-        <div class="chips" id="op-groups" role="group" aria-label="Prima mossa"></div>
-        <input type="search" class="lib-search" id="op-search" placeholder="Cerca un'apertura: Siciliana, Najdorf…" aria-label="Cerca un'apertura" autocomplete="off" spellcheck="false">
-        <ul class="op-families" id="op-families"></ul>
-      </div>
-
-      <div class="card op-reps" id="op-reps" hidden>
-        <div class="card-head"><h2>Varianti da ripassare</h2><span class="depth-info" id="op-reps-count"></span></div>
-        <ul class="op-rep-list" id="op-rep-list"></ul>
-      </div>
-
-      <p class="footnote" id="op-source">Albero dal dataset lichess-org/chess-openings (CC0); valutazioni e mosse consigliate da
-        Stockfish; statistiche reali dal database delle partite di Lichess (CC0). Nomi delle aperture in inglese, come nel dataset.</p>
     </section>
+
+    <!-- ③ Studio sulla scacchiera -->
+    <div class="layout op-study" id="op-s-study" hidden>
+      <section class="board-area">
+        <div class="board-row">
+          <div class="board-wrap"><div id="op-board" class="board"></div></div>
+        </div>
+        <p class="op-path" id="op-path"></p>
+      </section>
+      <section class="panel">
+        <div class="card pz-card op-study-card" id="op-study-card" aria-live="polite">
+          <div class="op-study-top">
+            <div class="segmented small" id="op-mode" role="radiogroup" aria-label="Modalità"></div>
+            <span class="hint" id="op-study-color"></span>
+          </div>
+          <div class="pz-meta" id="op-st-meta"></div>
+          <h2 class="pz-title" id="op-st-title"></h2>
+          <div class="pz-feedback" id="op-st-text"></div>
+          <div class="op-branches" id="op-st-branches"></div>
+          <div class="toolbar two">
+            <button type="button" class="btn" id="op-st-analysis" hidden>Continua da qui in Analisi partita</button>
+            <button type="button" class="btn" id="op-st-restart">Ricomincia</button>
+            <button type="button" class="btn primary" id="op-st-next" hidden></button>
+          </div>
+        </div>
+        <p class="op-summary" id="op-st-summary"></p>
+        <details class="card op-details" id="op-details">
+          <summary>Dettagli: Stockfish e statistiche</summary>
+          <div class="field-label">Il tuo punteggio Lichess</div>
+          <div class="segmented small" id="op-band" role="radiogroup" aria-label="Fascia di punteggio"></div>
+          <p class="hint">Punteggi Lichess, non Elo FIDE. Statistiche da 10 milioni di partite di Lichess (CC0).</p>
+          <p class="op-sf" id="op-sf"></p>
+          <div class="op-moves-head"><b>Mosse da qui</b><span class="hint" id="op-moves-note"></span></div>
+          <ol class="op-moves" id="op-moves"></ol>
+          <p class="hint" id="op-extra"></p>
+          <p class="hint">Valutazioni di Stockfish dal punto di vista del Bianco (+ vantaggio Bianco, − vantaggio Nero). Barre: vinte, patte e perse da chi muove, nella tua fascia.</p>
+        </details>
+      </section>
+    </div>
+
+    <p class="footnote" id="op-source">Albero dal dataset lichess-org/chess-openings (CC0); valutazioni e mosse consigliate da
+      Stockfish; statistiche reali dal database delle partite di Lichess (CC0). Nomi delle aperture in inglese, come nel dataset.</p>
   </main>
 
   <!-- Lezioni (fase G): src/ui/lessons.js -->

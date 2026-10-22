@@ -104,14 +104,26 @@ export const UI_CONFIG = Object.freeze({
     maxPlies: 30, //       semimosse seguite per partita (l'albero del dataset non va oltre)
     topMoves: 5, //        mosse tenute per posizione e fascia
     minGamesShown: 20, //  sotto questo numero di partite le statistiche non si mostrano (troppo poche)
-    // Nomi italiani comuni → nome inglese del dataset, per la ricerca ("Siciliana" trova "Sicilian Defense")
-    searchAliases: Object.freeze({
-      siciliana: 'sicilian', francese: 'french', spagnola: 'ruy lopez', italiana: 'italian game', inglese: 'english opening',
-      'gambetto di donna': "queen's gambit", 'gambetto di re': "king's gambit", 'indiana di re': "king's indian",
-      'nimzo-indiana': 'nimzo-indian', 'ovest-indiana': "queen's indian", olandese: 'dutch', scozzese: 'scotch', slava: 'slav',
-      'semi-slava': 'semi-slav', 'difesa russa': 'russian game', petrov: 'russian game', 'quattro cavalli': 'four knights',
-      'due cavalli': 'two knights', 'partita viennese': 'vienna', scandinava: 'scandinavian', 'difesa moderna': 'modern defense',
-      londra: 'london system', catalana: 'catalan', 'gambetto evans': 'evans gambit', benoni: 'benoni', grunfeld: 'grunfeld',
+    // Nome italiano delle aperture più note (sottotitolo in italiano e ricerca). Chiave = nome del dataset.
+    italianNames: Object.freeze({
+      'Alekhine Defense': 'Difesa Alekhine', 'Benko Gambit': 'Gambetto Benko', 'Benoni Defense': 'Difesa Benoni',
+      'Bird Opening': 'Apertura Bird', "Bishop's Opening": "Apertura d'alfiere", 'Blackmar-Diemer Gambit': 'Gambetto Blackmar-Diemer',
+      'Bogo-Indian Defense': 'Difesa bogo-indiana', 'Caro-Kann Defense': 'Difesa Caro-Kann', 'Catalan Opening': 'Apertura catalana',
+      'Center Game': 'Partita del centro', 'Colle System': 'Sistema Colle', 'Danish Gambit': 'Gambetto danese',
+      'Dutch Defense': 'Difesa olandese', 'Elephant Gambit': "Gambetto dell'elefante", 'English Opening': 'Apertura inglese',
+      'Englund Gambit': 'Gambetto Englund', 'Four Knights Game': 'Partita dei quattro cavalli', 'French Defense': 'Difesa francese',
+      'Grob Opening': 'Apertura Grob', 'Grünfeld Defense': 'Difesa Grünfeld', 'Italian Game': 'Partita italiana',
+      "King's Gambit": 'Gambetto di re', "King's Indian Attack": 'Attacco indiano di re', "King's Indian Defense": 'Difesa indiana di re',
+      "King's Pawn Game": 'Partita di pedone di re', 'Latvian Gambit': 'Gambetto lettone', 'London System': 'Sistema Londra',
+      'Modern Defense': 'Difesa moderna', 'Nimzo-Indian Defense': 'Difesa nimzo-indiana', 'Nimzowitsch Defense': 'Difesa Nimzowitsch',
+      'Old Indian Defense': 'Difesa vecchia indiana', 'Owen Defense': 'Difesa Owen', "Petrov's Defense": 'Difesa Petrov (russa)',
+      'Philidor Defense': 'Difesa Philidor', 'Pirc Defense': 'Difesa Pirc', 'Polish Opening': 'Apertura polacca',
+      'Ponziani Opening': 'Apertura Ponziani', "Queen's Gambit": 'Gambetto di donna', "Queen's Indian Defense": 'Difesa ovest-indiana',
+      "Queen's Pawn Game": 'Partita di pedone di donna', 'Réti Opening': 'Apertura Réti', 'Ruy Lopez': 'Partita spagnola',
+      'Scandinavian Defense': 'Difesa scandinava', 'Scotch Game': 'Partita scozzese', 'Semi-Slav Defense': 'Difesa semi-slava',
+      'Sicilian Defense': 'Difesa siciliana', 'Slav Defense': 'Difesa slava', 'Tarrasch Defense': 'Difesa Tarrasch',
+      'Three Knights Opening': 'Partita dei tre cavalli', 'Torre Attack': 'Attacco Torre', 'Trompowsky Attack': 'Attacco Trompowsky',
+      'Vienna Game': 'Partita viennese',
     }),
   }),
 

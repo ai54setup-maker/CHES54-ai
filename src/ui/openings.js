@@ -1,11 +1,17 @@
-// Sezione "Aperture": catalogo (gruppo → famiglia → variante), albero delle varianti navigabile, valutazioni e mossa
-// consigliata di Stockfish (calcolate in anticipo da scripts/build-opening-tree.mjs), statistiche reali per fascia di
-// punteggio Lichess (scripts/build-opening-stats.mjs) e ripasso delle varianti a scatole (come "I tuoi errori").
+// Sezione "Aperture" in tre schermate: ① catalogo (prima mossa → aperture), ② pagina dell'apertura (colore, albero delle
+// varianti "se gioca X → variante"), ③ studio sulla scacchiera (Impara / Ripasso). Le mosse vengono solo dal dataset
+// (albero data/openings/tree/), valutazioni e mosse consigliate da Stockfish (calcolate in anticipo, o dal vivo per una
+// mossa fuori teoria), statistiche reali per fascia nel pannello "Dettagli". Logica pura in src/analysis/opening-study.js.
 
 import { Chess } from '../../lib/chess.js';
 import { formatScore } from '../engine/score.js';
 import { UI_CONFIG } from '../config/ui.js';
-import { GROUPS, normSan, scoreFor, trainingStep, repKey } from '../analysis/opening-tree.js';
+import { ANALYSIS_CONFIG } from '../config/analysis.js';
+import { GROUPS, normSan, scoreFor } from '../analysis/opening-tree.js';
+import {
+  uniqueLabels, familyTrie, familyRows, walk, nextStep, judgeStudyMove, pickReview, migrateReps, mainPathOf, mergeFamilies,
+  firstVariationBelow, sansOf, numbered,
+} from '../analysis/opening-study.js';
 import { reviewQueue, recordResult, LEARNED_BOX } from '../analysis/my-mistakes.js';
 import { playUci } from '../analysis/puzzle.js';
 import { Board } from './board.js';
@@ -19,53 +25,91 @@ const fold = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const groupOfId = (id) => (id === 'root' ? 'root' : id.split(':')[0]);
 const el = (tag, props = {}, ...children) => {
   const e = Object.assign(document.createElement(tag), props);
-  e.append(...children.filter((c) => c != null && c !== false));
+  e.append(...children.filter((c) => c != null && c !== false && c !== ''));
   return e;
 };
-const ARROW_BEST = Object.freeze({ color: '#22c55e', width: 0.18, opacity: 0.9 });
+/** Mossa numerata nella notazione della lingua: "3.Nc3" → "3.Cc3" (solo la mossa, non il numero). */
+const localMove = (s) => s.replace(/^(\d+\.(?:\.\.)?)(.*)$/, (m, num, san) => num + toItalian(san));
+const ARROW_THEORY = Object.freeze({ color: '#22c55e', width: 0.18, opacity: 0.9 });
 const ARROW_POPULAR = Object.freeze({ color: '#60a5fa', width: 0.13, opacity: 0.75 });
+const OFF_THEORY_PAUSE_MS = 1600; // tempo per leggere il messaggio prima che l'app rimetta la mossa della teoria
+const STUDY_DEPTH = ANALYSIS_CONFIG.puzzles.refuteDepth; // valutazione dal vivo della mossa fuori teoria
 
 export class OpeningsExplorer {
   /**
    * @param {HTMLElement} root vista #view-openings
    * @param {{ store: { get: (k:string, d:any)=>any, set: (k:string, v:any)=>void }, toast: (m:string)=>void,
-   *   askPromotion: (color:string)=>Promise<string|null> }} deps
+   *   askPromotion: (color:string)=>Promise<string|null>, engine: () => import('../engine/engine.js').Engine|null,
+   *   openInAnalysis: (ucis: string[], color: 'w'|'b') => void }} deps
    */
   constructor(root, deps) {
     this.root = root;
     this.deps = deps;
     this.$ = (sel) => root.querySelector(sel);
     this.index = null;
-    this.trees = new Map(); //  gruppo → Map(id → nodo)
+    this.openings = []; //     aperture del catalogo (famiglie unite)
+    this.trees = new Map(); //  gruppo → Map(id → nodo dell'albero)
     this.stats = new Map(); //  gruppo → Map(id → statistiche per fascia)
     this.ideas = null;
     this.loading = null;
-    this.path = []; //          [{ id, uci, san }] dalla posizione iniziale
-    this.group = deps.store.get('opGroup', 'e4');
+    const saved = this.loadState();
+    this.screen = saved.screen ?? 'catalog';
+    this.group = saved.group ?? 'e4';
+    this.key = saved.key ?? null; //      apertura aperta: "gruppo|nome"
+    this.color = saved.color === 'b' ? 'b' : 'w';
+    this.mode = saved.mode === 'review' ? 'review' : 'learn';
+    this.savedPlan = saved.plan ?? null;
     this.band = CFG.ratingBands.some((b) => b.id === deps.store.get('opBand', '')) ? deps.store.get('opBand', '') : 'b1400';
-    this.color = deps.store.get('opColor', 'w') === 'b' ? 'b' : 'w';
-    this.open = new Set(); //   famiglie aperte nel catalogo
-    this.train = null; //      { name, path, color, i, failed, status }
+    this.study = null; //       { path, plan, startPlan, explore, errors, status, wrong, label, gen }
     this.gen = 0;
     this.board = new Board(this.$('#op-board'), {
       canPick: (sq) => {
-        if (this.train && this.train.status !== 'play') return false;
-        const c = this.chess();
-        const p = c.get(sq);
-        return !!p && p.color === c.turn();
+        if (this.study?.status !== 'play') return false;
+        const p = this.chess().get(sq);
+        return !!p && p.color === this.chess().turn();
       },
       dests: (sq) => this.chess().moves({ square: sq, verbose: true }).map((m) => ({ to: m.to, capture: !!m.captured })),
       onMove: (from, to) => this.onUserMove(from, to),
     });
-    this.$('#op-start').onclick = () => { if (!this.train) this.goPath([]); };
-    this.$('#op-back').onclick = () => { if (!this.train) this.goPath(this.path.slice(0, -1)); };
-    this.$('#op-flip').onclick = () => this.board.setOrientation(this.board.orientation === 'w' ? 'b' : 'w');
+    this.$('#op-back-btn').onclick = () => this.back();
     this.$('#op-search').addEventListener('input', () => this.renderCatalog());
-    this.$('#op-train-btn').onclick = () => this.startTraining(this.currentLine());
-    this.$('#op-train-exit').onclick = () => this.stopTraining();
-    this.$('#op-train-retry').onclick = () => this.retryTraining();
-    this.$('#op-train-solution').onclick = () => this.showTrainingSolution();
+    this.$('#op-learn-btn').onclick = () => this.startStudy('learn', this.opening().mainPath, true);
+    this.$('#op-review-btn').onclick = () => this.startStudy('review');
+    this.$('#op-st-restart').onclick = () => this.startStudy(this.mode, this.study?.startPlan ?? null, this.study?.explore ?? false);
+    this.$('#op-st-analysis').onclick = () => this.study?.wrong && this.deps.openInAnalysis(this.study.wrong.path, this.color);
+    this.$('#op-review-all').onclick = () => this.reviewAnyDue();
+    this.$('#op-details').addEventListener('toggle', () => this.renderDetails());
     this.buildControls();
+  }
+
+  // ---------- stato salvato ----------
+  loadState() {
+    try {
+      const v = JSON.parse(this.deps.store.get('openingState', '{}'));
+      return v && typeof v === 'object' ? v : {};
+    } catch {
+      return {};
+    }
+  }
+
+  saveState() {
+    this.deps.store.set('openingState', JSON.stringify({
+      screen: this.screen, group: this.group, key: this.key, color: this.color, mode: this.mode,
+      plan: this.screen === 'study' ? (this.study?.startPlan ?? null) : null,
+    }));
+  }
+
+  reps() {
+    try {
+      const v = JSON.parse(this.deps.store.get('openingReps', '[]'));
+      return Array.isArray(v) ? v : [];
+    } catch {
+      return [];
+    }
+  }
+
+  saveReps(list) {
+    this.deps.store.set('openingReps', JSON.stringify(list));
   }
 
   // ---------- dati ----------
@@ -85,19 +129,58 @@ export class OpeningsExplorer {
           for (const [k, v] of Object.entries(en?.families ?? {})) Object.assign(ideas.families[k] ?? {}, v);
         }
         this.ideas = ideas;
+        this.prepareOpenings();
+        // Ripassi salvati con la versione precedente della sezione: si tengono tutti, con la loro apertura
+        this.saveReps(migrateReps(this.reps(), (p) => this.openingOfPath(p.split(' '))?.key ?? null));
       })().catch(() => { this.loading = null; });
     }
     await this.loading;
     if (!this.index) {
-      this.$('#op-families').replaceChildren(el('li', { className: 'hint', textContent: t('Non riesco a caricare le aperture. Controlla la connessione e riprova.') }));
+      this.$('#op-cards').replaceChildren(el('p', { className: 'hint', textContent: t('Non riesco a caricare le aperture. Controlla la connessione e riprova.') }));
       return;
     }
-    this.renderCatalog();
-    this.renderReps();
-    await this.goPath(this.path);
+    // Rientro: dall'ultima apertura che stavo studiando
+    if (this.screen !== 'catalog' && !this.opening()) this.screen = 'catalog';
+    if (this.screen === 'study' && !this.study) return this.startStudy(this.mode, this.savedPlan, !this.savedPlan);
+    this.render();
   }
 
-  /** Carica albero e statistiche di un gruppo (1.e4, 1.d4, 1.c4, altre) la prima volta che serve. */
+  /** Aperture del catalogo: famiglie unite, albero, linea principale. */
+  prepareOpenings() {
+    this.openings = mergeFamilies(this.index.families).map((o) => {
+      const variations = o.variations.map((v) => ({ ...v, path: v.path.split(' ') }));
+      const mainPath = mainPathOf(variations) ?? variations.slice().sort((a, b) => a.path.length - b.path.length)[0].path;
+      return { ...o, key: `${o.group}|${o.name}`, variations, mainPath, trie: familyTrie(variations) };
+    });
+    this.labelCache = new Map();
+  }
+
+  opening(key = this.key) {
+    return this.openings.find((o) => o.key === key) ?? null;
+  }
+
+  /** Apertura che contiene la variante con questo percorso (o, se non c'è, quella con la variante più simile). */
+  openingOfPath(path) {
+    const key = path.join(' ');
+    let best = null;
+    let bestLen = -1;
+    for (const o of this.openings) {
+      for (const v of o.variations) {
+        if (v.path.join(' ') === key) return o;
+        let i = 0;
+        while (i < v.path.length && i < path.length && v.path[i] === path[i]) i++;
+        if (i > bestLen) { bestLen = i; best = o; }
+      }
+    }
+    return best;
+  }
+
+  /** Nomi univoci delle varianti (notazione della lingua attiva per le mosse aggiunte). */
+  labels(o) {
+    if (!this.labelCache.has(o.key)) this.labelCache.set(o.key, uniqueLabels(o.variations, t('Linea principale'), toItalian));
+    return this.labelCache.get(o.key);
+  }
+
   async loadGroup(group) {
     if (group !== 'root' && !this.trees.has(group)) {
       const r = await fetch(CFG.treeUrl(group));
@@ -115,98 +198,107 @@ export class OpeningsExplorer {
     return this.trees.get(g).get(id);
   }
 
+  /** Nodo dell'albero (con Stockfish e id) dopo un percorso UCI, o null se il percorso esce dall'albero. */
+  async treeNodeAt(path) {
+    let id = 'root';
+    let n = this.index.root;
+    for (const uci of path) {
+      const e = n.c.find((x) => x[1] === uci);
+      if (!e) return null;
+      id = e[2];
+      n = await this.node(id);
+    }
+    return { id, node: n };
+  }
+
   statsOf(id) {
     const row = this.stats.get(groupOfId(id))?.get(id);
     const i = CFG.ratingBands.findIndex((b) => b.id === this.band);
-    return row?.[i] || null; // [totale, [[san, n, w, d, b]…]] oppure null (troppo poche partite)
+    return row?.[i] || null;
   }
 
-  // ---------- posizione ----------
-  currentId() {
-    return this.path.at(-1)?.id ?? 'root';
+  // ---------- navigazione tra le schermate ----------
+  go(screen) {
+    this.screen = screen;
+    this.saveState();
+    this.render();
   }
 
-  chess() {
-    const c = new Chess();
-    for (const p of this.path) playUci(c, p.uci);
-    return c;
+  openOpening(key) {
+    this.key = key;
+    this.study = null;
+    this.go('family');
   }
 
-  /** Va a una posizione dell'albero (percorso dalla posizione iniziale). */
-  async goPath(path, animate = false) {
-    const gen = ++this.gen;
-    for (const p of path) await this.node(p.id);
-    if (gen !== this.gen) return;
-    this.path = path;
-    const c = this.chess();
-    const last = c.history({ verbose: true }).at(-1);
-    this.board.setPosition(piecesOf(c), last ? { from: last.from, to: last.to } : null, checkSquareOf(c), animate);
-    await this.renderPosition();
-  }
-
-  /** Percorso dei nodi dato un elenco di mosse UCI (dalla posizione iniziale). */
-  async pathOf(ucis) {
-    const out = [];
-    let node = this.index.root;
-    for (const uci of ucis) {
-      const edge = node.c.find((e) => e[1] === uci);
-      if (!edge) return null;
-      out.push({ id: edge[2], uci, san: edge[0] });
-      node = await this.node(edge[2]);
+  back() {
+    if (this.screen === 'study') {
+      this.study = null;
+      this.go('family');
+    } else if (this.screen === 'family') {
+      this.go('catalog');
     }
-    return out;
   }
 
-  /** Apre la posizione con questa chiave (primi 4 campi della FEN), es. dal link in Analisi partita. */
+  /** Apre l'apertura che contiene questa posizione (dal link in Analisi partita). */
   async openKey(key) {
     await this.show();
     for (const g of GROUPS) await this.loadGroup(g.id);
-    // Visita in ampiezza: il primo percorso trovato (il più corto) verso la posizione
     const seen = new Set(['root']);
     const queue = [{ node: this.index.root, path: [] }];
     while (queue.length) {
       const { node, path } = queue.shift();
-      if (node.k === key) return this.goPath(path);
-      for (const [san, uci, to] of node.c) {
+      if (node.k === key) {
+        const o = this.openingOfPath(path);
+        if (o) return this.openOpening(o.key);
+        break;
+      }
+      for (const [, uci, to] of node.c) {
         if (seen.has(to)) continue;
         seen.add(to);
-        queue.push({ node: await this.node(to), path: [...path, { id: to, uci, san }] });
+        queue.push({ node: await this.node(to), path: [...path, uci] });
       }
     }
     this.deps.toast(t('Posizione non presente nell\'albero delle aperture'));
   }
 
-  async onUserMove(from, to) {
-    const c = this.chess();
-    const needsPromo = c.moves({ square: from, verbose: true }).some((m) => m.to === to && m.promotion);
-    const promotion = needsPromo ? await this.deps.askPromotion(c.turn()) : undefined;
-    if (needsPromo && !promotion) return this.goPath(this.path);
-    const uci = from + to + (promotion ?? '');
-    if (this.train) return this.onTrainingMove(uci);
-    const node = await this.node(this.currentId());
-    const edge = node.c.find((e) => e[1] === uci);
-    if (!edge) {
-      this.deps.toast(t('Mossa fuori dalla teoria del dataset'));
-      return this.goPath(this.path);
-    }
-    return this.goPath([...this.path, { id: edge[2], uci, san: edge[0] }], true);
-  }
-
-  /** Variante con nome più vicina: quella della posizione, altrimenti la più avanzata lungo il percorso. */
-  async namedAlong() {
-    for (let i = this.path.length - 1; i >= 0; i--) {
-      const n = await this.node(this.path[i].id);
-      if (n.n) return { eco: n.n[0], name: n.n[1], depth: i + 1 };
-    }
-    return null;
-  }
-
-  /** Linea per il ripasso: il percorso attuale, con il nome della variante più vicina. */
-  currentLine() {
-    return { name: this.$('#op-name').textContent, path: this.path.map((p) => p.uci) };
-  }
-
   // ---------- disegno ----------
+  render() {
+    for (const s of ['catalog', 'family', 'study']) this.$(`#op-s-${s}`).hidden = this.screen !== s;
+    this.$('#op-back-btn').hidden = this.screen === 'catalog';
+    this.$('#op-back-btn').textContent = this.screen === 'study' ? `‹ ${t('Apertura')}` : `‹ ${t('Catalogo')}`;
+    this.renderCrumbs();
+    if (this.screen === 'catalog') this.renderCatalog();
+    if (this.screen === 'family') this.renderFamily();
+    if (this.screen === 'study') this.renderStudy();
+  }
+
+  groupLabel(id) {
+    const label = GROUPS.find((g) => g.id === id)?.label;
+    return label ? localMove(label) : t('Altre');
+  }
+
+  renderCrumbs() {
+    const o = this.opening();
+    const parts = [t('Aperture')];
+    if (this.screen !== 'catalog' && o) parts.push(this.groupLabel(o.group), o.name);
+    if (this.screen === 'study' && this.study?.label) parts.push(this.study.label);
+    this.$('#op-crumbs').textContent = parts.join(' › ');
+  }
+
+  italianName(o) {
+    return getLang() === 'it' ? CFG.italianNames[o.name] ?? '' : '';
+  }
+
+  /** Riga di descrizione: la prima frase delle idee (solo per le aperture che le hanno). */
+  description(o) {
+    const first = this.ideas?.families?.[o.name]?.text?.[0];
+    return first ? first.split(/(?<=\.)\s/)[0] : '';
+  }
+
+  movesText(path) {
+    return sansOf(path).map((s, i) => localMove(numbered(i, s))).join(' ');
+  }
+
   buildControls() {
     const seg = (box, options, current, onPick) => {
       box.replaceChildren(...options.map((o) => {
@@ -224,94 +316,417 @@ export class OpeningsExplorer {
       this.band = v;
       this.deps.store.set('opBand', v);
       markBand(v);
-      this.renderPosition();
+      if (this.study) this.renderDetails();
     });
-    const markColor = seg(this.$('#op-color'), [{ label: t('Bianco'), value: 'w' }, { label: t('Nero'), value: 'b' }], this.color, (v) => {
+    this.markColor = seg(this.$('#op-color'), [{ label: t('Bianco'), value: 'w' }, { label: t('Nero'), value: 'b' }], this.color, (v) => {
       this.color = v;
-      this.deps.store.set('opColor', v);
-      markColor(v);
+      this.markColor(v);
+      this.saveState();
+      this.renderFamily();
+    });
+    this.markMode = seg(this.$('#op-mode'), [{ label: t('Impara'), value: 'learn' }, { label: t('Ripasso'), value: 'review' }], this.mode, (v) => {
+      if (v === this.mode) return;
+      if (v === 'learn') this.startStudy('learn', this.study?.startPlan ?? this.opening().mainPath, !this.study?.startPlan);
+      else this.startStudy('review', this.study?.chosen ?? (this.study?.label ? this.study.startPlan : null));
     });
   }
 
-  async renderPosition() {
-    const id = this.currentId();
-    const node = await this.node(id);
+  renderCatalog() {
+    if (!this.index) return;
+    const q = fold(this.$('#op-search').value.trim());
+    this.$('#op-groups').replaceChildren(...GROUPS.map((g) => {
+      const b = el('button', { type: 'button', className: `chip${g.id === this.group && !q ? ' active' : ''}`, textContent: this.groupLabel(g.id) });
+      b.dataset.group = g.id;
+      b.onclick = () => {
+        this.group = g.id;
+        this.$('#op-search').value = '';
+        this.saveState();
+        this.renderCatalog();
+      };
+      return b;
+    }));
+    // Ricerca: nome dell'apertura (anche italiano) e nomi delle varianti, senza accenti
+    const hit = (o) => fold(o.name).includes(q) || fold(CFG.italianNames[o.name] ?? '').includes(q) || o.variations.some((v) => fold(v.full).includes(q));
+    const list = this.openings.filter((o) => (q ? hit(o) : o.group === this.group));
+    const due = reviewQueue(this.reps());
+    const btn = this.$('#op-review-all');
+    btn.hidden = !due.length;
+    btn.textContent = t('Ripassa le varianti studiate ({n})', { n: due.length });
+    const cards = list.map((o) => {
+      const card = el('button', { type: 'button', className: 'card op-card' },
+        el('span', { className: 'op-card-name', textContent: o.name }),
+        this.italianName(o) && el('span', { className: 'op-card-it', textContent: this.italianName(o) }),
+        el('span', { className: 'op-card-moves', textContent: this.movesText(o.mainPath) }),
+        this.description(o) && el('span', { className: 'op-card-desc', textContent: this.description(o) }),
+        el('span', { className: 'op-card-meta', textContent: `${o.eco} · ${t('{n} varianti', { n: o.variations.length })}` }));
+      card.dataset.key = o.key;
+      card.onclick = () => this.openOpening(o.key);
+      return card;
+    });
+    this.$('#op-cards').replaceChildren(...(cards.length ? cards : [el('p', { className: 'hint', textContent: t('Nessuna apertura trovata.') })]));
+  }
+
+  renderFamily() {
+    const o = this.opening();
+    if (!o || this.screen !== 'family') return;
+    this.$('#op-fam-eco').textContent = o.eco;
+    this.$('#op-fam-name').textContent = o.name;
+    this.$('#op-fam-sub').textContent = this.italianName(o);
+    this.$('#op-fam-moves').textContent = this.movesText(o.mainPath);
+    const idea = this.ideas?.families?.[o.name];
+    this.$('#op-fam-ideas').hidden = !idea;
+    if (idea) this.$('#op-fam-ideas').replaceChildren(...idea.text.map((p) => el('p', { textContent: p })));
+    this.markColor(this.color);
+    this.$('#op-fam-count').textContent = t('{n} varianti', { n: o.variations.length });
+    const labels = this.labels(o);
+    const { trunk, rows, others } = familyRows(o.trie, labels, o.variations, o.mainPath);
+    const reps = new Map(this.reps().filter((r) => r.color === this.color).map((r) => [r.path, r]));
+    const rowEl = (r) => {
+      const ply = r.path.length - r.moves.length; // semimossa della prima mossa della riga: pari = Bianco
+      const theirs = (ply % 2 === 0 ? 'w' : 'b') !== this.color;
+      const variation = r.variation ?? firstVariationBelow(walk(o.trie, r.path));
+      const rep = reps.get(o.variations[variation].path.join(' '));
+      const moves = r.moves.map(localMove).join(' ');
+      const b = el('button', { type: 'button', className: `op-row${theirs ? ' theirs' : ''}` },
+        el('span', { className: 'op-row-moves', textContent: theirs ? t('Se {move}', { move: moves }) : moves }),
+        r.label && el('span', { className: 'op-row-name', textContent: `→ ${r.label}` }),
+        rep && el('span', { className: `op-row-badge${rep.box >= LEARNED_BOX ? ' done' : ''}`, textContent: rep.box >= LEARNED_BOX ? '✓' : `${rep.box}/${LEARNED_BOX}` }));
+      b.dataset.variation = String(variation);
+      b.onclick = () => this.startStudy('learn', o.variations[variation].path);
+      return el('li', {}, b, r.children.length ? el('ul', { className: 'op-rows' }, ...r.children.map(rowEl)) : null);
+    };
+    const tree = [
+      el('div', { className: 'op-trunk' },
+        el('span', { className: 'op-row-moves', textContent: trunk.moves.map(localMove).join(' ') }),
+        trunk.label && el('span', { className: 'op-row-name', textContent: `→ ${trunk.label}` })),
+      el('ul', { className: 'op-rows' }, ...rows.map(rowEl)),
+    ];
+    if (others.length) {
+      tree.push(el('details', { className: 'op-others' },
+        el('summary', { textContent: t('Altri ordini di mosse ({n})', { n: others.length }) }),
+        el('ul', { className: 'op-rows' }, ...others.map(rowEl))));
+    }
+    this.$('#op-tree').replaceChildren(...tree);
+  }
+
+  // ---------- studio ----------
+  chess() {
+    const c = new Chess();
+    for (const u of this.study?.path ?? []) playUci(c, u);
+    return c;
+  }
+
+  /**
+   * Inizia lo studio. Impara: plan = variante scelta (o la linea principale, con explore = poi si continua alle
+   * diramazioni). Ripasso: variante scelta da pickReview (prima quelle studiate e non ancora imparate).
+   */
+  startStudy(mode, plan = null, explore = false) {
+    const o = this.opening();
+    if (!o) return;
+    this.mode = mode;
+    if (mode === 'review' && !plan) plan = pickReview(o.variations, this.reps(), this.color);
+    if (mode === 'review') explore = false;
+    this.study = { path: [], plan, startPlan: plan, chosen: null, explore, errors: 0, status: 'app', wrong: null, label: this.labelOf(plan), gen: ++this.gen };
+    if (explore) this.study.label = null; // "Impara dall'inizio": la variante si sceglie alle diramazioni
+    this.screen = 'study';
+    this.saveState();
+    this.board.setOrientation(this.color);
+    this.board.setArrows([]);
+    this.board.setMarks([]);
+    this.drawBoard(false);
+    this.render();
+    this.markMode(mode);
+    this.advance();
+  }
+
+  labelOf(plan) {
+    const o = this.opening();
+    if (!plan || !o) return null;
+    const i = o.variations.findIndex((v) => v.path.join(' ') === plan.join(' '));
+    return i >= 0 ? this.labels(o)[i] : null;
+  }
+
+  drawBoard(animate) {
+    const c = this.chess();
+    const last = c.history({ verbose: true }).at(-1) ?? null;
+    this.board.setPosition(piecesOf(c), last ? { from: last.from, to: last.to } : null, checkSquareOf(c), animate);
+  }
+
+  /** Va avanti da solo finché non tocca all'utente, a una diramazione (Impara) o alla fine. */
+  async advance() {
+    const s = this.study;
+    const o = this.opening();
+    for (;;) {
+      if (s !== this.study) return;
+      let step = nextStep({ trie: o.trie, path: s.path, color: this.color, plan: s.plan });
+      // Impara dall'inizio: finita la linea principale si continua, con le diramazioni
+      if (step.who === 'end' && s.explore && s.plan) {
+        s.plan = null;
+        step = nextStep({ trie: o.trie, path: s.path, color: this.color, plan: null });
+      }
+      if (step.who === 'end') return this.finish();
+      if (step.who === 'fork') {
+        s.status = 'fork';
+        s.options = step.options;
+        return this.renderStudy();
+      }
+      if (step.who === 'user') {
+        s.status = 'play';
+        s.theory = step.planned ? [step.planned] : step.theory.map((n) => n.uci);
+        return this.renderStudy();
+      }
+      s.status = 'app';
+      this.renderStudy();
+      await sleep(UI_CONFIG.puzzles.replyDelayMs);
+      if (s !== this.study) return;
+      s.path = [...s.path, step.uci];
+      this.drawBoard(true);
+    }
+  }
+
+  /** Diramazione dell'avversario in Impara: si sceglie quale variante studiare. */
+  chooseBranch(option) {
+    const s = this.study;
+    const o = this.opening();
+    const v = firstVariationBelow(option);
+    s.plan = o.variations[v].path;
+    s.chosen = s.plan; // variante scelta: è quella che si ripassa passando a Ripasso
+    s.label = this.labels(o)[v];
+    this.renderCrumbs();
+    this.advance();
+  }
+
+  async onUserMove(from, to) {
+    const s = this.study;
+    if (s?.status !== 'play') return;
+    const c = this.chess();
+    const needsPromo = c.moves({ square: from, verbose: true }).some((m) => m.to === to && m.promotion);
+    const promotion = needsPromo ? await this.deps.askPromotion(c.turn()) : undefined;
+    if (needsPromo && !promotion) return this.drawBoard(false);
+    const uci = from + to + (promotion ?? '');
+    const o = this.opening();
+    const planned = s.plan && s.plan.length > s.path.length ? s.plan[s.path.length] : null;
+    // In Impara con più mosse della teoria (senza piano) valgono tutte; altrimenti la mossa attesa è quella del piano
+    const verdict = judgeStudyMove(o.trie, s.path, uci, planned);
+    if (verdict.theory) {
+      // Un'altra mossa della teoria (diramazione nostra): si cambia variante
+      if (planned && uci !== planned) {
+        const v = firstVariationBelow(verdict.node);
+        s.plan = o.variations[v].path;
+        s.chosen = s.plan;
+        s.label = this.labels(o)[v];
+      }
+      s.path = [...s.path, uci];
+      s.wrong = null;
+      this.board.setMarks([]);
+      this.drawBoard(true);
+      return this.advance();
+    }
+    return this.offTheory(uci, verdict.expected);
+  }
+
+  /**
+   * Mossa diversa dalla teoria: si gioca, si evidenzia in rosso, si dice qual è la mossa della teoria con le valutazioni
+   * di Stockfish (teoria: già calcolata; la tua: dal vivo), poi l'app rimette la mossa della teoria. In Ripasso è un errore.
+   */
+  async offTheory(uci, expected) {
+    const s = this.study;
+    const before = this.chess();
+    const fenBefore = before.fen();
+    const m = playUci(before, uci);
+    const theoryUci = expected[0];
+    const theorySan = toItalian(new Chess(fenBefore).move({ from: theoryUci.slice(0, 2), to: theoryUci.slice(2, 4), promotion: theoryUci[4] }).san);
+    const theoryNode = await this.treeNodeAt([...s.path, theoryUci]);
+    const ts = theoryNode?.node.s;
+    if (this.mode === 'review') s.errors++;
+    s.status = 'wrong';
+    s.wrong = {
+      san: toItalian(m.san), theorySan, path: [...s.path, uci],
+      theoryScore: ts && (ts[0] != null || ts[1] != null) ? formatScore({ cp: ts[0], mate: ts[1] }) : null, yourScore: null,
+    };
+    this.board.setPosition(piecesOf(before), { from: m.from, to: m.to }, checkSquareOf(before), true);
+    this.board.setMarks([m.from, m.to], 'bad');
+    this.board.setArrows([{ from: theoryUci.slice(0, 2), to: theoryUci.slice(2, 4), ...ARROW_THEORY }]);
+    this.renderStudy();
+    const gen = s.gen;
+    const engine = this.deps.engine();
+    const evalYours = (async () => {
+      if (!engine || before.isGameOver()) return;
+      try {
+        engine.cancelAll();
+        const r = await engine.analyze(before.fen(), { depth: STUDY_DEPTH, multiPv: 1, movetimeMs: null });
+        if (this.study === s && s.gen === gen && s.wrong && r.lines[0]) {
+          s.wrong.yourScore = formatScore(r.lines[0].score);
+          this.renderStudy();
+        }
+      } catch { /* analisi annullata */ }
+    })();
+    await sleep(OFF_THEORY_PAUSE_MS);
+    if (this.study !== s || s.gen !== gen) return;
+    // Si rimette la mossa della teoria (con animazione) e si continua; il messaggio resta fino alla mossa successiva
+    this.board.setMarks([]);
+    this.drawBoard(false);
+    s.path = [...s.path, theoryUci];
+    s.status = 'app';
+    this.drawBoard(true);
+    await evalYours;
+    if (this.study === s) this.advance();
+  }
+
+  finish() {
+    const s = this.study;
+    s.status = 'done';
+    const plan = s.plan ?? s.path;
+    const key = plan.join(' ');
+    const list = this.reps();
+    let rep = list.find((r) => r.color === this.color && r.path === key);
+    if (!rep) {
+      rep = { id: `${this.color}|${key}`, name: s.label ?? this.opening().name, color: this.color, path: key, family: this.key, box: 0, tries: 0, addedAt: Date.now() };
+      list.push(rep);
+    }
+    // Il ripasso conta per le scatole; Impara aggiunge solo la variante a quelle da ripassare
+    if (this.mode === 'review') Object.assign(rep, recordResult(rep, s.errors === 0));
+    this.saveReps(list);
+    s.box = rep.box;
+    this.renderStudy();
+  }
+
+  sanAt(uci) {
+    return toItalian(this.chess().moves({ verbose: true }).find((m) => m.from + m.to + (m.promotion ?? '') === uci)?.san ?? uci);
+  }
+
+  renderStudy() {
+    const s = this.study;
+    if (!s || this.screen !== 'study') return;
+    const o = this.opening();
+    this.renderCrumbs();
+    this.$('#op-study-color').textContent = t(this.color === 'w' ? 'Studi con il Bianco' : 'Studi con il Nero');
+    this.$('#op-st-meta').textContent = s.label ?? o.name;
+    this.$('#op-path').textContent = this.movesText(s.path);
+    const card = this.$('#op-study-card');
+    card.dataset.state = s.status === 'wrong' ? 'wrong' : s.status === 'done' ? (s.errors ? 'done' : 'solved') : '';
+    const text = this.$('#op-st-text');
+    const branches = this.$('#op-st-branches');
+    text.replaceChildren();
+    branches.replaceChildren();
+    const para = (str, cls = '') => text.append(el('p', { textContent: str, className: cls }));
+    let title = '';
+    const arrows = [];
+    if (s.status === 'app') title = t('Mossa dell\'avversario…');
+    if (s.status === 'play') {
+      title = this.mode === 'learn' ? t('Tocca a te: gioca la mossa della teoria') : t('Tocca a te: quale mossa prevede la teoria?');
+      if (this.mode === 'learn') {
+        const names = s.theory.map((u) => {
+          const v = firstVariationBelow(walk(o.trie, [...s.path, u]));
+          arrows.push({ from: u.slice(0, 2), to: u.slice(2, 4), ...ARROW_THEORY });
+          return { san: this.sanAt(u), label: v == null ? '' : this.labels(o)[v] };
+        });
+        para(names.length === 1
+          ? t('La teoria gioca {move}.', { move: names[0].san })
+          : t('La teoria prevede più mosse: {moves}.', { moves: names.map((n) => `${n.san} (${n.label})`).join(', ') }));
+      }
+    }
+    if (s.status === 'fork') {
+      title = t('L\'avversario può rispondere in più modi');
+      para(t('Scegli quale variante studiare:'), 'pz-note');
+      for (const opt of s.options) {
+        const v = firstVariationBelow(opt);
+        const b = el('button', { type: 'button', className: 'op-branch' },
+          el('span', { className: 'op-row-moves', textContent: t('Se gioca {move}', { move: localMove(numbered(opt.ply - 1, opt.san)) }) }),
+          el('span', { className: 'op-row-name', textContent: `→ ${this.labels(o)[v]}` }));
+        b.onclick = () => this.chooseBranch(opt);
+        branches.append(b);
+      }
+    }
+    if (s.wrong && (s.status === 'wrong' || s.status === 'app' || s.status === 'play')) {
+      if (s.status === 'wrong') title = t('Mossa diversa dalla teoria');
+      const w = s.wrong;
+      text.prepend(...[
+        el('p', { className: 'op-wrong', textContent: t('Nella teoria qui si gioca {move}.', { move: w.theorySan }) }),
+        el('p', { className: 'pz-note', textContent: t('Stockfish: {theory} con {theoryMove}; {yours} con la tua mossa {move}.', {
+          theory: w.theoryScore ?? '–', theoryMove: w.theorySan, yours: w.yourScore ?? '…', move: w.san,
+        }) }),
+        this.mode === 'review' ? el('p', { className: 'pz-note', textContent: t('Conta come errore nel ripasso.') }) : null,
+      ].filter(Boolean));
+    }
+    if (s.status === 'done') {
+      title = this.mode === 'learn' ? t('Variante completata') : s.errors ? t('Ripasso completato con {n} errori', { n: s.errors }) : t('Ripasso completato senza errori!');
+      para(this.mode === 'review'
+        ? (s.box >= LEARNED_BOX ? t('Imparata! Esce dal ripasso.') : t('Risposte giuste di fila: {n} di {max}.', { n: s.box, max: LEARNED_BOX }))
+        : t('Aggiunta alle varianti da ripassare.'), 'pz-note');
+    }
+    this.$('#op-st-title').textContent = title;
+    this.$('#op-st-analysis').hidden = !s.wrong;
+    const next = this.$('#op-st-next');
+    next.hidden = s.status !== 'done';
+    next.textContent = this.mode === 'learn' ? t('Ripassala ora') : t('Prossimo ripasso');
+    next.onclick = () => (this.mode === 'learn' ? this.startStudy('review', s.plan ?? s.path) : this.startStudy('review'));
+    if (s.status !== 'wrong') this.board.setArrows(arrows);
+    this.renderDetails();
+  }
+
+  /** Pannello "Dettagli" (chiuso di base): Stockfish e statistiche della posizione; una sola riga fuori. */
+  async renderDetails() {
+    const s = this.study;
+    if (!s) return;
+    const at = await this.treeNodeAt(s.path);
+    if (s !== this.study) return;
+    const summary = this.$('#op-st-summary');
+    const list = this.$('#op-moves');
+    if (!at) {
+      this.$('#op-sf').textContent = t('Posizione fuori dall\'albero delle aperture.');
+      list.replaceChildren();
+      summary.textContent = '';
+      return;
+    }
+    const { id, node } = at;
     const c = this.chess();
     const fen = c.fen();
     const mover = c.turn();
-    const named = await this.namedAlong();
-    this.$('#op-eco').textContent = named ? named.eco : '';
-    this.$('#op-name').textContent = named ? named.name : t('Posizione iniziale');
-    this.$('#op-path').textContent = this.pathText();
-
-    // Idee dell'apertura (famiglia della variante più vicina)
-    const family = named?.name.split(':')[0].trim();
-    const idea = family && this.ideas?.families?.[family];
-    const ideasBox = this.$('#op-ideas');
-    ideasBox.hidden = !idea || !!this.train;
-    if (idea) ideasBox.replaceChildren(...idea.text.map((p) => el('p', { textContent: p })));
-
-    // Stockfish nella posizione
     const [cp, mate, best, depth] = node.s ?? [];
-    const bestSan = best ? toItalian(new Chess(fen).move({ from: best.slice(0, 2), to: best.slice(2, 4), promotion: best[4] })?.san ?? best) : null;
+    const sanOf = (u) => toItalian(new Chess(fen).move({ from: u.slice(0, 2), to: u.slice(2, 4), promotion: u[4] })?.san ?? u);
     this.$('#op-sf').textContent = best
-      ? t('Stockfish (profondità {depth}): {score} · mossa migliore {move}', { depth, score: formatScore({ cp, mate }), move: bestSan })
+      ? t('Stockfish (profondità {depth}): {score} · mossa migliore {move}', { depth, score: formatScore({ cp, mate }), move: sanOf(best) })
       : c.isCheckmate() ? t('Scacco matto') : t('Posizione finale: nessuna mossa');
-
-    // Mosse dell'albero, con valutazione del ramo e statistiche della fascia
     const st = this.statsOf(id);
     const rows = st ? st[1] : [];
     const popular = rows[0] ?? null;
     const band = CFG.ratingBands.find((b) => b.id === this.band);
+    summary.textContent = popular ? t('Più giocata nella fascia {band}: {move}', { band: band.label, move: toItalian(popular[0]) }) : '';
+    if (!this.$('#op-details').open) return; // il resto si prepara solo se i dettagli sono aperti
     this.$('#op-moves-note').textContent = st
       ? t('{n} partite nella fascia {band}', { n: st[0].toLocaleString(getLang() === 'it' ? 'it-IT' : 'en-GB'), band: band.label })
       : t('Poche partite nella fascia {band}', { band: band.label });
-    const list = this.$('#op-moves');
     const items = [];
     for (const [san, uci, to] of node.c) {
       const child = await this.node(to);
       const row = rows.find((r) => normSan(r[0]) === normSan(san));
       const pct = row ? scoreFor(row, mover) : null;
-      const isBest = uci === best;
-      const isPopular = popular && normSan(popular[0]) === normSan(san);
-      const li = el('li', {},
-        el('button', { type: 'button', className: 'op-move' },
-          el('span', { className: 'op-move-san', textContent: toItalian(san) }),
-          el('span', { className: 'op-move-name', textContent: child.n ? child.n[1] : '' }),
-          el('span', { className: 'op-move-badges' },
-            isBest && el('span', { className: 'op-badge best', textContent: t('Stockfish') }),
-            isPopular && el('span', { className: 'op-badge popular', textContent: t('Più giocata') })),
-          el('span', { className: 'op-move-eval', textContent: child.s && (child.s[0] != null || child.s[1] != null) ? formatScore({ cp: child.s[0], mate: child.s[1] }) : /#/.test(san) ? '#' : '–' }),
-          el('span', { className: 'op-move-games', textContent: row ? t('{n} partite', { n: row[1].toLocaleString(getLang() === 'it' ? 'it-IT' : 'en-GB') }) : '' }),
-          pct && this.resultBar(pct)));
-      li.firstChild.onclick = () => this.goPath([...this.path, { id: to, uci, san }], true);
-      items.push(li);
+      items.push(el('li', { className: 'op-move' },
+        el('span', { className: 'op-move-san', textContent: toItalian(san) }),
+        el('span', { className: 'op-move-name', textContent: child.n ? child.n[1] : '' }),
+        el('span', { className: 'op-move-badges' },
+          uci === best && el('span', { className: 'op-badge best', textContent: 'Stockfish' }),
+          popular && normSan(popular[0]) === normSan(san) && el('span', { className: 'op-badge popular', textContent: t('Più giocata') })),
+        el('span', { className: 'op-move-eval', textContent: child.s && (child.s[0] != null || child.s[1] != null) ? formatScore({ cp: child.s[0], mate: child.s[1] }) : /#/.test(san) ? '#' : '–' }),
+        el('span', { className: 'op-move-games', textContent: row ? t('{n} partite', { n: row[1].toLocaleString(getLang() === 'it' ? 'it-IT' : 'en-GB') }) : '' }),
+        pct && this.resultBar(pct)));
     }
+    if (s !== this.study) return;
     list.replaceChildren(...items);
-    this.$('#op-moves').hidden = !!this.train && this.train.status !== 'done';
-
-    // Mossa migliore o più giocata fuori dall'albero del dataset
     const extra = [];
-    if (best && !node.c.some((e) => e[1] === best)) extra.push(t('Stockfish preferisce {move}, che non è nella teoria del dataset.', { move: bestSan }));
+    if (best && !node.c.some((e) => e[1] === best)) extra.push(t('Stockfish preferisce {move}, che non è nella teoria del dataset.', { move: sanOf(best) }));
     if (popular && !node.c.some((e) => normSan(e[0]) === normSan(popular[0]))) {
       extra.push(t('Nella fascia {band} la mossa più giocata è {move} ({n} partite), che non è nella teoria del dataset.', { band: band.label, move: toItalian(popular[0]), n: popular[1] }));
     }
     this.$('#op-extra').textContent = extra.join(' ');
-
-    // Frecce: Stockfish (verde) e più giocata (azzurro)
-    const arrows = [];
-    if (best && !this.train) arrows.push({ from: best.slice(0, 2), to: best.slice(2, 4), ...ARROW_BEST });
-    if (popular && !this.train) {
-      const m = new Chess(fen).moves({ verbose: true }).find((x) => normSan(x.san) === normSan(popular[0]));
-      if (m && m.from + m.to !== best?.slice(0, 4)) arrows.push({ from: m.from, to: m.to, ...ARROW_POPULAR });
+    // Con i dettagli aperti, in Impara: freccia azzurra sulla mossa più giocata nella fascia
+    if (popular && s.status === 'play' && this.mode === 'learn') {
+      const mv = new Chess(fen).moves({ verbose: true }).find((x) => normSan(x.san) === normSan(popular[0]));
+      if (mv) this.board.setArrows([...this.board.arrows.filter((a) => a.color !== ARROW_POPULAR.color), { from: mv.from, to: mv.to, ...ARROW_POPULAR }]);
     }
-    this.board.setArrows(arrows);
-    this.$('#op-train-start').hidden = !!this.train || !this.path.length;
-    this.$('#op-catalog').hidden = !!this.train;
-    this.$('#op-reps').hidden = !!this.train || !this.reps().length;
   }
 
-  /** Barra dei risultati dal punto di vista di chi muove: vinte, patte, perse. */
   resultBar({ win, draw, loss }) {
     const bar = el('span', { className: 'op-bar', title: t('Vinte {w}% · patte {d}% · perse {l}% (per chi muove)', { w: Math.round(win), d: Math.round(draw), l: Math.round(loss) }) });
     for (const [cls, v] of [['win', win], ['draw', draw], ['loss', loss]]) {
@@ -322,223 +737,22 @@ export class OpeningsExplorer {
     return bar;
   }
 
-  pathText() {
-    if (!this.path.length) return '';
-    return this.path.map((p, i) => `${i % 2 === 0 ? `${i / 2 + 1}.` : ''}${toItalian(p.san)}`).join(' ');
+  /** Dal catalogo: ripasso di una variante studiata a caso (tra quelle non ancora imparate). */
+  reviewAnyDue() {
+    const due = reviewQueue(this.reps());
+    if (!due.length) return;
+    const r = due[Math.floor(Math.random() * due.length)];
+    const o = this.opening(r.family) ?? this.openingOfPath(r.path.split(' '));
+    if (!o) return;
+    this.key = o.key;
+    this.color = r.color;
+    this.startStudy('review', r.path.split(' '));
   }
 
-  renderCatalog() {
-    if (!this.index) return;
-    const q = fold(this.$('#op-search').value.trim());
-    const chips = this.$('#op-groups');
-    chips.replaceChildren(...GROUPS.map((g) => {
-      const b = el('button', { type: 'button', className: `chip${g.id === this.group && !q ? ' active' : ''}`, textContent: g.label || t('Altre') });
-      b.onclick = () => {
-        this.group = g.id;
-        this.deps.store.set('opGroup', g.id);
-        this.$('#op-search').value = '';
-        this.renderCatalog();
-      };
-      return b;
-    }));
-    // Con la ricerca si cerca in tutti i gruppi (nome della famiglia o della variante, senza accenti)
-    // Termini cercati: il testo scritto e, se corrisponde a un nome italiano comune, il nome inglese del dataset
-    const terms = q ? [q, ...Object.entries(CFG.searchAliases).filter(([it]) => it.includes(q) || q.includes(it)).map(([, en]) => en)] : [];
-    const hit = (s) => terms.some((x) => fold(s).includes(x));
-    const families = this.index.families.filter((f) => (q ? hit(f.name) || f.variations.some((v) => hit(v.full)) : f.group === this.group));
-    this.$('#op-count').textContent = t('{n} famiglie', { n: families.length });
-    this.$('#op-families').replaceChildren(...families.map((f) => {
-      const open = this.open.has(f.name) || (q && !hit(f.name));
-      const vars = q && !hit(f.name) ? f.variations.filter((v) => hit(v.full)) : f.variations;
-      const head = el('button', { type: 'button', className: 'op-family-head', ariaExpanded: String(!!open) },
-        el('span', { className: 'op-family-name', textContent: f.name }),
-        el('span', { className: 'op-family-count', textContent: `${f.eco} · ${vars.length}` }));
-      head.onclick = () => {
-        if (this.open.has(f.name)) this.open.delete(f.name);
-        else this.open.add(f.name);
-        this.renderCatalog();
-      };
-      const li = el('li', { className: 'op-family' }, head);
-      if (open) {
-        li.append(el('ul', { className: 'op-vars' }, ...vars.map((v) => {
-          const go = el('button', { type: 'button', className: 'op-var', textContent: v.name || t('Linea principale') });
-          go.onclick = async () => {
-            const p = await this.pathOf(v.path.split(' '));
-            if (p) {
-              await this.goPath(p); // salto a una posizione lontana: niente animazione (si muoverebbero tutti i pezzi insieme)
-              this.root.querySelector('#op-pos').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-            }
-          };
-          return el('li', {}, go, el('span', { className: 'op-var-eco', textContent: v.eco }));
-        })));
-      }
-      return li;
-    }));
-  }
-
-  // ---------- ripasso delle varianti ----------
-  reps() {
-    try {
-      const v = JSON.parse(this.deps.store.get('openingReps', '[]'));
-      return Array.isArray(v) ? v : [];
-    } catch {
-      return [];
-    }
-  }
-
-  saveReps(list) {
-    this.deps.store.set('openingReps', JSON.stringify(list));
-  }
-
-  renderReps() {
-    const list = this.reps();
-    const queue = reviewQueue(list);
-    this.$('#op-reps-count').textContent = t('{n} da ripassare', { n: queue.length });
-    this.$('#op-rep-list').replaceChildren(...list
-      .sort((a, b) => (a.box >= LEARNED_BOX) - (b.box >= LEARNED_BOX) || a.box - b.box || a.addedAt - b.addedAt)
-      .map((r) => {
-        const b = el('button', { type: 'button', className: 'op-rep' },
-          el('span', { className: 'op-rep-name', textContent: r.name }),
-          el('span', { className: 'op-rep-meta', textContent: `${t(r.color === 'w' ? 'Bianco' : 'Nero')} · ${r.box >= LEARNED_BOX ? t('imparata') : t('{n} di {max}', { n: r.box, max: LEARNED_BOX })}` }));
-        b.onclick = () => this.startTraining({ name: r.name, path: r.path.split(' ') }, r.color);
-        return el('li', {}, b);
-      }));
-    this.$('#op-reps').hidden = !!this.train || !list.length;
-  }
-
-  /** Inizia il ripasso di una variante: l'app gioca le mosse dell'avversario, tu trovi le tue. */
-  async startTraining(line, color = this.color) {
-    if (!line.path.length) return;
-    const list = this.reps();
-    const id = repKey(line.path, color);
-    if (!list.some((r) => r.id === id)) {
-      list.push({ id, name: line.name, color, path: line.path.join(' '), box: 0, tries: 0, addedAt: Date.now() });
-      this.saveReps(list);
-    }
-    this.train = { id, name: line.name, path: line.path, color, i: 0, failed: false, status: 'app', wrong: null };
-    this.board.setOrientation(color);
-    await this.goPath([]);
-    this.renderTraining();
-    this.advanceTraining();
-  }
-
-  /** Gioca le mosse dell'avversario finché non tocca a chi si allena (o la variante finisce). */
-  async advanceTraining() {
-    const tr = this.train;
-    while (tr === this.train) {
-      const step = trainingStep(tr.path, tr.color, tr.i);
-      if (step.who === 'done') return this.finishTraining();
-      if (step.who === 'user') {
-        tr.status = 'play';
-        return this.renderTraining();
-      }
-      tr.status = 'app';
-      this.renderTraining();
-      await sleep(UI_CONFIG.puzzles.replyDelayMs);
-      if (tr !== this.train) return;
-      await this.playTrainingMove(step.uci);
-    }
-  }
-
-  async playTrainingMove(uci) {
-    const tr = this.train;
-    const node = await this.node(this.currentId());
-    const edge = node.c.find((e) => e[1] === uci);
-    tr.i++;
-    await this.goPath([...this.path, { id: edge[2], uci, san: edge[0] }], true);
-  }
-
-  async onTrainingMove(uci) {
-    const tr = this.train;
-    if (tr.status !== 'play') return;
-    const expected = tr.path[tr.i];
-    if (uci === expected) {
-      await this.playTrainingMove(uci);
-      return this.advanceTraining();
-    }
-    // Mossa diversa: resta la posizione di prima; si dice se la mossa è almeno nell'albero e come la valuta Stockfish
-    tr.failed = true;
-    const node = await this.node(this.currentId());
-    const edge = node.c.find((e) => e[1] === uci);
-    const child = edge ? await this.node(edge[2]) : null;
-    const san = new Chess(this.chess().fen()).move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] })?.san ?? uci;
-    tr.wrong = { san: toItalian(san), inTree: !!edge, score: child?.s ? formatScore({ cp: child.s[0], mate: child.s[1] }) : null };
-    tr.status = 'wrong';
-    await this.goPath(this.path);
-    this.renderTraining();
-  }
-
-  retryTraining() {
-    if (this.train?.status !== 'wrong') return;
-    this.train.status = 'play';
-    this.train.wrong = null;
-    this.renderTraining();
-  }
-
-  async showTrainingSolution() {
-    const tr = this.train;
-    if (!tr || !['play', 'wrong'].includes(tr.status)) return;
-    tr.failed = true;
-    tr.wrong = null;
-    await this.playTrainingMove(tr.path[tr.i]);
-    this.advanceTraining();
-  }
-
-  finishTraining() {
-    const tr = this.train;
-    tr.status = 'done';
-    const list = this.reps().map((r) => (r.id === tr.id ? recordResult(r, !tr.failed) : r));
-    this.saveReps(list);
-    tr.box = list.find((r) => r.id === tr.id)?.box ?? 0;
-    this.renderTraining();
-    this.renderReps();
-  }
-
-  stopTraining() {
-    this.train = null;
-    this.$('#op-train').hidden = true;
-    this.renderReps();
-    this.renderPosition();
-  }
-
-  renderTraining() {
-    const tr = this.train;
-    const box = this.$('#op-train');
-    box.hidden = !tr;
-    if (!tr) return;
-    this.$('#op-train-meta').textContent = `${t('Ripasso')} · ${t(tr.color === 'w' ? 'Bianco' : 'Nero')} · ${tr.name}`;
-    const card = box;
-    card.dataset.state = tr.status === 'wrong' ? 'wrong' : tr.status === 'done' ? (tr.failed ? 'done' : 'solved') : '';
-    const titles = {
-      app: t('Mossa dell\'avversario…'),
-      play: t('Tocca a te: gioca la mossa della variante'),
-      wrong: t('Non è la mossa della variante'),
-      done: tr.failed ? t('Variante completata') : t('Variante completata senza errori!'),
-    };
-    this.$('#op-train-title').textContent = titles[tr.status];
-    const fb = this.$('#op-train-feedback');
-    fb.replaceChildren();
-    const para = (text, cls = '') => fb.append(el('p', { textContent: text, className: cls }));
-    para(t('Mossa {n} di {total} della variante', { n: Math.min(tr.i + 1, tr.path.length), total: tr.path.length }), 'pz-note');
-    if (tr.status === 'wrong') {
-      para(tr.wrong.inTree
-        ? t('{move} è un\'altra continuazione del dataset (Stockfish: {score}), ma non quella di questa variante.', { move: tr.wrong.san, score: tr.wrong.score ?? '–' })
-        : t('{move} non è nella teoria del dataset.', { move: tr.wrong.san }));
-    }
-    if (tr.status === 'done') {
-      para(tr.failed ? t('Ripassala ancora per fissarla.') : tr.box >= LEARNED_BOX ? t('Imparata! Esce dal ripasso.') : t('Risposte giuste di fila: {n} di {max}.', { n: tr.box, max: LEARNED_BOX }), 'pz-note');
-    }
-    this.$('#op-train-retry').hidden = tr.status !== 'wrong';
-    this.$('#op-train-solution').hidden = !['play', 'wrong'].includes(tr.status);
-    this.$('#op-train-exit').textContent = tr.status === 'done' ? t('Chiudi il ripasso') : t('Esci dal ripasso');
-    this.renderPosition();
-  }
-
-  /** Tastiera: ← indietro (fuori dal ripasso). */
+  /** Tastiera: Esc torna indietro di una schermata. */
   onKey(e) {
-    if (this.train || e.key !== 'ArrowLeft') return;
+    if (e.key !== 'Escape' || this.screen === 'catalog') return;
     e.preventDefault();
-    this.goPath(this.path.slice(0, -1));
+    this.back();
   }
 }
-

@@ -4,7 +4,7 @@
 /** Chiavi di localStorage dell'app (senza prefisso). Solo queste si esportano e si importano. */
 export const BACKUP_KEYS = Object.freeze([
   'coach', 'coachLevel', 'depth', 'evals', 'free', 'lessonsDone', 'mode', 'multipv', 'myMistakes', 'onlineSource',
-  'lang', 'musicOn', 'musicVol', 'onlineUser', 'openingReps', 'opBand', 'opColor', 'opGroup', 'pgn', 'playGame', 'sfxOn', 'pzLevel', 'pzStats', 'pzTheme', 'review', 'reviewDepth', 'section', 'setupDone', 'side', 'theme',
+  'lang', 'musicOn', 'musicVol', 'onlineUser', 'openingReps', 'openingState', 'opBand', 'opColor', 'opGroup', 'pgn', 'playGame', 'sfxOn', 'pzLevel', 'pzStats', 'pzTheme', 'review', 'reviewDepth', 'section', 'setupDone', 'side', 'theme',
 ]);
 const APP = 'CHES54.com';
 const OLD_APPS = ['CHES54.ai']; // backup esportati prima del cambio di nome: restano validi

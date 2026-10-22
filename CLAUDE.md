@@ -190,25 +190,50 @@ le spiegazioni torneranno in fase 4, derivate solo dalle linee del motore.
   nodo), archi = mosse. Ogni nodo analizzato da Stockfish (`ANALYSIS_CONFIG.openingTree`, profondità 18): `s = [cp, matto,
   mossa migliore UCI, profondità]` dal punto di vista del Bianco; la valutazione di un ramo è quella della posizione a cui porta.
   Le posizioni finali (es. matto di Légal) non hanno valutazione. File: `data/openings/tree/index.json` (catalogo: gruppo per
-  prima mossa → famiglia = nome prima dei ":" → varianti con il percorso UCI) e `tree-{e4,d4,c4,other}.json` (nodi:
+  prima mossa → famiglia = nome prima dei ":" → varianti con il percorso UCI) e `tree-{e4,d4,c4,Nf3,other}.json` (nodi:
   `k` chiave, `n` [eco, nome] o 0, `c` [[san, uci, id figlio]], `s`). Id dei nodi = `gruppo:numero`, radice `root`.
 - **Statistiche** (`npm run build:opening-stats`, ~6 min; `-- latest 50000` per una prova): **database delle partite di Lichess
   (CC0)**, file mensile più recente letto in streaming per `UI_CONFIG.openings.games` (10 M) partite; blitz/rapid/classiche (bullet
   escluso); per ogni posizione dell'albero si conta la mossa giocata (anche se esce dall'albero, poi ci si ferma) nella **fascia di
   chi muove**, con il risultato. Fasce `ratingBands` = **punteggi Lichess, non Elo FIDE** (l'interfaccia lo dice). File
-  `stats-{root,e4,d4,c4,other}.json`: per nodo e fascia `[totale, [[san, n, vinte Bianco, patte, vinte Nero]…]]` (prime
+  `stats-{root,e4,d4,c4,Nf3,other}.json`: per nodo e fascia `[totale, [[san, n, vinte Bianco, patte, vinte Nero]…]]` (prime
   `topMoves`), oppure 0 sotto `minGamesShown` partite. Fonte e numeri in `data/openings/STATS-SOURCES.md`.
   **L'Opening Explorer di Lichess richiede un account (401) dal 2026: non usato.**
-- Interfaccia: mosse dell'albero con valutazione del ramo (Stockfish), partite e risultati nella fascia scelta (per chi muove),
-  badge "Stockfish" e "Più giocata", frecce verde (Stockfish) e azzurra (più giocata); avviso se la mossa di Stockfish o la più
-  giocata non è nell'albero. Ricerca senza accenti, anche con nomi italiani comuni (`searchAliases`). Nomi delle aperture in
-  inglese come nel dataset. Collegamento "Apri nella sezione Aperture" dalla scheda Teoria delle aperture (`openKey`).
-- **Ripasso** delle varianti: l'app gioca l'avversario, l'utente le mosse della variante (dato del dataset); scatole come
-  "I tuoi errori" (`recordResult`, `LEARNED_BOX`); localStorage `openingReps` (id = colore + percorso), `opBand`, `opColor`,
-  `opGroup` (tutte in BACKUP_KEYS).
+- Interfaccia e ripasso: vedi "Aperture, ristrutturazione" qui sotto (la prima versione con un solo pannello è stata sostituita).
 - **Idee**: `data/openings/ideas.json` + `ideas.en.json` per le 20 famiglie più giocate (classifica dalle statistiche). Solo
   concetti e fatti sulla scacchiera; `test/opening-ideas.test.mjs` verifica che ogni mossa citata con il numero (es. 3...exd4)
   compaia a quel punto in una variante della famiglia.
+
+### Aperture, ristrutturazione (2026-10-22)
+- **Tre schermate** in `#view-openings` con "‹ Indietro" (`#op-back-btn`, anche Esc) e percorso (`#op-crumbs`, es.
+  "Aperture › 1.d4 › Queen's Gambit › Accepted (2...dxc4)"): ① catalogo (`#op-s-catalog`: gruppi 1.e4 / 1.d4 / 1.c4 / 1.Nf3 /
+  Altre, schede con nome, nome italiano, mosse iniziali, prima frase delle idee; ricerca anche con i nomi italiani di
+  `UI_CONFIG.openings.italianNames`); ② apertura (`#op-s-family`: colore, Impara / Ripasso, albero delle varianti);
+  ③ studio (`#op-s-study`: scacchiera + scheda, statistiche nel `details#op-details` chiuso, una riga fuori).
+- Logica pura in `src/analysis/opening-study.js` (testata in `test/opening-study.test.mjs`):
+  - `mergeFamilies`: le famiglie il cui nome inizia con "X " o "X," diventano rami di X nello stesso gruppo (Queen's Gambit
+    + Accepted + Declined); le varianti prendono il resto del nome ("Accepted: Normal Variation").
+  - `uniqueLabels`: le omonime (anche "Linea principale" = variante senza nome) si distinguono con le mosse da cui si
+    separano, una mossa in più alla volta finché il nome è unico ("Linea principale (2.d4)"). 0 nomi doppi nel dataset.
+  - `familyRows`: albero dalla linea principale (`mainPathOf` = variante senza nome più corta), catene senza diramazioni
+    compresse in una riga; varianti che non passano dalla linea principale (trasposizioni) in "Altri ordini di mosse".
+    Le righe dell'avversario iniziano con "Se …" (classe `theirs`), dipende dal colore scelto.
+  - `nextStep` (app / fork / user / end), `judgeStudyMove`, `pickReview`, `migrateReps`.
+- **Impara**: freccia verde + frase; l'avversario risponde da solo (`replyDelayMs`); a una diramazione dell'avversario
+  senza variante scelta compaiono i pulsanti "Se gioca …: → variante". "Impara dall'inizio" segue la linea principale e poi
+  le diramazioni. **Ripasso**: nessuna freccia, l'avversario segue la variante scelta da `pickReview` (prima quelle
+  studiate e non imparate, altrimenti a caso); passando da Impara a Ripasso si ripassa la variante scelta (`study.chosen`).
+- **Mossa fuori teoria** (qualsiasi mossa legale è permessa): viene giocata, case rosse (`board.setMarks(…, 'bad')`, CSS
+  `.sq.bad`), "Nella teoria qui si gioca X", valutazione di Stockfish della mossa della teoria (dall'albero) e della tua (dal
+  vivo, profondità `puzzles.refuteDepth`); dopo `OFF_THEORY_PAUSE_MS` l'app rimette la mossa della teoria con animazione.
+  In Ripasso conta come errore (scatole solo dal Ripasso; Impara aggiunge la variante a quelle da ripassare).
+  "Continua da qui in Analisi partita" → `openMovesInAnalysis(ucis, color)` in app.js.
+- **Analisi partita**: se la posizione precedente era nel dataset e quella mostrata no, la scheda Teoria mostra "Fuori dalla
+  teoria" e `#opening-out` con la mossa consigliata da Stockfish (prima linea dell'analisi dal vivo, `renderOpeningOut`).
+- **Rientro**: `openingState` (schermata, gruppo, apertura, colore, modalità, variante) in localStorage → si riparte da lì.
+  I ripassi della versione precedente (`openingReps`) restano, con l'apertura aggiunta (`migrateReps`).
+- test:ui "aperture": gruppo 1.Cf3, ricerca "gambetto di donna", "Se 2...dxc4 → Accepted", nomi univoci, colore, Impara con
+  diramazione, 3.Rd2 fuori teoria (rosso, Da4+, valutazioni), Analisi partita, Ripasso con 1 errore, ricaricamento, 375 px.
 
 ### Audio e nome CHES54.com (2026-10-22)
 - Nome visibile **CHES54.com** (prima CHES54.ai): titolo, logo testuale, manifest, Informazioni, PGN della sezione Gioca,

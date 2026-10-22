@@ -647,49 +647,96 @@ try {
     await b.viewport(1280, 900);
   });
 
-  await step('aperture: catalogo e ricerca, albero con Stockfish e statistiche, ripasso di una variante', async () => {
+  await step('aperture: catalogo, albero con le diramazioni, colore, Impara, mossa fuori teoria, Ripasso, rientro', async () => {
     await b.click('#tab-openings');
-    try {
-      await b.waitFor(`document.querySelectorAll('#op-families .op-family').length > 0`, 30000);
-    } catch (e) {
-      console.log('DIAGNOSI aperture:', await b.ev(`JSON.stringify({ section: document.querySelector('.tabs .active')?.id, hidden: document.getElementById('view-openings').hidden, families: document.getElementById('op-families').textContent.slice(0, 200), w: innerWidth })`));
-      throw e;
-    }
-    // Ricerca con un nome italiano: "siciliana" trova la Sicilian Defense
-    await b.ev(`(() => { const s = document.getElementById('op-search'); s.value = 'najdorf'; s.dispatchEvent(new Event('input')); })()`);
-    await b.waitFor(`[...document.querySelectorAll('#op-families .op-var')].some((x) => /Najdorf Variation$/.test(x.textContent))`, 5000);
-    await b.ev(`(() => { const s = document.getElementById('op-search'); s.value = 'siciliana'; s.dispatchEvent(new Event('input')); })()`);
-    await b.waitFor(`[...document.querySelectorAll('#op-families .op-family-name')].some((x) => x.textContent === 'Sicilian Defense')`, 5000);
-    await b.ev(`(() => { const s = document.getElementById('op-search'); s.value = 'najdorf'; s.dispatchEvent(new Event('input')); })()`);
-    await b.ev(`[...document.querySelectorAll('#op-families .op-var')].find((x) => x.textContent === 'Najdorf Variation').click()`);
-    await b.waitFor(`/Najdorf Variation$/.test(document.getElementById('op-name').textContent)`, 10000);
-    assert.match(await b.text('#op-sf'), /^Stockfish \(profondità \d+\)/);
-    assert.ok(await b.ev(`document.querySelectorAll('#op-moves .op-move').length`) > 0);
-    assert.ok(await b.ev(`document.querySelectorAll('#op-board .arrows g').length`) >= 1);
-    assert.equal(await b.ev(`document.getElementById('op-ideas').hidden`), false); // idee della Siciliana
-    // Statistiche per fascia: il numero di partite cambia con la fascia
-    await b.click('#op-band [data-value="b1400"]');
-    const n1 = await b.text('#op-moves-note');
-    await b.click('#op-band [data-value="b2200"]');
-    assert.notEqual(await b.text('#op-moves-note'), n1);
-    await shot('18-openings');
-    // Ripasso della Najdorf con il Nero: prima una mossa sbagliata, poi la variante giusta
+    const visible = (id) => `!document.getElementById('${id}').hidden`;
+    const setSearch = (q) => b.ev(`(() => { const s = document.getElementById('op-search'); s.value = ${JSON.stringify(q)}; s.dispatchEvent(new Event('input')); })()`);
+    await b.waitFor(`document.querySelectorAll('#op-cards .op-card').length > 0`, 30000);
+    // ① Catalogo: gruppi per prima mossa (anche 1.Cf3), ricerca con il nome italiano
+    assert.equal(await b.ev(`document.querySelectorAll('#op-groups .chip').length`), 5);
+    await b.click('#op-groups [data-group="Nf3"]');
+    assert.equal(await b.text('#op-groups .chip.active'), '1.Cf3');
+    assert.ok(await b.ev(`(() => { const c = [...document.querySelectorAll('#op-cards .op-card')]; return c.length > 0 && c.every((x) => x.dataset.key.startsWith('Nf3|')); })()`));
+    await setSearch('gambetto di donna');
+    await b.waitFor(`[...document.querySelectorAll('#op-cards .op-card')].some((x) => x.dataset.key === "d4|Queen's Gambit")`, 5000);
+    await b.ev(`[...document.querySelectorAll('#op-cards .op-card')].find((x) => x.dataset.key === "d4|Queen's Gambit").click()`);
+    // ② Pagina dell'apertura: albero dalla linea principale, "Se 2...dxc4 → Accepted", nomi univoci
+    await b.waitFor(visible('op-s-family'), 5000);
+    assert.equal(await b.text('#op-fam-name'), "Queen's Gambit");
+    assert.equal(await b.text('#op-crumbs'), "Aperture › 1.d4 › Queen's Gambit");
+    assert.match(await b.text('#op-tree .op-trunk'), /^1\.d4 1\.\.\.d5 2\.c4/);
+    const qga = `[...document.querySelectorAll('#op-tree .op-row')].find((x) => /^Se 2\\.\\.\\.dxc4/.test(x.querySelector('.op-row-moves').textContent))`;
+    assert.match(await b.ev(`${qga}.textContent`), /→ Accepted/);
+    assert.equal(await b.ev(`${qga}.classList.contains('theirs')`), true);
+    const names = await b.ev(`[...document.querySelectorAll('#op-tree .op-row-name')].map((x) => x.textContent)`);
+    assert.equal(new Set(names).size, names.length, 'nomi delle varianti doppi');
+    // Colore: con il Nero 2...dxc4 è una mossa mia (niente "Se")
     await b.click('#op-color [data-value="b"]');
-    await b.click('#op-train-btn');
-    const sq = (s) => b.clickSquare(s, 'op-board', true);
-    const myTurn = `/^Tocca a te/.test(document.getElementById('op-train-title').textContent)`;
+    assert.ok(await b.ev(`[...document.querySelectorAll('#op-tree .op-row:not(.theirs) .op-row-moves')].some((x) => x.textContent.startsWith('2...dxc4'))`));
+    await b.click('#op-color [data-value="w"]');
+    await shot('18-openings-family');
+    // ③ Impara dall'inizio con il Bianco: freccia, l'avversario risponde da solo, diramazione da scegliere
+    await b.click('#op-learn-btn');
+    await b.waitFor(visible('op-s-study'), 5000);
+    const sq = (s) => b.clickSquare(s, 'op-board', false);
+    const title = `document.getElementById('op-st-title').textContent`;
+    const myTurn = `/^Tocca a te/.test(${title})`;
     await b.waitFor(myTurn, 5000);
-    await sq('e7'); await sq('e5');
-    await b.waitFor(`/Non è la mossa della variante/.test(document.getElementById('op-train-title').textContent)`, 5000);
-    await b.click('#op-train-retry');
-    for (const m of ['c7c5', 'd7d6', 'c5d4', 'g8f6', 'a7a6']) {
-      await b.waitFor(myTurn, 5000);
-      await sq(m.slice(0, 2)); await sq(m.slice(2, 4));
-    }
-    await b.waitFor(`/^Variante completata/.test(document.getElementById('op-train-title').textContent)`, 5000);
-    await b.click('#op-train-exit');
-    assert.equal(await b.ev(`document.getElementById('op-reps').hidden`), false);
-    assert.match(await b.text('#op-rep-list'), /Najdorf/);
+    assert.ok(await b.ev(`document.querySelectorAll('#op-board .arrows g').length`) >= 1);
+    await sq('d2'); await sq('d4');
+    await b.waitFor(`${myTurn} && /d5/.test(document.getElementById('op-path').textContent)`, 5000); // 1...d5 giocata dall'app
+    await sq('c2'); await sq('c4');
+    await b.waitFor(`document.querySelectorAll('#op-st-branches .op-branch').length > 1`, 5000);
+    await b.ev(`[...document.querySelectorAll('#op-st-branches .op-branch')].find((x) => x.textContent.endsWith('→ Accepted (2...dxc4)')).click()`);
+    await b.waitFor(`${myTurn} && /dxc4/.test(document.getElementById('op-path').textContent)`, 5000);
+    assert.match(await b.text('#op-crumbs'), /^Aperture › 1\.d4 › Queen's Gambit › Accepted \(2\.\.\.dxc4\)$/);
+    // Mossa fuori teoria (3.Rd2): giocata, case rosse, mossa della teoria con Stockfish, poi l'app rimette la teoria
+    await sq('e1'); await sq('d2');
+    await b.waitFor(`${title} === 'Mossa diversa dalla teoria'`, 3000);
+    assert.equal(await b.ev(`document.querySelectorAll('#op-board .sq.bad').length`), 2);
+    assert.match(await b.text('#op-st-text'), /Nella teoria qui si gioca Da4\+\./);
+    assert.equal(await b.ev(visible('op-st-analysis')), true);
+    await shot('19-openings-off-theory');
+    await b.waitFor(`document.querySelectorAll('#op-board .sq.bad').length === 0 && /Da4\+/.test(document.getElementById('op-path').textContent)`, 8000);
+    await b.waitFor(`!document.getElementById('op-st-text').textContent.includes('… con la tua mossa')`, 20000); // valutazione di Stockfish arrivata
+    assert.doesNotMatch(await b.text('#op-path'), /Rd2/);
+    // Continua da qui in Analisi partita: la posizione con la mossa fuori teoria, Stockfish consiglia la risposta
+    await b.click('#op-st-analysis');
+    await b.waitFor(`document.querySelector('.tabs .active')?.id === 'tab-analysis' && document.getElementById('movelist').textContent.includes('Rd2')`, 5000);
+    await b.waitFor(`/^Fuori dalla teoria del dataset: Stockfish consiglia /.test(document.getElementById('opening-out').textContent)`, 20000);
+    assert.equal(await b.text('#opening-name'), 'Fuori dalla teoria');
+    // Ritorno alle Aperture: stesso studio; Ripasso della variante scelta, senza aiuti, con una mossa sbagliata
+    await b.click('#tab-openings');
+    await b.waitFor(visible('op-s-study'), 5000);
+    await b.click('#op-mode [data-value="review"]');
+    await b.waitFor(`/^Tocca a te: quale mossa/.test(${title})`, 5000);
+    assert.equal(await b.ev(`document.querySelectorAll('#op-board .arrows g').length`), 0);
+    await sq('e2'); await sq('e4');
+    await b.waitFor(`/Conta come errore nel ripasso/.test(document.getElementById('op-st-text').textContent)`, 3000);
+    await b.waitFor(`${myTurn} && /d5/.test(document.getElementById('op-path').textContent)`, 8000);
+    await sq('c2'); await sq('c4');
+    await b.waitFor(`${title} === 'Ripasso completato con 1 errori'`, 8000);
+    // Rientro dopo il ricaricamento: si riparte dallo studio di prima
+    await b.send('Page.reload');
+    await b.waitFor(`document.readyState === 'complete' && !!document.querySelector('.tabs .active')`, 10000);
+    await b.click('#tab-openings');
+    await b.waitFor(`${visible('op-s-study')} && /Queen's Gambit › Accepted/.test(document.getElementById('op-crumbs').textContent)`, 15000);
+    await b.click('#op-back-btn');
+    await b.waitFor(visible('op-s-family'), 5000);
+    assert.equal(await b.ev(`${qga}.querySelector('.op-row-badge')?.textContent`), '0/3'); // ripasso salvato
+    // Telefono (375 px): niente scorrimento orizzontale nelle tre schermate
+    await b.viewport(375, 812, true);
+    await sleep(300);
+    assert.equal(await b.ev(`document.documentElement.scrollWidth <= 375`), true, 'apertura: ' + await b.ev(`[...document.querySelectorAll('#view-openings *')].filter((x) => x.getBoundingClientRect().right > 376).slice(0, 6).map((x) => x.tagName + '.' + x.className + '#' + x.id + ' ' + Math.round(x.getBoundingClientRect().right)).join(' | ')`));
+    await b.click('#op-learn-btn');
+    await sleep(300);
+    assert.equal(await b.ev(`document.documentElement.scrollWidth <= 375`), true, 'studio');
+    await shot('20-openings-mobile');
+    await b.click('#op-back-btn');
+    await b.click('#op-back-btn');
+    await b.waitFor(visible('op-s-catalog'), 5000);
+    assert.equal(await b.ev(`document.documentElement.scrollWidth <= 375`), true, 'catalogo');
+    await b.viewport(1280, 900);
     // Collegamento da Analisi partita (Teoria delle aperture) alla stessa apertura
     await b.click('#tab-analysis');
     await b.click('#btn-reset');
@@ -699,7 +746,7 @@ try {
     await b.ev(`[...document.querySelectorAll('#opening-moves .opening-move')].find((x) => x.querySelector('b').textContent === 'e4').click()`);
     await b.waitFor(`!document.getElementById('opening-card').hidden && /King's Pawn/.test(document.getElementById('opening-name').textContent)`, 5000);
     await b.click('#opening-open');
-    await b.waitFor(`document.querySelector('.tabs .active')?.id === 'tab-openings' && /King's Pawn Game/.test(document.getElementById('op-name').textContent)`, 10000);
+    await b.waitFor(`document.querySelector('.tabs .active')?.id === 'tab-openings' && /King's Pawn/.test(document.getElementById('op-fam-name').textContent)`, 10000);
     await b.click('#tab-review');
   });
 
@@ -826,6 +873,13 @@ try {
     await b.click('#tab-puzzles');
     await b.waitFor(`/to move/.test(document.getElementById('pz-title').textContent)`, 10000);
     await check('Puzzles');
+    await b.click('#tab-openings');
+    await b.waitFor(`!document.getElementById('op-s-family').hidden && /Lines/.test(document.body.innerText)`, 15000);
+    await check('Openings');
+    await b.click('#op-learn-btn');
+    await b.waitFor(`/^Your turn/.test(document.getElementById('op-st-title').textContent)`, 5000);
+    await check('Openings study');
+    await b.click('#op-back-btn');
     await b.click('#tab-review');
     await b.ev(`document.getElementById('btn-library')?.click()`);
     await b.waitFor(`document.querySelectorAll('#dlg-library .lib-item').length > 0`, 10000);

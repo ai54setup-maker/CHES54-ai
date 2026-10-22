@@ -11,11 +11,12 @@ export const GROUPS = Object.freeze([
   Object.freeze({ id: 'e4', label: '1.e4' }),
   Object.freeze({ id: 'd4', label: '1.d4' }),
   Object.freeze({ id: 'c4', label: '1.c4' }),
+  Object.freeze({ id: 'Nf3', label: '1.Nf3' }),
   Object.freeze({ id: 'other', label: '' }), // "Altre" (testo tradotto nell'interfaccia)
 ]);
 
 /** Gruppo della prima mossa (SAN). */
-export const groupOf = (firstSan) => (['e4', 'd4', 'c4'].includes(firstSan) ? firstSan : 'other');
+export const groupOf = (firstSan) => (['e4', 'd4', 'c4', 'Nf3'].includes(firstSan) ? firstSan : 'other');
 
 /** "Sicilian Defense: Najdorf Variation, English Attack" → famiglia "Sicilian Defense", variante "Najdorf Variation, English Attack" */
 export function splitName(name) {
