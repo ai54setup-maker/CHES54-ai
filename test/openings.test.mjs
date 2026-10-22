@@ -32,3 +32,15 @@ test('posizione fuori dal dataset', () => {
   assert.equal(opening, null);
   assert.equal(bookPlies, 0);
 });
+
+test('bookMoves: continuazioni di teoria dalla posizione iniziale e dopo 1.e4 e5', () => {
+  const start = book.bookMoves('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+  const e4 = start.find((m) => m.san === 'e4');
+  assert.ok(e4 && e4.name, 'manca 1.e4 con il suo nome');
+  assert.ok(start.length >= 15, `solo ${start.length} prime mosse di teoria`);
+  const afterE5 = book.bookMoves('rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2');
+  assert.ok(afterE5.some((m) => m.san === 'Nf3'));
+  assert.ok(afterE5.every((m, i) => i === 0 || !m.name || afterE5[i - 1].name), 'le mosse con nome vengono prima');
+  // Fuori teoria: nessuna mossa
+  assert.deepEqual(book.bookMoves('8/8/8/4k3/8/8/4PK2/8 w - - 0 1'), []);
+});

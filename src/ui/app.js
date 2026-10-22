@@ -532,6 +532,7 @@ function renderVisibility() {
   $('game-setup').hidden = !setup;
   $('adv-card').hidden = inReview || setup;
   $('coach-card').hidden = inReview || setup;
+  if (inReview || setup) $('opening-card').hidden = true; // altrimenti decide renderOpenings()
   $('variation-bar').hidden = inReview || setup || !state.variation;
   $('game-move-card').hidden = inReview || setup;
   $('setup-back').hidden = !state.free.plies.length;
@@ -984,9 +985,38 @@ function renderGame() {
   renderGameMoveCard(a);
   renderVariationBar();
   renderCoach();
+  renderOpenings(a);
   renderBadge();
   renderGraph();
   renderMoves();
+}
+
+/** Esploratore delle aperture: mosse di teoria dalla posizione mostrata (dataset, nessuna valutazione). */
+const bookMovesMemo = new Map();
+function renderOpenings(a) {
+  const card = $('opening-card');
+  const fen = displayed().fen;
+  if (!openingBook) return void (card.hidden = true);
+  if (!bookMovesMemo.has(fen)) bookMovesMemo.set(fen, openingBook.bookMoves(fen));
+  const moves = bookMovesMemo.get(fen);
+  const here = openingBook.nameOf(fen) ?? (cur() > 0 && openingBook.isBook(fen) ? a.opening : null);
+  card.hidden = !moves.length && !here;
+  if (card.hidden) return;
+  $('opening-name').textContent = here ? `${here.eco} · ${here.name}` : 'Posizione iniziale';
+  $('opening-count').textContent = moves.length ? `${moves.length} ${moves.length === 1 ? 'continuazione' : 'continuazioni'}` : 'fine della teoria';
+  const key = `${fen}|${moves.length}`;
+  const box = $('opening-moves');
+  if (box.dataset.key === key) return;
+  box.dataset.key = key;
+  box.replaceChildren(...moves.map((m) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'opening-move';
+    b.append(Object.assign(document.createElement('b'), { textContent: toItalian(m.san) }));
+    if (m.name) b.append(Object.assign(document.createElement('span'), { textContent: m.name }));
+    b.onclick = () => playMove(uciToMove(m.uci));
+    return b;
+  }));
 }
 
 const ADV_TEXT = {

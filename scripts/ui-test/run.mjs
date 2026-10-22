@@ -647,6 +647,22 @@ try {
     await b.viewport(1280, 900);
   });
 
+  await step('teoria delle aperture: continuazioni dal dataset, una mossa giocata con un tocco', async () => {
+    await b.click('#tab-analysis');
+    await b.click('#btn-reset');
+    await b.ev(`document.getElementById('setup-fen-box').open = false; document.getElementById('setup-fen').value = ''`);
+    await b.click('#setup-color button:nth-child(1)');
+    await b.click('#btn-setup-start');
+    await b.waitFor(`!document.getElementById('opening-card').hidden`, 10000);
+    assert.match(await b.text('#opening-count'), /continuazioni/);
+    await b.ev(`[...document.querySelectorAll('#opening-moves .opening-move')].find((x) => x.querySelector('b').textContent === 'e4').click()`);
+    await b.waitFor(`document.getElementById('movelist').textContent.includes('e4')`, 5000);
+    assert.match(await b.text('#movelist'), /^1\. e4/);
+    assert.match(await b.text('#opening-name'), /^B00 · King's Pawn/);
+    assert.ok(await b.ev(`[...document.querySelectorAll('#opening-moves b')].some((x) => x.textContent === 'e5')`));
+    await shot('16-openings');
+  });
+
   await step('i tuoi dati: esportazione e importazione di un backup', async () => {
     await b.click('#tab-review');
     await b.ev(`document.getElementById('btn-about').click()`);

@@ -182,6 +182,10 @@ le spiegazioni torneranno in fase 4, derivate solo dalle linee del motore.
   `UI_CONFIG.puzzles.dailyLevels`; data locale del dispositivo; conta come fatto anche con indizio/soluzione;
   `pzStats.dailyLast` / `dailyStreak`. Link `?section=problemi&daily=1` (scorciatoia nel manifest).
 
+### Teoria delle aperture (2026-10-22)
+- `OpeningBook.bookMoves(fen)`: mosse legali che portano a posizioni del dataset, con nome se c'è; ordine alfabetico
+  (il dataset non ha statistiche, e la scheda lo dice). Scheda `#opening-card` in Analisi partita (`renderOpenings`).
+
 ### Gioca e condivisione (2026-10-22)
 - Sezione **Gioca** (`src/ui/play.js`, `src/analysis/play.js`): motore **separato** (`Engine.inWorker` con `playHashMb`) e
   `engine.setOptions({ 'Skill Level': n })` (svuota la cache); livelli in `ENGINE_CONFIG.playLevels` (nessuna stima di Elo).

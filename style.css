@@ -887,3 +887,14 @@ button { font: inherit; color: inherit; }
 .pl-moves li { display: grid; grid-template-columns: 2.4em 1fr 1fr; padding: 3px 4px; font-size: 0.95rem; }
 .pl-moves .num { color: var(--muted); font-size: 0.85rem; }
 #pl-level button { padding: 8px 2px; }
+
+/* Teoria delle aperture (Analisi partita) */
+.opening-name { margin: 0 0 8px; font-weight: 600; font-size: 0.92rem; }
+.opening-moves { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
+.opening-move {
+  display: flex; align-items: baseline; gap: 10px; text-align: left; cursor: pointer; min-height: 40px;
+  padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.02); color: var(--text);
+}
+.opening-move:hover, .opening-move:focus-visible { border-color: var(--accent); outline: none; }
+.opening-move b { min-width: 3.2em; font-variant-numeric: tabular-nums; }
+.opening-move span { color: var(--muted); font-size: 0.85rem; }

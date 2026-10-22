@@ -1,6 +1,7 @@
 // Riconoscimento dell'apertura (ECO e nome) e delle mosse di teoria ("Book"),
 // usando il dataset lichess-org/chess-openings convertito da scripts/build-openings.mjs.
 
+import { Chess } from '../../lib/chess.js';
 import { ANALYSIS_CONFIG } from '../config/analysis.js';
 import { positionKey } from '../engine/cache.js';
 
@@ -24,6 +25,24 @@ export class OpeningBook {
   nameOf(fen) {
     const v = this.positions[positionKey(fen)];
     return v ? { eco: v[0], name: v[1] } : null;
+  }
+
+  /**
+   * Esploratore: le mosse legali che portano a una posizione di teoria del dataset, con il nome dell'apertura
+   * se quella posizione ne ha uno. Il dataset non ha statistiche: l'ordine è solo alfabetico (prima le mosse con nome).
+   * @param {string} fen
+   * @returns {{ uci: string, san: string, eco: string|null, name: string|null }[]}
+   */
+  bookMoves(fen) {
+    const out = [];
+    for (const m of new Chess(fen).moves({ verbose: true })) {
+      const after = new Chess(fen);
+      after.move(m.san);
+      if (!this.isBook(after.fen())) continue;
+      const named = this.nameOf(after.fen());
+      out.push({ uci: m.from + m.to + (m.promotion ?? ''), san: m.san, eco: named?.eco ?? null, name: named?.name ?? null });
+    }
+    return out.sort((a, b) => (!a.name - !b.name) || (a.name ?? a.san).localeCompare(b.name ?? b.san));
   }
 
   /**
