@@ -22,6 +22,21 @@ export const ENGINE_CONFIG = Object.freeze({
     Object.freeze({ id: 'deep', label: 'Profonda', depth: 20 }),
   ]),
 
+  // Sezione Gioca: livelli del motore avversario (Skill Level di Stockfish 0–20 + profondità). Nessuna stima di Elo:
+  // non sarebbe verificabile. Il motore della partita è un'istanza separata, così le analisi restano a piena forza.
+  playLevels: Object.freeze([
+    Object.freeze({ level: 1, skill: 0, depth: 1 }),
+    Object.freeze({ level: 2, skill: 3, depth: 2 }),
+    Object.freeze({ level: 3, skill: 6, depth: 4 }),
+    Object.freeze({ level: 4, skill: 9, depth: 6 }),
+    Object.freeze({ level: 5, skill: 12, depth: 8 }),
+    Object.freeze({ level: 6, skill: 15, depth: 10 }),
+    Object.freeze({ level: 7, skill: 18, depth: 12 }),
+    Object.freeze({ level: 8, skill: 20, depth: 16 }),
+  ]),
+  playMinMoveMs: 500, // il motore non risponde prima di così, per non sembrare istantaneo
+  playHashMb: 16,
+
   // Numero massimo di posizioni tenute nella cache delle analisi.
   cacheSize: 5000,
 });

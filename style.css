@@ -224,6 +224,9 @@ button { font: inherit; color: inherit; }
     padding: 6px 2px; font-size: 0.68rem; font-weight: 600; border-radius: 10px; text-align: center;
   }
   .tabs button span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  /* Etichetta corta sul telefono (il testo completo resta per il titolo della sezione e i lettori di schermo) */
+  .tabs button span[data-short] { font-size: 0; }
+  .tabs button span[data-short]::after { content: attr(data-short); font-size: 0.68rem; }
   .tabs button.active, :root[data-theme="light"] .tabs button.active { box-shadow: none; background: transparent; border-color: transparent; color: var(--accent); }
   .tabs button.active svg { filter: drop-shadow(0 0 8px rgba(46, 230, 255, 0.55)); }
   .topbar { padding: calc(12px + env(safe-area-inset-top)) 16px 8px; gap: 12px; }
@@ -875,3 +878,12 @@ button { font: inherit; color: inherit; }
 .data-msg p { margin: 10px 0 0; color: var(--text); font-size: 0.9rem; }
 .data-msg:empty { display: none; }
 .data-msg .toolbar { margin-top: 8px; }
+
+/* Gioca contro Stockfish */
+.pl-moves {
+  list-style: none; margin: 0; padding: 0; max-height: 240px; overflow-y: auto;
+  display: grid; grid-template-columns: 1fr 1fr; column-gap: 12px; font-variant-numeric: tabular-nums;
+}
+.pl-moves li { display: grid; grid-template-columns: 2.4em 1fr 1fr; padding: 3px 4px; font-size: 0.95rem; }
+.pl-moves .num { color: var(--muted); font-size: 0.85rem; }
+#pl-level button { padding: 8px 2px; }

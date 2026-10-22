@@ -30,6 +30,7 @@ import { Library } from './library.js';
 import { PuzzleTrainer } from './puzzles.js';
 import { LessonPlayer } from './lessons.js';
 import { OnlineGames } from './online-games.js';
+import { PlayGame } from './play.js';
 import { mistakesFromReview, mergeMistakes } from '../analysis/my-mistakes.js';
 import { loadMistakes, saveMistakes } from './puzzles.js';
 import { BACKUP_KEYS, makeBackup, readBackup, backupFileName } from './backup.js';
@@ -73,10 +74,10 @@ const state = {
   section: null,
 };
 const BOARD_SECTIONS = ['review', 'analysis'];
-const SECTIONS = [...BOARD_SECTIONS, 'lessons', 'puzzles'];
+const SECTIONS = [...BOARD_SECTIONS, 'play', 'lessons', 'puzzles'];
 state.section = SECTIONS.includes(store.get('section', '')) ? store.get('section', '') : state.mode;
 // Link diretto a una sezione (anche dalle scorciatoie dell'icona dell'app): ?section=lezioni / problemi / analisi / revisione
-const SECTION_ALIASES = { revisione: 'review', analisi: 'analysis', lezioni: 'lessons', problemi: 'puzzles' };
+const SECTION_ALIASES = { revisione: 'review', analisi: 'analysis', gioca: 'play', lezioni: 'lessons', problemi: 'puzzles' };
 const linked = new URLSearchParams(location.search).get('section');
 const linkedSection = SECTION_ALIASES[linked] ?? linked;
 if (SECTIONS.includes(linkedSection)) {
@@ -241,7 +242,22 @@ function setSection(section) {
 /** Lezioni / Problemi: il modulo della sezione viene creato la prima volta che serve. */
 let puzzles = null;
 let lessons = null;
+let play = null;
 function showSectionView() {
+  if (state.section === 'play') {
+    play ??= new PlayGame($('view-play'), {
+      askPromotion,
+      store,
+      // A fine partita: la revisione completa, come per un PGN incollato
+      toReview: (pgn) => {
+        setMode('review');
+        $('pgn-text').value = pgn;
+        updateGameSelect();
+        startReview();
+      },
+    });
+    play.show();
+  }
   if (state.section === 'lessons') {
     lessons ??= new LessonPlayer($('view-lessons'), {
       engine: () => (engineFailed ? null : engine),
@@ -498,6 +514,7 @@ function renderTabs() {
   }
   $('view-board').hidden = !onBoard();
   $('view-lessons').hidden = state.section !== 'lessons';
+  $('view-play').hidden = state.section !== 'play';
   $('view-puzzles').hidden = state.section !== 'puzzles';
   document.body.dataset.section = state.section;
 }
@@ -1260,7 +1277,7 @@ $('btn-flip').onclick = () => {
 
 document.addEventListener('keydown', (e) => {
   if (e.target.closest('input, textarea, select, dialog') || e.altKey || e.ctrlKey || e.metaKey) return;
-  if (!onBoard()) return (state.section === 'lessons' ? lessons : puzzles)?.onKey(e);
+  if (!onBoard()) return ({ lessons, puzzles }[state.section])?.onKey?.(e);
   if (state.mode === 'review' && !reviewDone()) return;
   const actions = {
     ArrowLeft: () => (state.retry ? exitRetry() : goTo(cur() - 1)),

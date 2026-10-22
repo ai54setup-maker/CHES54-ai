@@ -26,7 +26,9 @@
       <button type="button" role="tab" id="tab-review" data-mode="review" data-sub="Analisi completa di una partita con Stockfish">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v16h16"/><path d="M8 15l3.5-4 3 2.5L20 7"/></svg><span>Revisione</span></button>
       <button type="button" role="tab" id="tab-analysis" data-mode="analysis" data-sub="Ricostruisci la tua partita mossa per mossa">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M3.5 12h17M12 3.5v17"/><path d="M3.5 3.5h8.5v8.5H3.5zM12 12h8.5v8.5H12z" class="fill"/></svg><span>Analisi partita</span></button>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M3.5 12h17M12 3.5v17"/><path d="M3.5 3.5h8.5v8.5H3.5zM12 12h8.5v8.5H12z" class="fill"/></svg><span data-short="Analisi">Analisi partita</span></button>
+      <button type="button" role="tab" id="tab-play" data-mode="play" data-sub="Gioca contro Stockfish, poi fai la revisione">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 20.5h11"/><path d="M8.5 20.5c0-3.2 1.200-4.700 2.800-6.300l-1.500-1.700-2.600 1.400-1.400-2.300c.4-2.900 2.700-5.400 5.400-6.700L12.300 2.500l1.300 2.200c2.900 1 4.900 3.800 4.900 7.300v8.500"/><circle cx="12.600" cy="8.400" r=".6" class="fill"/></svg><span>Gioca</span></button>
       <button type="button" role="tab" id="tab-lessons" data-mode="lessons" data-sub="Tattiche e principi, una lezione alla volta">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v5c0 1.6 2.5 3.2 5.5 3.2s5.5-1.6 5.5-3.2v-5"/><path d="M21.5 9v5"/></svg><span>Lezioni</span></button>
       <button type="button" role="tab" id="tab-puzzles" data-mode="puzzles" data-sub="Problemi verificati da Stockfish">
@@ -196,6 +198,44 @@
 
       <p class="footnote">Strumento di analisi e allenamento. Usarlo durante partite online o tornei è contro il regolamento.
         <br><button type="button" class="link-btn" id="btn-about">Informazioni e licenze</button></p>
+    </section>
+  </main>
+
+  <!-- Gioca contro Stockfish: src/ui/play.js -->
+  <main class="layout" id="view-play" hidden>
+    <section class="board-area">
+      <div class="player-tag" id="pl-tag-top"></div>
+      <div class="board-row">
+        <div class="board-wrap"><div id="pl-board" class="board"></div></div>
+      </div>
+      <div class="player-tag" id="pl-tag-bottom"></div>
+    </section>
+    <section class="panel">
+      <div class="card" id="pl-setup">
+        <h2>Gioca contro Stockfish</h2>
+        <p class="hint first">Scegli colore e livello. A fine partita puoi farne la revisione completa.</p>
+        <div class="field-label">Colore</div>
+        <div class="segmented" id="pl-color" role="radiogroup" aria-label="Colore"></div>
+        <div class="field-label">Livello</div>
+        <div class="segmented small" id="pl-level" role="radiogroup" aria-label="Livello"></div>
+        <p class="hint" id="pl-level-hint"></p>
+        <button type="button" class="btn primary wide" id="pl-start">Inizia la partita</button>
+      </div>
+      <div class="card pz-card" id="pl-card" hidden aria-live="polite">
+        <div class="pz-meta" id="pl-meta"></div>
+        <h2 class="pz-title" id="pl-status"></h2>
+        <div class="pz-feedback" id="pl-feedback"></div>
+        <div class="toolbar two">
+          <button type="button" class="btn" id="pl-undo">↶ Annulla mossa</button>
+          <button type="button" class="btn danger" id="pl-resign">Abbandona</button>
+          <button type="button" class="btn primary" id="pl-review" hidden>Revisione della partita</button>
+          <button type="button" class="btn" id="pl-new" hidden>Nuova partita</button>
+        </div>
+      </div>
+      <div class="card" id="pl-moves-card" hidden>
+        <div class="card-head"><h2>Mosse</h2></div>
+        <ol class="pl-moves" id="pl-moves"></ol>
+      </div>
     </section>
   </main>
 

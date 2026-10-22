@@ -151,6 +151,22 @@ export class Engine {
     });
   }
 
+  /**
+   * Imposta opzioni UCI (es. "Skill Level" per giocare contro il motore), in coda come newGame().
+   * Svuota la cache: i risultati ottenuti con le opzioni precedenti non valgono più.
+   * @param {Record<string, string|number|boolean>} options
+   * @returns {Promise<void>}
+   */
+  setOptions(options) {
+    if (this.error) return Promise.reject(this.error);
+    this.cache = new AnalysisCache(this.config.cacheSize);
+    const cmds = Object.entries(options).map(([name, value]) => `setoption name ${name} value ${value}`);
+    return new Promise((resolve, reject) => {
+      this.queue.push({ kind: 'command', cmds, resolve, reject });
+      this.pump();
+    });
+  }
+
   /** Annulla tutte le richieste in coda e ferma la ricerca in corso. */
   cancelAll() {
     for (const job of this.queue.splice(0)) job.reject(new AnalysisCancelled());

@@ -4,7 +4,7 @@
 /** Chiavi di localStorage dell'app (senza prefisso). Solo queste si esportano e si importano. */
 export const BACKUP_KEYS = Object.freeze([
   'coach', 'coachLevel', 'depth', 'evals', 'free', 'lessonsDone', 'mode', 'multipv', 'myMistakes', 'onlineSource',
-  'onlineUser', 'pgn', 'pzLevel', 'pzStats', 'pzTheme', 'review', 'reviewDepth', 'section', 'setupDone', 'side', 'theme',
+  'onlineUser', 'pgn', 'playGame', 'pzLevel', 'pzStats', 'pzTheme', 'review', 'reviewDepth', 'section', 'setupDone', 'side', 'theme',
 ]);
 const APP = 'CHES54.ai';
 export const MAX_BACKUP_BYTES = 5 * 1024 * 1024;

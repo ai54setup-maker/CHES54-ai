@@ -39,6 +39,16 @@
       ]
     },
     {
+      "name": "Gioca",
+      "url": "./?section=gioca",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
       "name": "Lezioni",
       "url": "./?section=lezioni",
       "icons": [
@@ -51,16 +61,6 @@
     {
       "name": "Problemi",
       "url": "./?section=problemi",
-      "icons": [
-        {
-          "src": "icons/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
-      "name": "Revisione",
-      "url": "./?section=revisione",
       "icons": [
         {
           "src": "icons/icon-192.png",

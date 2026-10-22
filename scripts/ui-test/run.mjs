@@ -251,7 +251,7 @@ try {
       const r = el.getBoundingClientRect();
       return { h: r.height, inside: r.left >= 0 && r.right <= 375 && r.bottom <= 812 };
     })`);
-    assert.equal(tabs.length, 4);
+    assert.equal(tabs.length, 5);
     assert.ok(tabs.every((t) => t.h >= 40 && t.inside), JSON.stringify(tabs));
     await shot('08-mobile-puzzles');
     await b.viewport(1280, 900);
@@ -406,6 +406,36 @@ try {
     assert.match(await b.text('#pz-feedback'), /Buona mossa/);
     await shot('14-mistakes');
     await b.click('#tab-review');
+  });
+
+  await step('gioca contro Stockfish: mossa e risposta, annulla, ripresa dopo il ricaricamento, abbandono e revisione', async () => {
+    await b.click('#tab-play');
+    await b.waitFor(`!document.getElementById('pl-setup').hidden`, 5000);
+    await b.click('#pl-color [data-value="w"]');
+    await b.click('#pl-level [data-value="1"]');
+    assert.match(await b.text('#pl-level-hint'), /Skill Level 0/);
+    await b.click('#pl-start');
+    const sq = (s) => b.clickSquare(s, 'pl-board', false);
+    const replied = `/^Tocca a te/.test(document.getElementById('pl-status').textContent)
+      && document.querySelector('#pl-moves li')?.children[2]?.textContent !== ''`;
+    await sq('e2'); await sq('e4');
+    await b.waitFor(replied, 30000);
+    await b.click('#pl-undo');
+    assert.equal(await b.ev(`document.querySelectorAll('#pl-moves li').length`), 0);
+    await sq('d2'); await sq('d4');
+    await b.waitFor(replied, 30000);
+    // La partita in corso resta dopo il ricaricamento della pagina
+    await b.send('Page.reload');
+    await b.waitFor(`!!document.querySelector('.tabs .active') && !document.getElementById('pl-card').hidden`, 10000);
+    assert.equal(await b.text('.tabs .active'), 'Gioca');
+    assert.match(await b.text('#pl-moves'), /^1\. d4/);
+    await b.click('#pl-resign');
+    assert.match(await b.text('#pl-status'), /Hai perso \(abbandono\)/);
+    await shot('15-play');
+    await b.click('#pl-review');
+    await b.waitFor(`!document.getElementById('review-summary').hidden`, 60000);
+    assert.equal(await b.text('.tabs .active'), 'Revisione');
+    assert.match(await b.text('#review-summary'), /Tu.*Stockfish \(livello 1\)/);
   });
 
   await step('lezioni: indice, spiegazione con dimostrazione, esercizio sbagliato e giusto, lezione completata', async () => {
