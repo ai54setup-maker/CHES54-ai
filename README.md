@@ -4,6 +4,8 @@
 
 Revisione e analisi delle partite di scacchi, direttamente nel browser, con **Stockfish 17.1**.
 
+**Provalo online: <https://ches54.com>** (nessun account, nessuna installazione; si può aggiungere alla schermata Home come app).
+
 - **Revisione partita:** incolli il PGN di una partita (da Chess.com, Lichess o qualsiasi altro programma) e ottieni:
   - la valutazione di ogni mossa e la sua categoria, da Brillante a Errore grave;
   - la precisione di ciascun giocatore e il nome dell'apertura;
