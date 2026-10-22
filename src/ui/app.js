@@ -941,7 +941,7 @@ function renderAdvantage(a) {
     const whitePct = Math.round(adv.winPct);
     const sub = pe.terminal ? '' : `Valutazione ${formatScore(pe.score)} · win% del Bianco ${whitePct}${partial ? ' · analisi in corso…' : ''}`;
     html = `<div class="adv-title adv-${adv.side ?? 'none'}">${title}</div>
-      <div class="adv-meter" role="img" aria-label="win% del Bianco ${whitePct}"><div class="adv-meter-fill" style="width:${adv.winPct}%"></div></div>
+      <div class="adv-meter" role="img" aria-label="win% del Bianco ${whitePct}"><div class="adv-meter-fill" data-pct="${adv.winPct}"></div></div>
       ${sub ? `<div class="adv-sub">${sub}</div>` : ''}`;
   }
   const tp = mainTurningPoint();
@@ -952,6 +952,8 @@ function renderAdvantage(a) {
       la tua win% è scesa da ${Math.round(tp.peakWin)} a ${Math.round(tp.nowWin)}.</p>`;
   }
   el.innerHTML = html;
+  // Larghezza impostata da JS e non con style="…" nell'HTML: la CSP del sito non permette stili inline
+  for (const f of el.querySelectorAll('[data-pct]')) f.style.width = `${f.dataset.pct}%`;
   el.querySelector('[data-goto]')?.addEventListener('click', (e) => {
     state.variation = null;
     goTo(Number(e.currentTarget.dataset.goto));

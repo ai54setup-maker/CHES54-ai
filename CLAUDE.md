@@ -182,6 +182,12 @@ le spiegazioni torneranno in fase 4, derivate solo dalle linee del motore.
   `UI_CONFIG.puzzles.dailyLevels`; data locale del dispositivo; conta come fatto anche con indizio/soluzione;
   `pzStats.dailyLast` / `dailyStreak`. Link `?section=problemi&daily=1` (scorciatoia nel manifest).
 
+### Sicurezza per il sito pubblico (2026-10-22)
+- CSP in `<meta>` di index.html: solo file del sito, `'wasm-unsafe-eval'` per Stockfish, niente script o stili inline.
+  Quindi **mai `style="…"` dentro HTML generato** (usare `el.style` da JS, come in eval-graph.js e nella barra del vantaggio)
+  e mai script esterni. Le violazioni CSP compaiono come errori in console e fanno fallire test:ui.
+- Nessun account, cookie o statistica: tutto resta in localStorage (nota "Privacy" nella finestra Informazioni).
+
 ### Rifinitura (fase H)
 - Link diretto: `?section=revisione|analisi|lezioni|problemi` (anche i nomi interni); scorciatoie dell'icona in
   `manifest.webmanifest`. Tastiera: ← → nei passi delle lezioni; → prossimo problema (dopo averlo risolto), H indizio.

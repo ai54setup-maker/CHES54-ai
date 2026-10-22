@@ -6,6 +6,9 @@
   <title>CHES54.ai</title>
   <meta name="description" content="CHES54.ai – revisione e analisi delle partite di scacchi con Stockfish, direttamente nel browser.">
   <meta name="theme-color" content="#060b18">
+  <!-- Sicurezza: solo file di questo sito; 'wasm-unsafe-eval' serve a Stockfish (WebAssembly). Nessuno script esterno. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self'; font-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -334,6 +337,9 @@
       © Chess.com, LLC), chess.js (BSD-2-Clause, © Jeff Hlywa), pezzi "cburnett" (GPLv2+, Colin M.L. Burnett), font Inter (SIL OFL 1.1, The Inter Project Authors),
       dataset delle aperture lichess-org/chess-openings (CC0), problemi dal database di Lichess (CC0).
       <a href="THIRD-PARTY-NOTICES.md" target="_blank" rel="noopener">Dettagli</a>.</p>
+    <p><b>Privacy.</b> Nessun account, nessun cookie, nessuna statistica di utilizzo. Partite, progressi e preferenze
+      restano solo nel tuo browser (memoria locale del sito) e non vengono inviati a nessuno: anche Stockfish gira sul tuo
+      dispositivo. Per cancellare tutto basta cancellare i dati del sito dalle impostazioni del browser.</p>
     <p>CHES54.ai non è affiliato a Chess.com né a Lichess e non è approvato da loro.</p>
     <div class="toolbar two"><span></span><button type="button" class="btn" id="about-close">Chiudi</button></div>
   </dialog>

@@ -43,7 +43,13 @@ export class EvalGraph {
         <path d="M${pts}" class="graph-line" fill="none" vector-effect="non-scaling-stroke"/>
         <line class="graph-cursor" y1="0" y2="${H}" vector-effect="non-scaling-stroke"/>
       </svg>
-      ${marks.map((m) => `<span class="graph-dot dot-${m.cls}" style="left:${(x(m.index) / W) * 100}%;top:${(y(whiteWin[m.index]) / H) * 100}%"></span>`).join('')}`;
+      ${marks.map((m) => `<span class="graph-dot dot-${m.cls}"></span>`).join('')}`;
+    // Posizione dei pallini impostata da JS (la CSP del sito non permette style="…" nell'HTML)
+    this.el.querySelectorAll('.graph-dot').forEach((dot, k) => {
+      const m = marks[k];
+      dot.style.left = `${(x(m.index) / W) * 100}%`;
+      dot.style.top = `${(y(whiteWin[m.index]) / H) * 100}%`;
+    });
     this.cursorEl = this.el.querySelector('.graph-cursor');
   }
 
