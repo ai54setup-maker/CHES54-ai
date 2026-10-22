@@ -3,22 +3,28 @@
     {
       "id": "piadineria-morgan",
       "name": "Piadineria Morgan",
-      "city": "Via Anelli 48, Desenzano del Garda (BS)",
-      "description": { "it": "", "en": "" },
-      "url": "",
+      "city": "Desenzano del Garda (BS)",
+      "description": {
+        "it": "Piadineria in Via Anelli 48 a Desenzano del Garda.",
+        "en": "Piadina shop in Via Anelli 48, Desenzano del Garda."
+      },
+      "url": "https://piadineriamorgan.com/",
       "logo": null,
       "photo": null,
-      "hidden": true
+      "hidden": false
     },
     {
       "id": "scaroni",
       "name": "Scaroni A. Srl",
       "city": "Montichiari (BS)",
-      "description": { "it": "", "en": "" },
-      "url": "",
+      "description": {
+        "it": "Bancali e imballaggi a Montichiari.",
+        "en": "Pallets and packaging in Montichiari."
+      },
+      "url": "https://www.scaroni.it/",
       "logo": null,
       "photo": null,
-      "hidden": true
+      "hidden": false
     }
   ]
 }

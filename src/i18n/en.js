@@ -486,7 +486,6 @@ export const EN = Object.freeze({
   "Niente pubblicità invasiva": "No intrusive ads",
   "Nessun tracciamento": "No tracking",
   "Tutto gira nel tuo browser, anche Stockfish": "Everything runs in your browser, Stockfish included",
-  "Mantenerlo costa il dominio (circa 10 $ all'anno) e tante ore di sviluppo.": "Keeping it running costs the domain (about $10 a year) and many hours of development.",
   "Offrimi un caffè ☕": "Buy me a coffee ☕",
   "Si apre in una nuova scheda, su un sito esterno con le sue regole sulla privacy.": "Opens in a new tab, on an external site with its own privacy rules.",
   "Sponsor – grazie a": "Sponsors – thanks to",
