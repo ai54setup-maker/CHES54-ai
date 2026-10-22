@@ -29,6 +29,8 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M3.5 12h17M12 3.5v17"/><path d="M3.5 3.5h8.5v8.5H3.5zM12 12h8.5v8.5H12z" class="fill"/></svg><span data-short="Analisi">Analisi partita</span></button>
       <button type="button" role="tab" id="tab-play" data-mode="play" data-sub="Gioca contro Stockfish, poi fai la revisione">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 20.5h11"/><path d="M8.5 20.5c0-3.2 1.200-4.700 2.800-6.300l-1.500-1.700-2.600 1.400-1.400-2.300c.4-2.900 2.700-5.400 5.400-6.700L12.300 2.500l1.300 2.200c2.900 1 4.900 3.800 4.900 7.300v8.500"/><circle cx="12.600" cy="8.400" r=".6" class="fill"/></svg><span>Gioca</span></button>
+      <button type="button" role="tab" id="tab-openings" data-mode="openings" data-sub="Varianti, Stockfish e statistiche reali per fascia">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="4.5" r="2"/><circle cx="5.5" cy="19.5" r="2"/><circle cx="18.5" cy="19.5" r="2"/><path d="M12 6.5v3.5M12 10c-3.5 0-6.5 2-6.5 7.5M12 10c3.5 0 6.5 2 6.5 7.5"/></svg><span>Aperture</span></button>
       <button type="button" role="tab" id="tab-lessons" data-mode="lessons" data-sub="Tattiche e principi, una lezione alla volta">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v5c0 1.6 2.5 3.2 5.5 3.2s5.5-1.6 5.5-3.2v-5"/><path d="M21.5 9v5"/></svg><span>Lezioni</span></button>
       <button type="button" role="tab" id="tab-puzzles" data-mode="puzzles" data-sub="Problemi verificati da Stockfish">
@@ -172,6 +174,7 @@
         <div class="card-head"><h2>Teoria delle aperture</h2><span class="depth-info" id="opening-count"></span></div>
         <p class="opening-name" id="opening-name"></p>
         <div class="opening-moves" id="opening-moves"></div>
+        <button type="button" class="btn wide" id="opening-open">Apri nella sezione Aperture</button>
         <p class="hint">Mosse del dataset lichess-org/chess-openings (CC0), senza statistiche: l'ordine non indica la più giocata.
           Tocca una mossa per giocarla; il giudizio resta a Stockfish.</p>
       </div>
@@ -261,6 +264,73 @@
         <div class="card-head"><h2>Mosse</h2></div>
         <ol class="pl-moves" id="pl-moves"></ol>
       </div>
+    </section>
+  </main>
+
+  <!-- Aperture: src/ui/openings.js -->
+  <main class="layout" id="view-openings" hidden>
+    <section class="board-area">
+      <div class="board-row">
+        <div class="board-wrap"><div id="op-board" class="board"></div></div>
+      </div>
+      <div class="op-nav">
+        <button type="button" class="btn" id="op-start" title="Posizione iniziale" aria-label="Posizione iniziale">⏮</button>
+        <button type="button" class="btn" id="op-back" title="Indietro" aria-label="Indietro">◀</button>
+        <button type="button" class="btn" id="op-flip" title="Gira la scacchiera" aria-label="Gira la scacchiera">⇅</button>
+      </div>
+      <p class="op-path" id="op-path"></p>
+    </section>
+
+    <section class="panel">
+      <div class="card op-band-card">
+        <div class="field-label first">Il tuo punteggio Lichess</div>
+        <div class="segmented small" id="op-band" role="radiogroup" aria-label="Fascia di punteggio"></div>
+        <p class="hint">Punteggi Lichess, non Elo FIDE. Statistiche da 10 milioni di partite di Lichess (CC0).</p>
+      </div>
+
+      <!-- Allenamento -->
+      <div class="card pz-card" id="op-train" hidden aria-live="polite">
+        <div class="pz-meta" id="op-train-meta"></div>
+        <h2 class="pz-title" id="op-train-title"></h2>
+        <div class="pz-feedback" id="op-train-feedback"></div>
+        <div class="toolbar two">
+          <button type="button" class="btn" id="op-train-retry" hidden>Riprova</button>
+          <button type="button" class="btn" id="op-train-solution" hidden>Soluzione</button>
+          <button type="button" class="btn" id="op-train-exit">Esci dal ripasso</button>
+        </div>
+      </div>
+
+      <!-- Posizione -->
+      <div class="card op-pos" id="op-pos">
+        <div class="pz-meta" id="op-eco"></div>
+        <h2 class="pz-title" id="op-name"></h2>
+        <div class="op-ideas" id="op-ideas" hidden></div>
+        <p class="op-sf" id="op-sf"></p>
+        <div class="op-moves-head"><b>Mosse da qui</b><span class="hint" id="op-moves-note"></span></div>
+        <ol class="op-moves" id="op-moves"></ol>
+        <p class="hint" id="op-extra"></p>
+        <p class="hint">Valutazioni di Stockfish dal punto di vista del Bianco (+ vantaggio Bianco, − vantaggio Nero). Barre: vinte, patte e perse da chi muove, nella tua fascia.</p>
+        <div class="op-train-start" id="op-train-start">
+          <div class="segmented small" id="op-color" role="radiogroup" aria-label="Colore per il ripasso"></div>
+          <button type="button" class="btn primary" id="op-train-btn">Ripassa questa variante</button>
+        </div>
+      </div>
+
+      <!-- Catalogo -->
+      <div class="card op-catalog" id="op-catalog">
+        <div class="card-head"><h2>Catalogo delle aperture</h2><span class="depth-info" id="op-count"></span></div>
+        <div class="chips" id="op-groups" role="group" aria-label="Prima mossa"></div>
+        <input type="search" class="lib-search" id="op-search" placeholder="Cerca un'apertura: Siciliana, Najdorf…" aria-label="Cerca un'apertura" autocomplete="off" spellcheck="false">
+        <ul class="op-families" id="op-families"></ul>
+      </div>
+
+      <div class="card op-reps" id="op-reps" hidden>
+        <div class="card-head"><h2>Varianti da ripassare</h2><span class="depth-info" id="op-reps-count"></span></div>
+        <ul class="op-rep-list" id="op-rep-list"></ul>
+      </div>
+
+      <p class="footnote" id="op-source">Albero dal dataset lichess-org/chess-openings (CC0); valutazioni e mosse consigliate da
+        Stockfish; statistiche reali dal database delle partite di Lichess (CC0). Nomi delle aperture in inglese, come nel dataset.</p>
     </section>
   </main>
 
@@ -430,7 +500,7 @@
       <a id="about-sf-source" target="_blank" rel="noopener"></a>.</p>
     <p><b>Componenti di terze parti:</b> Stockfish 17.1 (GPLv3, gli sviluppatori di Stockfish; build JavaScript
       © Chess.com, LLC), chess.js (BSD-2-Clause, © Jeff Hlywa), pezzi "cburnett" (GPLv2+, Colin M.L. Burnett), font Inter (SIL OFL 1.1, The Inter Project Authors),
-      dataset delle aperture lichess-org/chess-openings (CC0), problemi dal database di Lichess (CC0).
+      dataset delle aperture lichess-org/chess-openings (CC0), problemi e statistiche delle aperture dai database di Lichess (CC0).
       <a href="THIRD-PARTY-NOTICES.md" target="_blank" rel="noopener">Dettagli</a>.</p>
     <p><b>Privacy.</b> Nessun account, nessun cookie, nessuna statistica di utilizzo. Partite, progressi e preferenze
       restano solo nel tuo browser (memoria locale del sito) e non vengono inviati a nessuno: anche Stockfish gira sul tuo

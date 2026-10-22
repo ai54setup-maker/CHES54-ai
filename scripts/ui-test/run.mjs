@@ -251,7 +251,7 @@ try {
       const r = el.getBoundingClientRect();
       return { h: r.height, inside: r.left >= 0 && r.right <= 375 && r.bottom <= 812 };
     })`);
-    assert.equal(tabs.length, 5);
+    assert.equal(tabs.length, 6);
     assert.ok(tabs.every((t) => t.h >= 40 && t.inside), JSON.stringify(tabs));
     await shot('08-mobile-puzzles');
     await b.viewport(1280, 900);
@@ -647,6 +647,62 @@ try {
     await b.viewport(1280, 900);
   });
 
+  await step('aperture: catalogo e ricerca, albero con Stockfish e statistiche, ripasso di una variante', async () => {
+    await b.click('#tab-openings');
+    try {
+      await b.waitFor(`document.querySelectorAll('#op-families .op-family').length > 0`, 30000);
+    } catch (e) {
+      console.log('DIAGNOSI aperture:', await b.ev(`JSON.stringify({ section: document.querySelector('.tabs .active')?.id, hidden: document.getElementById('view-openings').hidden, families: document.getElementById('op-families').textContent.slice(0, 200), w: innerWidth })`));
+      throw e;
+    }
+    // Ricerca con un nome italiano: "siciliana" trova la Sicilian Defense
+    await b.ev(`(() => { const s = document.getElementById('op-search'); s.value = 'najdorf'; s.dispatchEvent(new Event('input')); })()`);
+    await b.waitFor(`[...document.querySelectorAll('#op-families .op-var')].some((x) => /Najdorf Variation$/.test(x.textContent))`, 5000);
+    await b.ev(`(() => { const s = document.getElementById('op-search'); s.value = 'siciliana'; s.dispatchEvent(new Event('input')); })()`);
+    await b.waitFor(`[...document.querySelectorAll('#op-families .op-family-name')].some((x) => x.textContent === 'Sicilian Defense')`, 5000);
+    await b.ev(`(() => { const s = document.getElementById('op-search'); s.value = 'najdorf'; s.dispatchEvent(new Event('input')); })()`);
+    await b.ev(`[...document.querySelectorAll('#op-families .op-var')].find((x) => x.textContent === 'Najdorf Variation').click()`);
+    await b.waitFor(`/Najdorf Variation$/.test(document.getElementById('op-name').textContent)`, 10000);
+    assert.match(await b.text('#op-sf'), /^Stockfish \(profondità \d+\)/);
+    assert.ok(await b.ev(`document.querySelectorAll('#op-moves .op-move').length`) > 0);
+    assert.ok(await b.ev(`document.querySelectorAll('#op-board .arrows g').length`) >= 1);
+    assert.equal(await b.ev(`document.getElementById('op-ideas').hidden`), false); // idee della Siciliana
+    // Statistiche per fascia: il numero di partite cambia con la fascia
+    await b.click('#op-band [data-value="b1400"]');
+    const n1 = await b.text('#op-moves-note');
+    await b.click('#op-band [data-value="b2200"]');
+    assert.notEqual(await b.text('#op-moves-note'), n1);
+    await shot('18-openings');
+    // Ripasso della Najdorf con il Nero: prima una mossa sbagliata, poi la variante giusta
+    await b.click('#op-color [data-value="b"]');
+    await b.click('#op-train-btn');
+    const sq = (s) => b.clickSquare(s, 'op-board', true);
+    const myTurn = `/^Tocca a te/.test(document.getElementById('op-train-title').textContent)`;
+    await b.waitFor(myTurn, 5000);
+    await sq('e7'); await sq('e5');
+    await b.waitFor(`/Non è la mossa della variante/.test(document.getElementById('op-train-title').textContent)`, 5000);
+    await b.click('#op-train-retry');
+    for (const m of ['c7c5', 'd7d6', 'c5d4', 'g8f6', 'a7a6']) {
+      await b.waitFor(myTurn, 5000);
+      await sq(m.slice(0, 2)); await sq(m.slice(2, 4));
+    }
+    await b.waitFor(`/^Variante completata/.test(document.getElementById('op-train-title').textContent)`, 5000);
+    await b.click('#op-train-exit');
+    assert.equal(await b.ev(`document.getElementById('op-reps').hidden`), false);
+    assert.match(await b.text('#op-rep-list'), /Najdorf/);
+    // Collegamento da Analisi partita (Teoria delle aperture) alla stessa apertura
+    await b.click('#tab-analysis');
+    await b.click('#btn-reset');
+    await sleep(200);
+    await b.click('#setup-color button:nth-child(1)');
+    await b.click('#btn-setup-start');
+    await b.ev(`[...document.querySelectorAll('#opening-moves .opening-move')].find((x) => x.querySelector('b').textContent === 'e4').click()`);
+    await b.waitFor(`!document.getElementById('opening-card').hidden && /King's Pawn/.test(document.getElementById('opening-name').textContent)`, 5000);
+    await b.click('#opening-open');
+    await b.waitFor(`document.querySelector('.tabs .active')?.id === 'tab-openings' && /King's Pawn Game/.test(document.getElementById('op-name').textContent)`, 10000);
+    await b.click('#tab-review');
+  });
+
   await step('teoria delle aperture: continuazioni dal dataset, una mossa giocata con un tocco', async () => {
     await b.click('#tab-analysis');
     await b.click('#btn-reset');
@@ -702,11 +758,11 @@ try {
   await step('audio: musica lofi (accesa, ripresa dopo il ricaricamento, spenta) e suono delle mosse', async () => {
     const stats = `({ ...window.__ches54Audio })`;
     await b.click('#tab-analysis');
-    await b.click('#btn-audio');
-    assert.equal(await b.ev(`document.getElementById('audio-panel').hidden`), false);
-    assert.equal(await b.ev(`document.getElementById('sfx-on').checked`), true);  // suoni accesi di base
-    assert.equal(await b.ev(`document.getElementById('music-on').checked`), false); // musica spenta di base
-    await b.click('#music-on');
+    await b.realClick('#btn-audio');
+    assert.equal(await b.ev(`document.getElementById('audio-panel').hidden`), false, 'pannello audio non aperto');
+    assert.equal(await b.ev(`document.getElementById('sfx-on').checked`), true, 'suoni non accesi di base');
+    assert.equal(await b.ev(`document.getElementById('music-on').checked`), false, 'musica già accesa all\'inizio');
+    await b.realClick('#music-on');
     await b.waitFor(`document.getElementById('btn-audio').classList.contains('playing')`, 3000);
     const before = (await b.ev(stats)).musicSteps;
     await sleep(1500);
@@ -714,14 +770,14 @@ try {
     // Ricaricamento: la preferenza resta e la musica riparte al primo tocco
     await b.send('Page.reload');
     await b.waitFor(`document.readyState === 'complete' && !!document.querySelector('.tabs .active')`, 10000);
-    assert.equal(await b.ev(`document.getElementById('btn-audio').classList.contains('playing')`), false);
+    assert.equal(await b.ev(`document.getElementById('btn-audio').classList.contains('playing')`), false, 'musica partita da sola dopo il ricaricamento');
     await b.mouse(640, 450);
     await b.waitFor(`document.getElementById('btn-audio').classList.contains('playing')`, 3000);
     await b.click('#btn-audio');
     await b.click('#music-on');
-    assert.equal(await b.ev(`document.getElementById('btn-audio').classList.contains('playing')`), false);
+    assert.equal(await b.ev(`document.getElementById('btn-audio').classList.contains('playing')`), false, 'musica non spenta');
     await b.ev(`document.body.click()`); // chiude il pannello
-    assert.equal(await b.ev(`document.getElementById('audio-panel').hidden`), true);
+    assert.equal(await b.ev(`document.getElementById('audio-panel').hidden`), true, 'pannello non chiuso');
     // Suono di una mossa (Analisi partita: nuova partita, 1.e4)
     await b.click('#btn-reset');
     await sleep(200);

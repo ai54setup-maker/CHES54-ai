@@ -4,3 +4,4 @@ node_modules/
 *.log
 data/examples/source/
 data/puzzles/source/
+data/openings/tree-source/

@@ -182,6 +182,34 @@ le spiegazioni torneranno in fase 4, derivate solo dalle linee del motore.
   `UI_CONFIG.puzzles.dailyLevels`; data locale del dispositivo; conta come fatto anche con indizio/soluzione;
   `pzStats.dailyLast` / `dailyStreak`. Link `?section=problemi&daily=1` (scorciatoia nel manifest).
 
+### Sezione Aperture (2026-10-22, richiesta "quarta serie": fase 1)
+- Sesta voce della barra (`data-mode="openings"`, link `?section=aperture`), `src/ui/openings.js` (`OpeningsExplorer`),
+  logica pura in `src/analysis/opening-tree.js` (albero, statistiche, ripasso; testata in Node).
+- **Albero** (`npm run build:opening-tree`, ~70 min la prima volta, cache in `data/openings/tree-source/`, esclusa da git): dal
+  dataset lichess-org/chess-openings (CC0) un nodo per posizione (chiave = `positionKey`, le trasposizioni portano allo stesso
+  nodo), archi = mosse. Ogni nodo analizzato da Stockfish (`ANALYSIS_CONFIG.openingTree`, profondità 18): `s = [cp, matto,
+  mossa migliore UCI, profondità]` dal punto di vista del Bianco; la valutazione di un ramo è quella della posizione a cui porta.
+  Le posizioni finali (es. matto di Légal) non hanno valutazione. File: `data/openings/tree/index.json` (catalogo: gruppo per
+  prima mossa → famiglia = nome prima dei ":" → varianti con il percorso UCI) e `tree-{e4,d4,c4,other}.json` (nodi:
+  `k` chiave, `n` [eco, nome] o 0, `c` [[san, uci, id figlio]], `s`). Id dei nodi = `gruppo:numero`, radice `root`.
+- **Statistiche** (`npm run build:opening-stats`, ~6 min; `-- latest 50000` per una prova): **database delle partite di Lichess
+  (CC0)**, file mensile più recente letto in streaming per `UI_CONFIG.openings.games` (10 M) partite; blitz/rapid/classiche (bullet
+  escluso); per ogni posizione dell'albero si conta la mossa giocata (anche se esce dall'albero, poi ci si ferma) nella **fascia di
+  chi muove**, con il risultato. Fasce `ratingBands` = **punteggi Lichess, non Elo FIDE** (l'interfaccia lo dice). File
+  `stats-{root,e4,d4,c4,other}.json`: per nodo e fascia `[totale, [[san, n, vinte Bianco, patte, vinte Nero]…]]` (prime
+  `topMoves`), oppure 0 sotto `minGamesShown` partite. Fonte e numeri in `data/openings/STATS-SOURCES.md`.
+  **L'Opening Explorer di Lichess richiede un account (401) dal 2026: non usato.**
+- Interfaccia: mosse dell'albero con valutazione del ramo (Stockfish), partite e risultati nella fascia scelta (per chi muove),
+  badge "Stockfish" e "Più giocata", frecce verde (Stockfish) e azzurra (più giocata); avviso se la mossa di Stockfish o la più
+  giocata non è nell'albero. Ricerca senza accenti, anche con nomi italiani comuni (`searchAliases`). Nomi delle aperture in
+  inglese come nel dataset. Collegamento "Apri nella sezione Aperture" dalla scheda Teoria delle aperture (`openKey`).
+- **Ripasso** delle varianti: l'app gioca l'avversario, l'utente le mosse della variante (dato del dataset); scatole come
+  "I tuoi errori" (`recordResult`, `LEARNED_BOX`); localStorage `openingReps` (id = colore + percorso), `opBand`, `opColor`,
+  `opGroup` (tutte in BACKUP_KEYS).
+- **Idee**: `data/openings/ideas.json` + `ideas.en.json` per le 20 famiglie più giocate (classifica dalle statistiche). Solo
+  concetti e fatti sulla scacchiera; `test/opening-ideas.test.mjs` verifica che ogni mossa citata con il numero (es. 3...exd4)
+  compaia a quel punto in una variante della famiglia.
+
 ### Audio e nome CHES54.com (2026-10-22)
 - Nome visibile **CHES54.com** (prima CHES54.ai): titolo, logo testuale, manifest, Informazioni, PGN della sezione Gioca,
   `logo-CHES54.svg/png`. I backup esportati con `app: 'CHES54.ai'` restano importabili (`OLD_APPS` in backup.js).
@@ -312,6 +340,8 @@ npm run bench          # tempi di analisi (default: data/examples/games/kasparov
 npm run build:examples # libreria di partite: scarica le fonti (in data/examples/source/, esclusa da git), verifica, rigenera
 npm run build:puzzles  # problemi: legge il database Lichess (CC0), verifica con Stockfish, rigenera data/puzzles/
 npm run check:lessons  # lezioni: verifica gli esercizi con Stockfish (--explore FEN per scriverne di nuovi)
+npm run build:opening-tree   # aperture: albero dal dataset + Stockfish su ogni posizione (cache in data/openings/tree-source/)
+npm run build:opening-stats  # aperture: statistiche per fascia dal database delle partite Lichess (CC0)
 ```
 Richiede Node ≥ 22 (WebSocket integrato per test:ui; glob in `node --test`).
 Prima di chiudere una modifica all'interfaccia: `npm test` e `npm run test:ui` devono passare.

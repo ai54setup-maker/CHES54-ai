@@ -90,6 +90,12 @@ export async function launch(browserPath, port) {
         await send('Input.dispatchMouseEvent', { type, x, y, button: 'left', clickCount: 1 });
       }
     },
+    /** Clic "vero" (mouse) al centro di un elemento: per il browser è un gesto dell'utente (serve per l'audio). */
+    async realClick(sel) {
+      const r = await ev(`(() => { const el = document.querySelector(${JSON.stringify(sel)}); el.scrollIntoView({ block: 'center' }); const e = el.getBoundingClientRect(); return { x: e.left + e.width / 2, y: e.top + e.height / 2 }; })()`);
+      await b.mouse(r.x, r.y);
+      await sleep(80);
+    },
     /** Clic su una casa della scacchiera, tenendo conto dell'orientamento. */
     async clickSquare(sq, boardId = 'board', flipped = null) {
       const r = await ev(`(() => { const e = document.getElementById(${JSON.stringify(boardId)}).getBoundingClientRect();

@@ -32,6 +32,8 @@ import { LessonPlayer } from './lessons.js';
 import { OnlineGames } from './online-games.js';
 import { startMusic, stopMusic, setMusicVolume, setSoundEffects, isMusicPlaying } from './audio.js';
 import { PlayGame } from './play.js';
+import { OpeningsExplorer } from './openings.js';
+import { positionKey } from '../engine/cache.js';
 import { t, fmtNum, locale, getLang, setLang, detectLang, translateDom } from '../i18n/i18n.js';
 import { sharePgn, encodeShare, decodeShare } from '../analysis/share.js';
 import { mistakesFromReview, mergeMistakes } from '../analysis/my-mistakes.js';
@@ -81,10 +83,10 @@ const state = {
   section: null,
 };
 const BOARD_SECTIONS = ['review', 'analysis'];
-const SECTIONS = [...BOARD_SECTIONS, 'play', 'lessons', 'puzzles'];
+const SECTIONS = [...BOARD_SECTIONS, 'play', 'openings', 'lessons', 'puzzles'];
 state.section = SECTIONS.includes(store.get('section', '')) ? store.get('section', '') : state.mode;
 // Link diretto a una sezione (anche dalle scorciatoie dell'icona dell'app): ?section=lezioni / problemi / analisi / revisione
-const SECTION_ALIASES = { revisione: 'review', analisi: 'analysis', gioca: 'play', lezioni: 'lessons', problemi: 'puzzles' };
+const SECTION_ALIASES = { revisione: 'review', analisi: 'analysis', gioca: 'play', aperture: 'openings', lezioni: 'lessons', problemi: 'puzzles' };
 const linked = new URLSearchParams(location.search).get('section');
 const linkedSection = SECTION_ALIASES[linked] ?? linked;
 if (SECTIONS.includes(linkedSection)) {
@@ -250,7 +252,10 @@ function setSection(section) {
 let puzzles = null;
 let lessons = null;
 let play = null;
+let openings = null;
+const getOpenings = () => (openings ??= new OpeningsExplorer($('view-openings'), { store, toast, askPromotion }));
 function showSectionView() {
+  if (state.section === 'openings') getOpenings().show();
   if (state.section === 'play') {
     play ??= new PlayGame($('view-play'), {
       askPromotion,
@@ -523,6 +528,7 @@ function renderTabs() {
   $('view-board').hidden = !onBoard();
   $('view-lessons').hidden = state.section !== 'lessons';
   $('view-play').hidden = state.section !== 'play';
+  $('view-openings').hidden = state.section !== 'openings';
   $('view-puzzles').hidden = state.section !== 'puzzles';
   document.body.dataset.section = state.section;
 }
@@ -1000,6 +1006,12 @@ function renderGame() {
 
 /** Esploratore delle aperture: mosse di teoria dalla posizione mostrata (dataset, nessuna valutazione). */
 const bookMovesMemo = new Map();
+$('opening-open').onclick = async () => {
+  const key = positionKey(displayed().fen);
+  setSection('openings');
+  await getOpenings().openKey(key);
+};
+
 function renderOpenings(a) {
   const card = $('opening-card');
   const fen = displayed().fen;
@@ -1345,7 +1357,7 @@ $('btn-flip').onclick = () => {
 
 document.addEventListener('keydown', (e) => {
   if (e.target.closest('input, textarea, select, dialog') || e.altKey || e.ctrlKey || e.metaKey) return;
-  if (!onBoard()) return ({ lessons, puzzles }[state.section])?.onKey?.(e);
+  if (!onBoard()) return ({ lessons, puzzles, openings }[state.section])?.onKey?.(e);
   if (state.mode === 'review' && !reviewDone()) return;
   const actions = {
     ArrowLeft: () => (state.retry ? exitRetry() : goTo(cur() - 1)),

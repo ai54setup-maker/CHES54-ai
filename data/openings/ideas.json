@@ -1,0 +1,125 @@
+{
+  "_note": "Idee delle 20 famiglie più giocate (statistiche di data/openings/tree/stats-*.json). Solo concetti e fatti visibili sulla scacchiera: nessuna valutazione scritta a mano (quelle vengono da Stockfish). Ogni mossa citata con il numero (es. 2.Cf3, 3...exd4) deve comparire, a quel punto, in una variante della famiglia: lo controlla test/opening-ideas.test.mjs.",
+  "families": {
+    "King's Pawn Game": {
+      "text": [
+        "1.e4 porta un pedone al centro: occupa e4 e controlla d5 e f5.",
+        "Apre anche due linee: quella dell'alfiere in f1 e quella della donna in d1, che possono uscire subito."
+      ]
+    },
+    "Queen's Pawn Game": {
+      "text": [
+        "1.d4 occupa il centro con il pedone di donna: controlla c5 ed e5.",
+        "Il pedone in d4 è difeso dalla donna in d1, e la diagonale dell'alfiere in c1 si apre."
+      ]
+    },
+    "King's Knight Opening": {
+      "text": [
+        "Dopo 1.e4 e5, 2.Cf3 sviluppa un pezzo e nello stesso momento attacca il pedone in e5.",
+        "Il Nero di solito risponde difendendo e5 (con il cavallo, il pedone d o il pedone f) oppure attaccando a sua volta il pedone in e4."
+      ]
+    },
+    "Sicilian Defense": {
+      "text": [
+        "Con 1...c5 il Nero non mette un pedone in e5: controlla d4 con un pedone laterale.",
+        "Se il Bianco spinge d4, spesso si arriva a uno scambio del pedone c del Nero con il pedone d del Bianco: la colonna c si apre per il Nero e il Bianco resta con un pedone centrale in più."
+      ]
+    },
+    "Scandinavian Defense": {
+      "text": [
+        "1...d5 attacca subito il pedone in e4.",
+        "Dopo 2.exd5 il Nero riprende spesso con la donna, che però può essere attaccata dai pezzi bianchi che si sviluppano (per esempio un cavallo in c3)."
+      ]
+    },
+    "French Defense": {
+      "text": [
+        "1...e6 prepara 2...d5, che attacca il pedone in e4 con il sostegno del pedone e6.",
+        "L'alfiere in c8 resta chiuso dietro i pedoni neri in e6 e d5: liberarlo è un tema tipico della partita del Nero."
+      ]
+    },
+    "Caro-Kann Defense": {
+      "text": [
+        "1...c6 prepara 2...d5, che attacca il pedone in e4 con il pedone c6 come sostegno.",
+        "A differenza della Francese, la diagonale dell'alfiere in c8 resta aperta: spesso l'alfiere esce prima che il pedone e venga spinto."
+      ]
+    },
+    "Indian Defense": {
+      "text": [
+        "1...Cf6 sviluppa un pezzo e controlla e4 e d5 senza mettere subito un pedone al centro.",
+        "Da qui nascono molte aperture con nomi diversi (Indiana di re, Nimzo-indiana, Grünfeld…), a seconda di dove il Nero sviluppa l'alfiere e di quando spinge i pedoni centrali."
+      ]
+    },
+    "Italian Game": {
+      "text": [
+        "3.Ac4 sviluppa l'alfiere su una diagonale che punta su f7, la casa vicino al re nero difesa solo dal re.",
+        "Dopo 3.Ac4 il Bianco ha liberato le case tra re e torre: può arroccare corto alla mossa successiva."
+      ]
+    },
+    "Queen's Gambit": {
+      "text": [
+        "2.c4 offre il pedone c per attaccare il pedone nero in d5 e lottare per il centro.",
+        "Il Nero può prenderlo (Gambetto di donna accettato) oppure difendere d5 con un pedone, per esempio con e6 o c6 (Gambetto di donna rifiutato, Slava)."
+      ]
+    },
+    "Zukertort Opening": {
+      "text": [
+        "1.Cf3 sviluppa un cavallo che controlla e5 e d4 senza decidere subito quale pedone centrale spingere.",
+        "Con le mosse successive si può arrivare a molte aperture diverse: è una delle prime mosse che più spesso portano a trasposizioni."
+      ]
+    },
+    "Bishop's Opening": {
+      "text": [
+        "2.Ac4 sviluppa subito l'alfiere sulla diagonale che punta su f7.",
+        "Il cavallo in g1 resta per ora in casa: il Bianco può ancora scegliere tra Cf3 e la spinta f4."
+      ]
+    },
+    "English Opening": {
+      "text": [
+        "1.c4 controlla d5 con un pedone laterale invece di occupare il centro con e4 o d4.",
+        "Spesso il Bianco sviluppa l'alfiere in g2 (dopo g3), dove guarda la grande diagonale verso il centro e il lato di donna."
+      ]
+    },
+    "Philidor Defense": {
+      "text": [
+        "2...d6 difende il pedone in e5 con un pedone invece che con un pezzo.",
+        "La diagonale dell'alfiere in f8 resta chiusa dal pedone d6: l'alfiere di solito si sviluppa in e7."
+      ]
+    },
+    "Horwitz Defense": {
+      "text": [
+        "1...e6 apre la diagonale dell'alfiere in f8 e prepara d5 o f5.",
+        "Può trasporre in altre aperture: per esempio in una Francese, se il Bianco gioca e4 e il Nero risponde d5."
+      ]
+    },
+    "Ruy Lopez": {
+      "text": [
+        "3.Ab5 attacca il cavallo in c6, il pezzo che difende il pedone in e5.",
+        "Il Nero spesso chiede subito all'alfiere cosa fare con a6: l'alfiere può tornare in a4 o cambiarsi con il cavallo."
+      ]
+    },
+    "Scotch Game": {
+      "text": [
+        "3.d4 attacca subito il pedone in e5 con un pedone e apre il centro.",
+        "Dopo 3...exd4 4.Cxd4 il cavallo bianco sta al centro in d4 e il Bianco ha il pedone in e4 contro nessun pedone nero centrale."
+      ]
+    },
+    "Vienna Game": {
+      "text": [
+        "2.Cc3 sviluppa il cavallo di donna e difende il pedone in e4.",
+        "La casa f3 resta libera per il pedone f: la spinta f4 contro il pedone in e5 è uno dei temi della Viennese."
+      ]
+    },
+    "Center Game": {
+      "text": [
+        "2.d4 attacca subito il pedone in e5 con il pedone di donna.",
+        "Se il Nero cattura e il Bianco riprende con la donna (3.Dxd4), la donna sta al centro ma può essere attaccata da un cavallo che esce in c6."
+      ]
+    },
+    "Englund Gambit": {
+      "text": [
+        "1...e5 offre il pedone e: dopo 2.dxe5 il pedone bianco arriva in e5.",
+        "In cambio del pedone il Nero cerca uno sviluppo rapido dei pezzi e attacchi contro il pedone in e5."
+      ]
+    }
+  }
+}

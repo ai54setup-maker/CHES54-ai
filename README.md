@@ -16,6 +16,8 @@ Revisione e analisi delle partite di scacchi, direttamente nel browser, con **St
 - **Analisi partita:** ricostruisci una partita mossa per mossa, con le migliori mosse del motore, l'Allenatore e la
   teoria delle aperture.
 - **Gioca:** contro Stockfish a 8 livelli, con la revisione completa a fine partita.
+- **Aperture:** tutte le aperture del dataset Lichess per famiglia e variante, con l'albero delle risposte, la mossa consigliata
+  da Stockfish, le statistiche reali per fascia di punteggio Lichess (10 milioni di partite) e il ripasso delle varianti.
 - **I tuoi errori:** gli errori delle tue revisioni diventano esercizi da ripassare.
 - **Condividi:** un link riapre la stessa revisione (la partita sta nel link, non su un server).
 - **I tuoi dati:** nessun account; esporta e importa un file per passare a un altro dispositivo.

@@ -14,6 +14,8 @@
     "build:openings": "node scripts/build-openings.mjs",
     "build:examples": "node scripts/build-examples.mjs",
     "build:puzzles": "node scripts/build-puzzles.mjs",
-    "check:lessons": "node scripts/check-lessons.mjs"
+    "check:lessons": "node scripts/check-lessons.mjs",
+    "build:opening-tree": "node scripts/build-opening-tree.mjs",
+    "build:opening-stats": "node scripts/build-opening-stats.mjs"
   }
 }

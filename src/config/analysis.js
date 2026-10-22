@@ -133,6 +133,13 @@ export const ANALYSIS_CONFIG = Object.freeze({
     rejectGap: 10,
   }),
 
+  // Nostro: sezione Aperture (scripts/build-opening-tree.mjs). Ogni posizione dell'albero viene analizzata da Stockfish:
+  // la mossa consigliata è la prima linea, la valutazione di un ramo è quella della posizione a cui porta.
+  openingTree: Object.freeze({
+    depth: 18,
+    multiPv: 1,
+  }),
+
   keyMoments: Object.freeze({
     count: 5, // quanti momenti chiave mostrare al massimo
     minSwing: 10, // variazione minima di win% per essere un momento chiave

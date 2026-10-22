@@ -84,6 +84,37 @@ export const UI_CONFIG = Object.freeze({
     max: 300, // esercizi conservati al massimo (si tolgono prima quelli imparati, poi i più vecchi)
   }),
 
+  // Sezione Aperture: albero (data/openings/tree/) e statistiche reali per fascia di punteggio Lichess (non Elo FIDE),
+  // dal database delle partite di Lichess (CC0), generate da scripts/build-opening-stats.mjs.
+  openings: Object.freeze({
+    indexUrl: 'data/openings/tree/index.json',
+    treeUrl: (group) => `data/openings/tree/tree-${group}.json`,
+    statsUrl: (group) => `data/openings/tree/stats-${group}.json`,
+    ideasUrl: 'data/openings/ideas.json',
+    ideasEnUrl: 'data/openings/ideas.en.json',
+    ratingBands: Object.freeze([
+      Object.freeze({ id: 'u1000', label: '< 1000', min: 0, max: 1000 }),
+      Object.freeze({ id: 'b1000', label: '1000–1400', min: 1000, max: 1400 }),
+      Object.freeze({ id: 'b1400', label: '1400–1800', min: 1400, max: 1800 }),
+      Object.freeze({ id: 'b1800', label: '1800–2200', min: 1800, max: 2200 }),
+      Object.freeze({ id: 'b2200', label: '2200+', min: 2200, max: 4000 }),
+    ]),
+    speeds: Object.freeze(['blitz', 'rapid', 'classical']), // il bullet è escluso: mosse troppo affrettate
+    games: 10_000_000, //  partite lette dall'inizio del file mensile
+    maxPlies: 30, //       semimosse seguite per partita (l'albero del dataset non va oltre)
+    topMoves: 5, //        mosse tenute per posizione e fascia
+    minGamesShown: 20, //  sotto questo numero di partite le statistiche non si mostrano (troppo poche)
+    // Nomi italiani comuni → nome inglese del dataset, per la ricerca ("Siciliana" trova "Sicilian Defense")
+    searchAliases: Object.freeze({
+      siciliana: 'sicilian', francese: 'french', spagnola: 'ruy lopez', italiana: 'italian game', inglese: 'english opening',
+      'gambetto di donna': "queen's gambit", 'gambetto di re': "king's gambit", 'indiana di re': "king's indian",
+      'nimzo-indiana': 'nimzo-indian', 'ovest-indiana': "queen's indian", olandese: 'dutch', scozzese: 'scotch', slava: 'slav',
+      'semi-slava': 'semi-slav', 'difesa russa': 'russian game', petrov: 'russian game', 'quattro cavalli': 'four knights',
+      'due cavalli': 'two knights', 'partita viennese': 'vienna', scandinava: 'scandinavian', 'difesa moderna': 'modern defense',
+      londra: 'london system', catalana: 'catalan', 'gambetto evans': 'evans gambit', benoni: 'benoni', grunfeld: 'grunfeld',
+    }),
+  }),
+
   // Lezioni (fase G): contenuti in data/lessons/lessons.json, verificati con npm run check:lessons.
   lessons: Object.freeze({
     dataUrl: 'data/lessons/lessons.json',

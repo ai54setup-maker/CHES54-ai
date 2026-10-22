@@ -1,0 +1,85 @@
+{
+  "_note": "English texts for ideas.json (same families). Moves in English notation; checked by test/opening-ideas.test.mjs.",
+  "families": {
+    "King's Pawn Game": { "text": [
+      "1.e4 brings a pawn to the centre: it occupies e4 and controls d5 and f5.",
+      "It also opens two lines: those of the bishop on f1 and the queen on d1, which can come out at once."
+    ] },
+    "Queen's Pawn Game": { "text": [
+      "1.d4 occupies the centre with the queen's pawn: it controls c5 and e5.",
+      "The pawn on d4 is defended by the queen on d1, and the diagonal of the bishop on c1 opens."
+    ] },
+    "King's Knight Opening": { "text": [
+      "After 1.e4 e5, 2.Nf3 develops a piece and at the same time attacks the pawn on e5.",
+      "Black usually answers by defending e5 (with the knight, the d-pawn or the f-pawn) or by attacking the pawn on e4 in turn."
+    ] },
+    "Sicilian Defense": { "text": [
+      "With 1...c5 Black does not put a pawn on e5: it controls d4 with a side pawn.",
+      "If White pushes d4, Black's c-pawn is often exchanged for White's d-pawn: the c-file opens for Black and White keeps one more central pawn."
+    ] },
+    "Scandinavian Defense": { "text": [
+      "1...d5 immediately attacks the pawn on e4.",
+      "After 2.exd5 Black often recaptures with the queen, which can however be attacked by the developing white pieces (for example a knight on c3)."
+    ] },
+    "French Defense": { "text": [
+      "1...e6 prepares 2...d5, which attacks the pawn on e4 with the support of the pawn on e6.",
+      "The bishop on c8 stays shut in behind the black pawns on e6 and d5: freeing it is a typical theme of Black's game."
+    ] },
+    "Caro-Kann Defense": { "text": [
+      "1...c6 prepares 2...d5, which attacks the pawn on e4 with the pawn on c6 as support.",
+      "Unlike the French, the diagonal of the bishop on c8 stays open: the bishop often comes out before the e-pawn is pushed."
+    ] },
+    "Indian Defense": { "text": [
+      "1...Nf6 develops a piece and controls e4 and d5 without putting a pawn in the centre right away.",
+      "Many openings with different names start from here (King's Indian, Nimzo-Indian, Grünfeld…), depending on where Black develops the bishop and when the central pawns are pushed."
+    ] },
+    "Italian Game": { "text": [
+      "3.Bc4 develops the bishop on a diagonal aimed at f7, the square next to the black king defended only by the king.",
+      "After 3.Bc4 White has cleared the squares between king and rook: castling short is possible on the next move."
+    ] },
+    "Queen's Gambit": { "text": [
+      "2.c4 offers the c-pawn to attack the black pawn on d5 and fight for the centre.",
+      "Black can take it (Queen's Gambit Accepted) or defend d5 with a pawn, for example with e6 or c6 (Queen's Gambit Declined, Slav)."
+    ] },
+    "Zukertort Opening": { "text": [
+      "1.Nf3 develops a knight that controls e5 and d4 without deciding yet which central pawn to push.",
+      "With the following moves it can lead to many different openings: it is one of the first moves that most often lead to transpositions."
+    ] },
+    "Bishop's Opening": { "text": [
+      "2.Bc4 develops the bishop at once on the diagonal aimed at f7.",
+      "The knight on g1 stays home for now: White can still choose between Nf3 and the push f4."
+    ] },
+    "English Opening": { "text": [
+      "1.c4 controls d5 with a side pawn instead of occupying the centre with e4 or d4.",
+      "White often develops the bishop on g2 (after g3), where it looks along the long diagonal towards the centre and the queenside."
+    ] },
+    "Philidor Defense": { "text": [
+      "2...d6 defends the pawn on e5 with a pawn instead of a piece.",
+      "The diagonal of the bishop on f8 stays closed by the pawn on d6: the bishop is usually developed to e7."
+    ] },
+    "Horwitz Defense": { "text": [
+      "1...e6 opens the diagonal of the bishop on f8 and prepares d5 or f5.",
+      "It can transpose into other openings: for example a French, if White plays e4 and Black answers d5."
+    ] },
+    "Ruy Lopez": { "text": [
+      "3.Bb5 attacks the knight on c6, the piece that defends the pawn on e5.",
+      "Black often asks the bishop at once with a6: the bishop can retreat to a4 or exchange itself for the knight."
+    ] },
+    "Scotch Game": { "text": [
+      "3.d4 immediately attacks the pawn on e5 with a pawn and opens the centre.",
+      "After 3...exd4 4.Nxd4 the white knight stands in the centre on d4 and White has the pawn on e4 against no black central pawn."
+    ] },
+    "Vienna Game": { "text": [
+      "2.Nc3 develops the queen's knight and defends the pawn on e4.",
+      "The f3 square stays free for the f-pawn: the push f4 against the pawn on e5 is one of the themes of the Vienna."
+    ] },
+    "Center Game": { "text": [
+      "2.d4 immediately attacks the pawn on e5 with the queen's pawn.",
+      "If Black captures and White recaptures with the queen (3.Qxd4), the queen stands in the centre but can be attacked by a knight coming out to c6."
+    ] },
+    "Englund Gambit": { "text": [
+      "1...e5 offers the e-pawn: after 2.dxe5 the white pawn arrives on e5.",
+      "In return for the pawn Black aims for quick development of the pieces and attacks on the pawn on e5."
+    ] }
+  }
+}
