@@ -182,6 +182,15 @@ le spiegazioni torneranno in fase 4, derivate solo dalle linee del motore.
   `UI_CONFIG.puzzles.dailyLevels`; data locale del dispositivo; conta come fatto anche con indizio/soluzione;
   `pzStats.dailyLast` / `dailyStreak`. Link `?section=problemi&daily=1` (scorciatoia nel manifest).
 
+### Gioca e condivisione (2026-10-22)
+- Sezione **Gioca** (`src/ui/play.js`, `src/analysis/play.js`): motore **separato** (`Engine.inWorker` con `playHashMb`) e
+  `engine.setOptions({ 'Skill Level': n })` (svuota la cache); livelli in `ENGINE_CONFIG.playLevels` (nessuna stima di Elo).
+  Con Skill Level < 20 si gioca `bestMove` (la scelta indebolita), non la prima linea. Partita in localStorage `playGame`;
+  a fine partita `playPgn()` → revisione. Fine partita con le regole (`outcomeOf`) o abbandono.
+- **Condivisione** (`src/analysis/share.js`): `?section=revisione#r=z<base64url deflate-raw>&d=<profondità>`. Il frammento non
+  arriva al server; all'apertura `openSharedReview()` rifà la revisione alla stessa profondità (test: riepilogo identico) e
+  toglie il frammento dall'indirizzo. Massimo `MAX_SHARED_PGN` caratteri.
+
 ### Backup dei dati (2026-10-22)
 - `src/ui/backup.js` (puro): `BACKUP_KEYS` = tutte le chiavi di localStorage dell'app (**aggiungere qui ogni chiave nuova**),
   `makeBackup` / `readBackup` (solo chiavi note e valori di testo, max 5 MB, file estranei rifiutati). Finestra Informazioni:

@@ -45,5 +45,6 @@ export function renderSummary(el, a, retryCount, save = null) {
     <div class="toolbar two">
       <button type="button" class="btn" id="btn-retry-all" ${retryCount ? '' : 'disabled'}>Ritenta gli errori (${retryCount})</button>
       <button type="button" class="btn" id="btn-new-review">Nuova revisione</button>
-    </div>`;
+    </div>
+    <button type="button" class="btn wide" id="btn-share">Condividi la revisione (link)</button>`;
 }

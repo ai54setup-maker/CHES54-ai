@@ -31,6 +31,7 @@ import { PuzzleTrainer } from './puzzles.js';
 import { LessonPlayer } from './lessons.js';
 import { OnlineGames } from './online-games.js';
 import { PlayGame } from './play.js';
+import { sharePgn, encodeShare, decodeShare } from '../analysis/share.js';
 import { mistakesFromReview, mergeMistakes } from '../analysis/my-mistakes.js';
 import { loadMistakes, saveMistakes } from './puzzles.js';
 import { BACKUP_KEYS, makeBackup, readBackup, backupFileName } from './backup.js';
@@ -762,6 +763,34 @@ function saveMyMistakes(a, color) {
   renderReviewCards();
 }
 
+/** Link alla revisione: la partita sta nel frammento "#…" (non arriva al server); chi lo apre rifà la revisione. */
+async function shareReview(a) {
+  const frag = await encodeShare(sharePgn(state.review.game), a.settings.depth);
+  const url = `${location.origin}${location.pathname}?section=revisione#${frag}`;
+  const h = a.headers ?? {};
+  if (navigator.share && matchMedia('(pointer: coarse)').matches) {
+    try {
+      await navigator.share({ title: `Revisione: ${h.White || 'Bianco'} – ${h.Black || 'Nero'}`, url });
+      return;
+    } catch { /* condivisione annullata: si copia il link */ }
+  }
+  await copyText(url);
+  toast('Link copiato: chi lo apre vede la stessa revisione');
+}
+
+/** All'avvio: link condiviso con una partita → revisione automatica. */
+async function openSharedReview() {
+  if (!location.hash.includes('r=')) return;
+  const shared = await decodeShare(location.hash);
+  history.replaceState(null, '', location.pathname + location.search); // un ricaricamento non la rifà
+  if (!shared) return toast('Link di revisione non valido');
+  setMode('review');
+  if (UI_CONFIG.reviewDepthPresets.some((p) => p.depth === shared.depth)) state.reviewDepth = shared.depth; // stesso risultato di chi l'ha condivisa
+  $('pgn-text').value = shared.pgn;
+  updateGameSelect();
+  startReview();
+}
+
 function renderReviewCards() {
   if (!reviewDone()) return;
   const a = state.review.analysis;
@@ -773,6 +802,7 @@ function renderReviewCards() {
       if (first != null) startRetry(first);
     };
     $('btn-new-review').onclick = newReview;
+    $('btn-share').onclick = () => shareReview(a);
   }
   const el = $('move-card');
   if (state.retry) return renderRetryCard(el, a);
@@ -1566,6 +1596,7 @@ restore();
 if (state.mode === 'analysis' && state.setupDone) setOrientation(state.side);
 render();
 showSectionView();
+openSharedReview();
 
 if ('serviceWorker' in navigator && window.isSecureContext) {
   navigator.serviceWorker.register('./sw.js').catch(() => { /* offline non disponibile */ });

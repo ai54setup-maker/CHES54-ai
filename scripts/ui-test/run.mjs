@@ -438,6 +438,22 @@ try {
     assert.match(await b.text('#review-summary'), /Tu.*Stockfish \(livello 1\)/);
   });
 
+  await step('condivisione: il link riapre la stessa revisione con lo stesso risultato', async () => {
+    await b.click('#tab-review');
+    await b.waitFor(`!document.getElementById('review-summary').hidden`, 10000);
+    const before = await b.text('#review-summary');
+    const link = await b.ev(`new Promise((resolve) => {
+      navigator.clipboard.writeText = async (t) => resolve(t);
+      document.getElementById('btn-share').click();
+    })`);
+    assert.match(link, /\?section=revisione#r=z[A-Za-z0-9_-]+&d=\d+$/);
+    await b.send('Page.navigate', { url: link });
+    await b.waitFor(`document.readyState === 'complete' && !!document.querySelector('.tabs .active')`, 10000);
+    await b.waitFor(`!document.getElementById('review-summary').hidden`, 60000);
+    assert.equal(await b.text('#review-summary'), before);
+    assert.equal(await b.ev(`location.hash`), ''); // un ricaricamento non rifà la revisione
+  });
+
   await step('lezioni: indice, spiegazione con dimostrazione, esercizio sbagliato e giusto, lezione completata', async () => {
     await b.click('#tab-lessons');
     await b.waitFor(`document.querySelectorAll('#ls-groups .ls-item').length > 0`, 10000);
