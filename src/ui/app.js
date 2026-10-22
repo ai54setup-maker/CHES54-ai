@@ -31,23 +31,28 @@ import { PuzzleTrainer } from './puzzles.js';
 import { LessonPlayer } from './lessons.js';
 import { OnlineGames } from './online-games.js';
 import { PlayGame } from './play.js';
+import { t, fmtNum, locale, getLang, setLang, detectLang, translateDom } from '../i18n/i18n.js';
 import { sharePgn, encodeShare, decodeShare } from '../analysis/share.js';
 import { mistakesFromReview, mergeMistakes } from '../analysis/my-mistakes.js';
 import { loadMistakes, saveMistakes } from './puzzles.js';
 import { BACKUP_KEYS, makeBackup, readBackup, backupFileName } from './backup.js';
 
 const $ = (id) => document.getElementById(id);
-const COLOR_NAME = { w: 'Bianco', b: 'Nero' };
+const colorName = (c) => t(c === 'w' ? 'Bianco' : 'Nero');
 const GRAPH_MARKS = ['brilliant', 'great', 'inaccuracy', 'mistake', 'blunder'];
-const fmt1 = (v) => v.toFixed(1).replace('.', ',');
-const UNSTABLE_NOTE = 'Era la prima scelta del motore nella posizione precedente, ma analizzando la posizione dopo la mossa '
-  + 'il motore la valuta peggio: a questa profondità la valutazione è instabile. Una profondità maggiore può chiarire.';
+const fmt1 = (v) => fmtNum(v, 1);
+const unstableNote = () => t('Era la prima scelta del motore nella posizione precedente, ma analizzando la posizione dopo la mossa il motore la valuta peggio: a questa profondità la valutazione è instabile. Una profondità maggiore può chiarire.');
 
 // ---------- preferenze (facoltative: l'app funziona anche senza localStorage) ----------
 const store = {
   get(k, d) { try { return localStorage.getItem(UI_CONFIG.storagePrefix + k) ?? d; } catch { return d; } },
   set(k, v) { try { localStorage.setItem(UI_CONFIG.storagePrefix + k, v); } catch { /* spazio esaurito o bloccato */ } },
 };
+// Lingua: va impostata prima di qualsiasi testo (t() la usa da qui in poi); poi si traduce l'HTML statico.
+setLang(detectLang(store.get('lang', ''), navigator.languages ?? [navigator.language]));
+document.documentElement.lang = getLang();
+translateDom(document.body);
+
 const pickNum = (key, allowed, fallback) => {
   const v = Number(store.get(key, fallback));
   return allowed.includes(v) ? v : fallback;
@@ -132,14 +137,14 @@ function positionState(fen) {
   const c = new Chess(fen);
   if (c.isCheckmate()) {
     const winner = c.turn() === 'w' ? 'b' : 'w';
-    return { over: true, mateWinner: winner, text: `Scacco matto: vince il ${COLOR_NAME[winner]}.` };
+    return { over: true, mateWinner: winner, text: t('Scacco matto: vince il {color}.', { color: colorName(winner) }) };
   }
-  if (c.isStalemate()) return { over: true, draw: true, text: 'Stallo: la partita è patta.' };
-  if (c.isInsufficientMaterial()) return { over: true, draw: true, text: 'Patta per materiale insufficiente.' };
-  if (c.isDrawByFiftyMoves()) return { over: true, draw: true, text: 'Patta per la regola delle 50 mosse.' };
+  if (c.isStalemate()) return { over: true, draw: true, text: t('Stallo: la partita è patta.') };
+  if (c.isInsufficientMaterial()) return { over: true, draw: true, text: t('Patta per materiale insufficiente.') };
+  if (c.isDrawByFiftyMoves()) return { over: true, draw: true, text: t('Patta per la regola delle 50 mosse.') };
   const g = currentGame();
   if (!state.retry && cur() === g.plies.length && g.ending === 'threefold') {
-    return { over: true, draw: true, text: 'Patta per triplice ripetizione.' };
+    return { over: true, draw: true, text: t('Patta per triplice ripetizione.') };
   }
   return { over: false };
 }
@@ -184,7 +189,7 @@ function playMove(move) {
     store.set('setupDone', '1');
     saveFree();
     setMode('analysis');
-    toast('Variante: ora sei in Analisi partita');
+    toast(t('Variante: ora sei in Analisi partita'));
     return true;
   }
   return playInGame(move);
@@ -204,7 +209,7 @@ function playInGame(move) {
     // Mossa diversa a metà partita: la linea principale non si tocca, si prova una variante.
     state.variation = { base: i, game: g };
     setCur(i + 1);
-    toast('Variante: la linea principale resta salvata');
+    toast(t('Variante: la linea principale resta salvata'));
   } else {
     if (state.variation) state.variation = { base: Math.min(state.variation.base, i), game: g };
     else {
@@ -405,7 +410,7 @@ async function runCoach(fen, depth, gen) {
   const hints = coachHints({ fen, pe, threat });
   coachCache.set(key, hints);
   // Avviso breve (utile sul telefono, dove il pannello può essere fuori schermo)
-  if (hints.length && fen === displayed().fen) toast(`Allenatore: ${formatHint(hints[0], { user: state.side, level: state.coach.level }).text}`);
+  if (hints.length && fen === displayed().fen) toast(`${t('Allenatore')}: ${formatHint(hints[0], { user: state.side, level: state.coach.level }).text}`);
   renderCoach();
   renderLive(); // nel livello "Indizio" le linee si nascondono se c'è una tattica da trovare
 }
@@ -425,17 +430,17 @@ function renderCoach() {
   $('coach-level').hidden = !state.coach.on;
   const el = $('coach-body');
   if (!state.coach.on) {
-    el.innerHTML = '<p class="hint">Allenatore spento: attivalo per ricevere suggerimenti tattici dopo ogni mossa.</p>';
+    el.innerHTML = `<p class="hint">${t('Allenatore spento: attivalo per ricevere suggerimenti tattici dopo ogni mossa.')}</p>`;
     return;
   }
   const ps = positionState(displayed().fen);
   const hints = coachFor();
   if (ps.over || (hints && !hints.length)) {
-    el.innerHTML = '<p class="hint">Nessuna tattica da segnalare in questa posizione.</p>';
+    el.innerHTML = `<p class="hint">${t('Nessuna tattica da segnalare in questa posizione.')}</p>`;
     return;
   }
   if (!hints) {
-    el.innerHTML = '<p class="hint">L\'allenatore sta guardando la posizione…</p>';
+    el.innerHTML = `<p class="hint">${t('L\'allenatore sta guardando la posizione…')}</p>`;
     return;
   }
   el.replaceChildren(...hints.map((h, i) => {
@@ -451,12 +456,12 @@ function renderCoach() {
     if (picked && f.line) {
       const line = document.createElement('span');
       line.className = 'mc-line';
-      line.textContent = `Variante del motore: ${f.line}`;
+      line.textContent = `${t('Variante del motore')}: ${f.line}`;
       b.append(line);
     } else {
       const more = document.createElement('span');
       more.className = 'coach-more';
-      more.textContent = state.coach.level === 'hint' ? 'Tocca per la soluzione' : 'Tocca per la freccia e la variante';
+      more.textContent = state.coach.level === 'hint' ? t('Tocca per la soluzione') : t('Tocca per la freccia e la variante');
       b.append(more);
     }
     b.addEventListener('click', () => {
@@ -577,13 +582,13 @@ function renderTags() {
   const label = (color) => {
     if (state.mode === 'review' && state.review.game) {
       const h = state.review.game.headers;
-      const name = (color === 'w' ? h.White : h.Black) || COLOR_NAME[color];
+      const name = (color === 'w' ? h.White : h.Black) || colorName(color);
       const acc = state.review.analysis?.players[color].accuracy;
       return `${name}${acc != null ? ` · ${fmt1(acc)}` : ''}`;
     }
     const h = state.free.headers;
-    const name = (color === 'w' ? h.White : h.Black) || COLOR_NAME[color];
-    return state.setupDone && color === state.side ? `${name} (tu)` : name;
+    const name = (color === 'w' ? h.White : h.Black) || colorName(color);
+    return state.setupDone && color === state.side ? `${name} ${t('(tu)')}` : name;
   };
   const top = state.orientation === 'w' ? 'b' : 'w';
   const bottom = state.orientation;
@@ -620,7 +625,7 @@ function renderProgress() {
   const pct = total ? Math.round((done / total) * 100) : 0;
   $('progress-fill').style.width = pct + '%';
   $('progress').setAttribute('aria-valuenow', String(pct));
-  $('progress-text').textContent = `Stockfish sta analizzando ${done}/${total} posizioni (profondità ${state.reviewDepth})…`;
+  $('progress-text').textContent = t('Stockfish sta analizzando {done}/{total} posizioni (profondità {depth})…', { done, total, depth: state.reviewDepth });
 }
 
 function renderLive() {
@@ -634,19 +639,19 @@ function renderLive() {
   // Testo e linee
   info.textContent = '';
   if (state.retry && state.retry.phase !== 'done') {
-    renderEngineMessage(ol, state.retry.phase === 'thinking' ? 'Il motore sta valutando la tua mossa…' : 'Linee nascoste: trova tu la mossa migliore.');
+    renderEngineMessage(ol, state.retry.phase === 'thinking' ? t('Il motore sta valutando la tua mossa…') : t('Linee nascoste: trova tu la mossa migliore.'));
   } else if (engineFailed) {
-    renderEngineMessage(ol, 'Il motore non si è avviato. Apri l\'app tramite il server locale (vedi README), non con un doppio clic su index.html.');
+    renderEngineMessage(ol, t('Il motore non si è avviato. Apri l\'app tramite il server locale (vedi README), non con un doppio clic su index.html.'));
   } else if (ps.over) {
     renderEngineMessage(ol, ps.text);
   } else if (state.review.status === 'running') {
-    renderEngineMessage(ol, 'Il motore è occupato con la revisione della partita…');
+    renderEngineMessage(ol, t('Il motore è occupato con la revisione della partita…'));
   } else if (coachHides()) {
-    renderEngineMessage(ol, 'Linee nascoste: c\'è una tattica da trovare. Tocca il suggerimento dell\'allenatore per la soluzione.');
+    renderEngineMessage(ol, t('Linee nascoste: c\'è una tattica da trovare. Tocca il suggerimento dell\'allenatore per la soluzione.'));
   } else if (!lines.length) {
-    renderEngineMessage(ol, engine?.isReady ? 'Analisi in corso…' : 'Avvio del motore…');
+    renderEngineMessage(ol, engine?.isReady ? t('Analisi in corso…') : t('Avvio del motore…'));
   } else {
-    info.textContent = `profondità ${r.depth}${r.done ? ' ✓' : '…'}${r.fromCache ? ' · cache' : ''}`;
+    info.textContent = `${t('profondità')} ${r.depth}${r.done ? ' ✓' : '…'}${r.fromCache ? ' · cache' : ''}`;
     renderEngineLines(ol, {
       fen: d.fen,
       lines,
@@ -717,7 +722,7 @@ function explanationsHtml(facts) {
   if (!facts?.length) return '';
   const items = facts.map((f) => {
     const { text, line } = formatExplanation(f);
-    return `<li>${text}<span class="mc-line">Variante: ${line}</span></li>`;
+    return `<li>${text}<span class="mc-line">${t('Variante')}: ${line}</span></li>`;
   });
   return `<ul class="mc-explain">${items.join('')}</ul>`;
 }
@@ -727,10 +732,10 @@ function moveDetailsHtml(m) {
   const info = CLASS_INFO[m.classification];
   let html = `<div class="mc-head">${classIcon(m.classification)}<div>
       <div class="mc-title">${moveLabel(m.ply)} <span class="cls-text cls-${m.classification}">${info.label}</span></div>
-      <div class="mc-sub">Valutazione ${evalText(m.after)} · perdita ${fmt1(m.winLoss)} punti di win% · precisione ${Math.round(m.accuracy)}</div>
+      <div class="mc-sub">${t('Valutazione {score} · perdita {loss} punti di win% · precisione {acc}', { score: evalText(m.after), loss: fmt1(m.winLoss), acc: Math.round(m.accuracy) })}</div>
     </div></div>`;
   if (!m.isBest && m.bestSan && m.before.lines[0]) {
-    html += `<p class="mc-best">Migliore: <b>${toItalian(m.bestSan)}</b> (${formatScore(m.before.lines[0].score)})
+    html += `<p class="mc-best">${t('Migliore')}: <b>${toItalian(m.bestSan)}</b> (${formatScore(m.before.lines[0].score)})
       <span class="mc-line">${numberedLine(m.ply.fenBefore, m.before.lines[0].pv, UI_CONFIG.lineMoves)}</span></p>`;
   }
   return html + explanationsHtml(m.explanations ?? explainMove(m));
@@ -756,11 +761,11 @@ function saveInfo(a) {
 
 function saveMyMistakes(a, color) {
   const h = a.headers ?? {};
-  const label = `${h.White || 'Bianco'} – ${h.Black || 'Nero'}${h.UTCDate || h.Date ? `, ${(h.UTCDate || h.Date).replace(/\./g, '-')}` : ''}`;
+  const label = `${h.White || t('Bianco')} – ${h.Black || t('Nero')}${h.UTCDate || h.Date ? `, ${(h.UTCDate || h.Date).replace(/\./g, '-')}` : ''}`;
   const { list, added } = mergeMistakes(loadMistakes(store), mistakesFromReview(a, color, label), UI_CONFIG.myMistakes.max);
   saveMistakes(store, list);
   savedMistakeIds = new Set(list.map((x) => x.id));
-  toast(added ? `${added} ${added === 1 ? 'esercizio aggiunto' : 'esercizi aggiunti'}: li trovi in Problemi → I tuoi errori` : 'Erano già salvati');
+  toast(added ? t(added === 1 ? '{n} esercizio aggiunto: li trovi in Problemi → I tuoi errori' : '{n} esercizi aggiunti: li trovi in Problemi → I tuoi errori', { n: added }) : t('Erano già salvati'));
   renderReviewCards();
 }
 
@@ -771,12 +776,12 @@ async function shareReview(a) {
   const h = a.headers ?? {};
   if (navigator.share && matchMedia('(pointer: coarse)').matches) {
     try {
-      await navigator.share({ title: `Revisione: ${h.White || 'Bianco'} – ${h.Black || 'Nero'}`, url });
+      await navigator.share({ title: `${t('Revisione')}: ${h.White || t('Bianco')} – ${h.Black || t('Nero')}`, url });
       return;
     } catch { /* condivisione annullata: si copia il link */ }
   }
   await copyText(url);
-  toast('Link copiato: chi lo apre vede la stessa revisione');
+  toast(t('Link copiato: chi lo apre vede la stessa revisione'));
 }
 
 /** All'avvio: link condiviso con una partita → revisione automatica. */
@@ -784,7 +789,7 @@ async function openSharedReview() {
   if (!location.hash.includes('r=')) return;
   const shared = await decodeShare(location.hash);
   history.replaceState(null, '', location.pathname + location.search); // un ricaricamento non la rifà
-  if (!shared) return toast('Link di revisione non valido');
+  if (!shared) return toast(t('Link di revisione non valido'));
   setMode('review');
   if (UI_CONFIG.reviewDepthPresets.some((p) => p.depth === shared.depth)) state.reviewDepth = shared.depth; // stesso risultato di chi l'ha condivisa
   $('pgn-text').value = shared.pgn;
@@ -810,17 +815,17 @@ function renderReviewCards() {
 
   const i = cur();
   if (i === 0) {
-    el.innerHTML = '<div class="mc-title">Posizione iniziale</div><p class="hint">Usa ◀ ▶ (o le frecce della tastiera), tocca il grafico oppure una mossa della lista.</p>';
+    el.innerHTML = `<div class="mc-title">${t('Posizione iniziale')}</div><p class="hint">${t('Usa ◀ ▶ (o le frecce della tastiera), tocca il grafico oppure una mossa della lista.')}</p>`;
     return;
   }
   const m = a.moves[i - 1];
   let html = moveDetailsHtml(m);
-  if (m.isBest && RETRY_CLASSIFICATIONS.includes(m.classification)) html += `<p class="hint">${UNSTABLE_NOTE}</p>`;
+  if (m.isBest && RETRY_CLASSIFICATIONS.includes(m.classification)) html += `<p class="hint">${unstableNote()}</p>`;
   const key = a.keyMoments.find((k) => k.index === i - 1);
-  if (key) html += `<p class="mc-key">Momento chiave: win% del Bianco ${key.swing > 0 ? '+' : '−'}${fmt1(Math.abs(key.swing))}</p>`;
-  if (a.bookPlies === i && a.opening) html += `<p class="hint">Fine della teoria (${a.opening.name}).</p>`;
+  if (key) html += `<p class="mc-key">${t('Momento chiave: win% del Bianco {swing}', { swing: `${key.swing > 0 ? '+' : '−'}${fmt1(Math.abs(key.swing))}` })}</p>`;
+  if (a.bookPlies === i && a.opening) html += `<p class="hint">${t('Fine della teoria ({name}).', { name: a.opening.name })}</p>`;
   if (RETRY_CLASSIFICATIONS.includes(m.classification)) {
-    html += '<button type="button" class="btn" id="btn-retry-this">Ritenta questa mossa</button>';
+    html += `<button type="button" class="btn" id="btn-retry-this">${t('Ritenta questa mossa')}</button>`;
   }
   el.innerHTML = html;
   $('btn-retry-this')?.addEventListener('click', () => startRetry(i - 1));
@@ -880,40 +885,40 @@ async function submitRetry(move) {
 function renderRetryCard(el, a) {
   const r = state.retry;
   const m = a.moves[r.index];
-  const who = COLOR_NAME[m.ply.color];
+  const who = colorName(m.ply.color);
   const head = `<div class="mc-head">${classIcon(m.classification)}<div>
-      <div class="mc-title">Ritenta: ${moveLabel(m.ply)} <span class="cls-text cls-${m.classification}">${CLASS_INFO[m.classification].label}</span></div>
-      <div class="mc-sub">Trova una mossa migliore per il ${who}.</div></div></div>`;
+      <div class="mc-title">${t('Ritenta')}: ${moveLabel(m.ply)} <span class="cls-text cls-${m.classification}">${CLASS_INFO[m.classification].label}</span></div>
+      <div class="mc-sub">${t('Trova una mossa migliore per il {color}.', { color: who })}</div></div></div>`;
   const solution = r.showSolution && m.bestSan
-    ? `<p class="mc-best">Soluzione: <b>${toItalian(m.bestSan)}</b> (${formatScore(m.before.lines[0].score)})
+    ? `<p class="mc-best">${t('Soluzione')}: <b>${toItalian(m.bestSan)}</b> (${formatScore(m.before.lines[0].score)})
        <span class="mc-line">${numberedLine(m.ply.fenBefore, m.before.lines[0].pv, UI_CONFIG.lineMoves)}</span></p>` : '';
   const hasNext = retryCandidates(a).some((i) => i > r.index);
   const buttons = (list) => `<div class="toolbar two">${list.join('')}</div>`;
   const B = {
-    again: '<button type="button" class="btn primary" data-act="again">Riprova</button>',
-    solution: '<button type="button" class="btn" data-act="solution">Mostra soluzione</button>',
-    next: `<button type="button" class="btn" data-act="next" ${hasNext ? '' : 'disabled'}>Errore successivo</button>`,
-    exit: '<button type="button" class="btn" data-act="exit">Esci</button>',
+    again: `<button type="button" class="btn primary" data-act="again">${t('Riprova')}</button>`,
+    solution: `<button type="button" class="btn" data-act="solution">${t('Mostra soluzione')}</button>`,
+    next: `<button type="button" class="btn" data-act="next" ${hasNext ? '' : 'disabled'}>${t('Errore successivo')}</button>`,
+    exit: `<button type="button" class="btn" data-act="exit">${t('Esci')}</button>`,
   };
 
   if (r.phase === 'waiting') {
     el.innerHTML = head + solution + buttons([r.showSolution ? B.next : B.solution, B.exit]);
   } else if (r.phase === 'thinking') {
-    el.innerHTML = head + `<p class="mc-feedback">Hai giocato <b>${toItalian(r.attempt.ply.san)}</b>: il motore la sta valutando…</p>`;
+    el.innerHTML = head + `<p class="mc-feedback">${t('Hai giocato {move}: il motore la sta valutando…', { move: `<b>${toItalian(r.attempt.ply.san)}</b>` })}</p>`;
   } else {
     const att = r.attempt;
     const label = CLASS_INFO[att.classification].label;
     const isError = RETRY_CLASSIFICATIONS.includes(att.classification);
-    const loss = `perdita ${fmt1(att.winLoss)} punti di win%`;
+    const loss = t('perdita {loss} punti di win%', { loss: fmt1(att.winLoss) });
     let msg;
-    if (isError && att.isBest) msg = `è la prima scelta del motore, ma analizzando la posizione dopo la mossa risulta "${label}" (${loss}): a questa profondità la valutazione è instabile.`;
-    else if (isError) msg = `anche questa è una mossa da "${label}" (${loss}).`;
-    else if (att.isBest || ['brilliant', 'great', 'best'].includes(att.classification)) msg = 'esatto, è la mossa migliore secondo il motore!';
-    else if (att.classification === 'excellent') msg = `mossa eccellente (${loss}), quasi come la migliore.`;
-    else msg = `buona mossa (${loss}), ma c'era di meglio.`;
+    if (isError && att.isBest) msg = t('è la prima scelta del motore, ma analizzando la posizione dopo la mossa risulta "{label}" ({loss}): a questa profondità la valutazione è instabile.', { label, loss });
+    else if (isError) msg = t('anche questa è una mossa da "{label}" ({loss}).', { label, loss });
+    else if (att.isBest || ['brilliant', 'great', 'best'].includes(att.classification)) msg = t('esatto, è la mossa migliore secondo il motore!');
+    else if (att.classification === 'excellent') msg = t('mossa eccellente ({loss}), quasi come la migliore.', { loss });
+    else msg = t('buona mossa ({loss}), ma c\'era di meglio.', { loss });
     let reply = isError ? explanationsHtml(att.explanations) : '';
     if (isError && !reply && att.after.lines[0]) {
-      reply = `<p class="mc-best">Il motore risponde: <span class="mc-line">${numberedLine(att.ply.fenAfter, att.after.lines[0].pv, UI_CONFIG.lineMoves)}</span></p>`;
+      reply = `<p class="mc-best">${t('Il motore risponde')}: <span class="mc-line">${numberedLine(att.ply.fenAfter, att.after.lines[0].pv, UI_CONFIG.lineMoves)}</span></p>`;
     }
     el.innerHTML = head + `<p class="mc-feedback">${classIcon(att.classification)} <b>${toItalian(att.ply.san)}</b>: ${msg}</p>` + reply
       + buttons([B.again, B.solution, B.next, B.exit]);
@@ -1002,8 +1007,8 @@ function renderOpenings(a) {
   const here = openingBook.nameOf(fen) ?? (cur() > 0 && openingBook.isBook(fen) ? a.opening : null);
   card.hidden = !moves.length && !here;
   if (card.hidden) return;
-  $('opening-name').textContent = here ? `${here.eco} · ${here.name}` : 'Posizione iniziale';
-  $('opening-count').textContent = moves.length ? `${moves.length} ${moves.length === 1 ? 'continuazione' : 'continuazioni'}` : 'fine della teoria';
+  $('opening-name').textContent = here ? `${here.eco} · ${here.name}` : t('Posizione iniziale');
+  $('opening-count').textContent = moves.length ? t(moves.length === 1 ? '{n} continuazione' : '{n} continuazioni', { n: moves.length }) : t('fine della teoria');
   const key = `${fen}|${moves.length}`;
   const box = $('opening-moves');
   if (box.dataset.key === key) return;
@@ -1020,9 +1025,9 @@ function renderOpenings(a) {
 }
 
 const ADV_TEXT = {
-  slight: 'sta leggermente meglio',
-  clear: 'ha un chiaro vantaggio',
-  decisive: 'ha un vantaggio decisivo',
+  slight: '{who} sta leggermente meglio',
+  clear: '{who} ha un chiaro vantaggio',
+  decisive: '{who} ha un vantaggio decisivo',
 };
 
 /** "Chi sta meglio e di quanto" nella posizione mostrata, e dove il giocatore ha perso il vantaggio. */
@@ -1035,21 +1040,21 @@ function renderAdvantage(a) {
     pe = positionEval({ ...live.result, fen: live.fen }); // analisi ancora in corso
     partial = true;
   }
-  const who = (color) => `il ${COLOR_NAME[color]}${color === state.side ? ' (tu)' : ''}`;
+  const who = (color) => `${t('il {color}', { color: colorName(color) })}${color === state.side ? ` ${t('(tu)')}` : ''}`;
   const cap = (s) => s[0].toUpperCase() + s.slice(1);
   let html;
   if (!pe) {
-    html = '<div class="adv-title">Valutazione in corso…</div>';
+    html = `<div class="adv-title">${t('Valutazione in corso…')}</div>`;
   } else {
     const adv = advantageOf(pe);
     let title;
-    if (adv.level === 'checkmate') title = `Scacco matto: vince ${who(adv.side)}`;
-    else if (adv.level === 'draw') title = 'Patta';
-    else if (adv.level === 'mate') title = `${cap(who(adv.side))} ha il matto in ${Math.abs(adv.mate)}`;
-    else if (adv.level === 'equal') title = 'Posizione equilibrata';
-    else title = `${cap(who(adv.side))} ${ADV_TEXT[adv.level]}`;
+    if (adv.level === 'checkmate') title = t('Scacco matto: vince {who}', { who: who(adv.side) });
+    else if (adv.level === 'draw') title = t('Patta');
+    else if (adv.level === 'mate') title = cap(t('{who} ha il matto in {n}', { who: who(adv.side), n: Math.abs(adv.mate) }));
+    else if (adv.level === 'equal') title = t('Posizione equilibrata');
+    else title = cap(t(ADV_TEXT[adv.level], { who: who(adv.side) }));
     const whitePct = Math.round(adv.winPct);
-    const sub = pe.terminal ? '' : `Valutazione ${formatScore(pe.score)} · win% del Bianco ${whitePct}${partial ? ' · analisi in corso…' : ''}`;
+    const sub = pe.terminal ? '' : `${t('Valutazione {score} · win% del Bianco {pct}', { score: formatScore(pe.score), pct: whitePct })}${partial ? ` · ${t('analisi in corso…')}` : ''}`;
     html = `<div class="adv-title adv-${adv.side ?? 'none'}">${title}</div>
       <div class="adv-meter" role="img" aria-label="win% del Bianco ${whitePct}"><div class="adv-meter-fill" data-pct="${adv.winPct}"></div></div>
       ${sub ? `<div class="adv-sub">${sub}</div>` : ''}`;
@@ -1080,7 +1085,7 @@ function renderGameMoveCard(a) {
   }
   const m = a.moves[i - 1];
   const ply = currentGame().plies[i - 1];
-  let html = m ? moveDetailsHtml(m) : `<div class="mc-title">${moveLabel(ply)}</div><p class="hint">Stockfish sta valutando la mossa…</p>`;
+  let html = m ? moveDetailsHtml(m) : `<div class="mc-title">${moveLabel(ply)}</div><p class="hint">${t('Stockfish sta valutando la mossa…')}</p>`;
   if (a.opening && i <= a.bookPlies) html += `<p class="hint">Teoria: ${a.opening.eco} · ${a.opening.name}</p>`;
   el.innerHTML = html;
 }
@@ -1089,8 +1094,9 @@ function renderVariationBar() {
   const v = state.variation;
   if (!v) return;
   const replaced = state.free.plies[v.base];
-  $('variation-text').textContent = `Stai provando una variante${replaced ? ` al posto di ${moveLabel(replaced)}` : ''}: `
-    + 'la linea principale resta salvata.';
+  $('variation-text').textContent = replaced
+    ? t('Stai provando una variante al posto di {move}: la linea principale resta salvata.', { move: moveLabel(replaced) })
+    : t('Stai provando una variante: la linea principale resta salvata.');
 }
 
 // ---------- revisione ----------
@@ -1100,12 +1106,12 @@ async function startReview() {
   let game;
   try {
     const games = splitPgnGames(text);
-    if (!games.length) throw new PgnError('Incolla un PGN o apri un file.');
+    if (!games.length) throw new PgnError(t('Incolla un PGN o apri un file.'));
     const sel = $('game-select');
     game = gameFromPgn(games[sel.hidden ? 0 : Number(sel.value)] ?? games[0]);
-    if (!game.plies.length) throw new PgnError('La partita non contiene mosse.');
+    if (!game.plies.length) throw new PgnError(t('La partita non contiene mosse.'));
   } catch (err) {
-    showReviewError(err instanceof PgnError ? err.message : 'PGN non valido.');
+    showReviewError(err instanceof PgnError ? t(err.message) : t('PGN non valido.'));
     return;
   }
   if (state.retry) exitRetry(false);
@@ -1115,7 +1121,7 @@ async function startReview() {
   render();
   if (!engine || engineFailed) {
     state.review.status = 'empty';
-    showReviewError('Il motore non è disponibile.');
+    showReviewError(t('Il motore non è disponibile.'));
     return render();
   }
   try {
@@ -1134,7 +1140,7 @@ async function startReview() {
   } catch (err) {
     if (state.review.game !== game) return;
     state.review = { status: 'empty', game: null, analysis: null, progress: [0, 0] };
-    if (!(err instanceof AnalysisCancelled)) showReviewError(`Analisi non riuscita: ${err.message}`);
+    if (!(err instanceof AnalysisCancelled)) showReviewError(`${t('Analisi non riuscita')}: ${t(err.message)}`);
     render();
   }
 }
@@ -1167,7 +1173,7 @@ function updateGameSelect() {
   $('game-select-label').hidden = !many;
   if (!many) return;
   sel.replaceChildren(...games.map((g, i) => {
-    let text = `Partita ${i + 1}`;
+    let text = t('Partita {n}', { n: i + 1 });
     try {
       const h = parsePgn(g).headers;
       text = `${i + 1}. ${h.White ?? '?'} – ${h.Black ?? '?'} (${h.Result ?? '*'})`;
@@ -1250,14 +1256,14 @@ function loadFromIO() {
     if (pgnTxt && pgnTxt !== gameToPgn(state.free).trim()) {
       state.free = gameFromPgn(splitPgnGames(pgnTxt)[0] ?? '');
       state.cursors.analysis = state.free.plies.length;
-      toast('Partita caricata');
+      toast(t('Partita caricata'));
     } else {
       state.free = createGame(fenTxt);
       state.cursors.analysis = 0;
-      toast('Posizione caricata');
+      toast(t('Posizione caricata'));
     }
   } catch (e) {
-    err.textContent = e instanceof PgnError ? e.message : 'Testo non valido.';
+    err.textContent = e instanceof PgnError ? t(e.message) : t('Testo non valido.');
     return;
   }
   Object.assign(state, { variation: null, redo: [], setupDone: true });
@@ -1279,7 +1285,7 @@ async function copyText(text) {
     document.execCommand('copy');
     ta.remove();
   }
-  toast('Copiato negli appunti');
+  toast(t('Copiato negli appunti'));
 }
 
 let toastTimer;
@@ -1385,10 +1391,10 @@ $('move-form').addEventListener('submit', (e) => {
   e.preventDefault();
   const input = $('move-text');
   const c = new Chess(displayed().fen);
-  if (c.isGameOver()) return ($('input-error').textContent = 'La partita è terminata.');
+  if (c.isGameOver()) return ($('input-error').textContent = t('La partita è terminata.'));
   const mv = parseUserMove(c, input.value);
   if (!mv) {
-    $('input-error').textContent = `"${input.value}" non è una mossa legale per il ${COLOR_NAME[c.turn()]}. Esempi: e4, Cf3, O-O, e2e4.`;
+    $('input-error').textContent = t('"{move}" non è una mossa legale per il {color}. Esempi: e4, Cf3, O-O, e2e4.', { move: input.value, color: colorName(c.turn()) });
     return;
   }
   if (playMove(mv)) input.value = '';
@@ -1397,14 +1403,14 @@ $('move-text').addEventListener('input', () => { $('input-error').textContent = 
 
 // ---------- analisi partita: comandi ----------
 let setupColor = state.side;
-buildSegmented($('setup-color'), [{ label: 'Bianco', value: 'w' }, { label: 'Nero', value: 'b' }], setupColor, (v) => { setupColor = v; });
+buildSegmented($('setup-color'), [{ label: t('Bianco'), value: 'w' }, { label: t('Nero'), value: 'b' }], setupColor, (v) => { setupColor = v; });
 
 $('btn-setup-start').onclick = () => {
   let g;
   try {
     g = createGame($('setup-fen').value.trim() || undefined);
   } catch (e) {
-    $('setup-error').textContent = e instanceof PgnError ? e.message : 'FEN non valida.';
+    $('setup-error').textContent = e instanceof PgnError ? t(e.message) : t('FEN non valida.');
     return;
   }
   $('setup-error').textContent = '';
@@ -1477,7 +1483,7 @@ $('btn-var-promote').onclick = () => {
   state.redo = [];
   saveFree();
   saveEvals();
-  toast('La variante ora è la linea principale');
+  toast(t('La variante ora è la linea principale'));
   render();
 };
 $('btn-reset').onclick = () => {
@@ -1507,7 +1513,7 @@ $('coach-on').addEventListener('change', (e) => {
   refreshLive();
   renderCoach();
 });
-buildSegmented($('coach-level'), [{ label: 'Indizio', value: 'hint' }, { label: 'Soluzione', value: 'solution' }], state.coach.level, (v) => {
+buildSegmented($('coach-level'), [{ label: t('Indizio'), value: 'hint' }, { label: t('Soluzione'), value: 'solution' }], state.coach.level, (v) => {
   state.coach.level = v;
   store.set('coachLevel', v);
   state.coachPick = null;
@@ -1516,7 +1522,7 @@ buildSegmented($('coach-level'), [{ label: 'Indizio', value: 'hint' }, { label: 
 });
 $('btn-io').onclick = openIO;
 $('btn-review-this').onclick = () => {
-  if (!state.free.plies.length) return toast('Gioca almeno una mossa');
+  if (!state.free.plies.length) return toast(t('Gioca almeno una mossa'));
   $('pgn-text').value = gameToPgn(state.free);
   updateGameSelect();
   state.mode = 'review';
@@ -1530,24 +1536,24 @@ $('io-copy-fen').onclick = () => copyText($('io-fen').value);
 $('io-copy-pgn').onclick = () => copyText(gameToPgn(state.free));
 $('io-load').onclick = loadFromIO;
 
-buildSegmented($('depth-control'), ENGINE_CONFIG.depthPresets.map((p) => ({ label: p.label, value: p.depth })), state.depth, (v) => {
+buildSegmented($('depth-control'), ENGINE_CONFIG.depthPresets.map((p) => ({ label: t(p.label), value: p.depth })), state.depth, (v) => {
   state.depth = v;
   store.set('depth', v);
   refreshLive();
 });
-buildSegmented($('lines-control'), ENGINE_CONFIG.multiPvOptions.map((n) => ({ label: `${n} ${n === 1 ? 'linea' : 'linee'}`, value: n })), state.multiPv, (v) => {
+buildSegmented($('lines-control'), ENGINE_CONFIG.multiPvOptions.map((n) => ({ label: t(n === 1 ? '{n} linea' : '{n} linee', { n }), value: n })), state.multiPv, (v) => {
   state.multiPv = v;
   store.set('multipv', v);
   refreshLive();
 });
-buildSegmented($('review-depth'), UI_CONFIG.reviewDepthPresets.map((p) => ({ label: `${p.label} (${p.depth})`, value: p.depth })), state.reviewDepth, (v) => {
+buildSegmented($('review-depth'), UI_CONFIG.reviewDepthPresets.map((p) => ({ label: `${t(p.label)} (${p.depth})`, value: p.depth })), state.reviewDepth, (v) => {
   state.reviewDepth = v;
   store.set('reviewDepth', v);
 });
 
 $('btn-about').onclick = () => {
   const a = UI_CONFIG.about;
-  $('about-version').textContent = `versione ${a.version}`;
+  $('about-version').textContent = `${t('versione')} ${a.version}`;
   $('about-copyright').textContent = a.copyright;
   const src = $('about-source');
   src.replaceChildren();
@@ -1578,7 +1584,7 @@ function replaceStoredData(entries) {
     for (const k of BACKUP_KEYS) localStorage.removeItem(UI_CONFIG.storagePrefix + k);
     for (const [k, v] of entries) localStorage.setItem(UI_CONFIG.storagePrefix + k, v);
   } catch {
-    return dataMessage('Il browser non permette di salvare i dati (memoria piena o bloccata).');
+    return dataMessage(t('Il browser non permette di salvare i dati (memoria piena o bloccata).'));
   }
   location.reload();
 }
@@ -1589,7 +1595,7 @@ $('data-export').onclick = () => {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  dataMessage(`File ${a.download} scaricato.`);
+  dataMessage(t('File {name} scaricato.', { name: a.download }));
 };
 $('data-import').addEventListener('change', async (e) => {
   const file = e.target.files?.[0];
@@ -1597,20 +1603,26 @@ $('data-import').addEventListener('change', async (e) => {
   if (!file) return;
   try {
     const { entries, exportedAt } = readBackup(await file.text());
-    const when = exportedAt ? ` del ${new Date(exportedAt).toLocaleDateString('it-IT')}` : '';
-    dataMessage(`Backup${when}: ${entries.length} elementi. Importandolo sostituisci i dati attuali di questo browser.`, [
-      ['Sostituisci i miei dati', 'primary', () => replaceStoredData(entries)],
-      ['Annulla', '', () => dataMessage('')],
+    const when = exportedAt ? new Date(exportedAt).toLocaleDateString(locale()) : '';
+    dataMessage(t('Backup {when}: {n} elementi. Importandolo sostituisci i dati attuali di questo browser.', { when, n: entries.length }), [
+      [t('Sostituisci i miei dati'), 'primary', () => replaceStoredData(entries)],
+      [t('Annulla'), '', () => dataMessage('')],
     ]);
   } catch (err) {
-    dataMessage(err.message);
+    dataMessage(t(err.message));
   }
 });
-$('data-clear').onclick = () => dataMessage('Cancellare progressi, partite e preferenze salvati in questo browser?', [
-  ['Sì, cancella tutto', 'danger', () => replaceStoredData([])],
-  ['Annulla', '', () => dataMessage('')],
+$('data-clear').onclick = () => dataMessage(t('Cancellare progressi, partite e preferenze salvati in questo browser?'), [
+  [t('Sì, cancella tutto'), 'danger', () => replaceStoredData([])],
+  [t('Annulla'), '', () => dataMessage('')],
 ]);
 $('about-close').onclick = () => $('dlg-about').close();
+
+$('btn-lang').textContent = getLang() === 'it' ? 'EN' : 'IT';
+$('btn-lang').onclick = () => {
+  store.set('lang', getLang() === 'it' ? 'en' : 'it');
+  location.reload();
+};
 
 $('btn-theme').onclick = () => {
   const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';

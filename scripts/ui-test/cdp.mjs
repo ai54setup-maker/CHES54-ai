@@ -27,7 +27,7 @@ export function findBrowser() {
 export async function launch(browserPath, port) {
   const profile = mkdtempSync(join(tmpdir(), 'ches54-ui-'));
   const proc = spawn(browserPath, [
-    '--headless=new', '--disable-gpu', '--no-first-run', '--hide-scrollbars',
+    '--headless=new', '--disable-gpu', '--no-first-run', '--hide-scrollbars', '--lang=it-IT', '--accept-lang=it-IT,it',
     `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, 'about:blank',
   ], { stdio: 'ignore' });
   let targets;

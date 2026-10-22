@@ -182,6 +182,23 @@ le spiegazioni torneranno in fase 4, derivate solo dalle linee del motore.
   `UI_CONFIG.puzzles.dailyLevels`; data locale del dispositivo; conta come fatto anche con indizio/soluzione;
   `pzStats.dailyLast` / `dailyStreak`. Link `?section=problemi&daily=1` (scorciatoia nel manifest).
 
+### Versione inglese (2026-10-22)
+- `src/i18n/i18n.js`: `t('testo italiano {param}', { param })` → testo nella lingua attiva; **il testo italiano è la chiave**,
+  il dizionario è `src/i18n/en.js`. `setLang()` è chiamata da app.js all'avvio (scelta salvata `lang`, altrimenti italiano se il
+  browser è in italiano, altrimenti inglese); in Node la lingua resta l'italiano. `translateDom()` traduce l'HTML statico
+  (testi e attributi presenti nel dizionario). Pulsante IT/EN (`#btn-lang`, ricarica la pagina).
+- **Regole:** ogni testo visibile nuovo va scritto come `t('…')` (mai concatenare frammenti: frasi intere con segnaposto) e
+  tradotto in en.js; `test/i18n.test.mjs` estrae le chiavi da `t()` e da index.html e fallisce se ne manca una o se i segnaposto
+  non coincidono. Etichette lette al caricamento dei moduli: tradurle al momento dell'uso (es. `CLASS_INFO` con getter).
+- Allenatore e spiegazioni hanno funzioni inglesi complete (`formatHintEn`, `explanationEn`): le frasi italiane dipendono da
+  articoli e genere. Notazione: `toItalian()` restituisce la SAN inglese quando la lingua è l'inglese; `parseUserMove` prova
+  prima la notazione della lingua attiva ("R" = Re in italiano, Torre in inglese).
+- Contenuti: `data/lessons/lessons.en.json` (stessi id e passi; posizioni e verifica restano in lessons.json) e
+  `data/examples/index.en.json` (evento, "perché è famosa", eventuali nomi; `notMoves` = riferimenti storici che non sono mosse
+  della partita). Il test verifica che ogni mossa citata in inglese sia tra le `mentions` verificate del catalogo.
+- test:ui: il browser parte con `--lang=it-IT`; la prova "versione inglese" passa all'inglese e controlla che nel testo visibile
+  non restino parole italiane.
+
 ### Teoria delle aperture (2026-10-22)
 - `OpeningBook.bookMoves(fen)`: mosse legali che portano a posizioni del dataset, con nome se c'è; ordine alfabetico
   (il dataset non ha statistiche, e la scheda lo dice). Scheda `#opening-card` in Analisi partita (`renderOpenings`).

@@ -898,3 +898,4 @@ button { font: inherit; color: inherit; }
 .opening-move:hover, .opening-move:focus-visible { border-color: var(--accent); outline: none; }
 .opening-move b { min-width: 3.2em; font-variant-numeric: tabular-nums; }
 .opening-move span { color: var(--muted); font-size: 0.85rem; }
+.lang-btn { font-size: 0.78rem; font-weight: 800; letter-spacing: 0.04em; }

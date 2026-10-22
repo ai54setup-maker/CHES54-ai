@@ -3,6 +3,7 @@
 import { formatScore } from '../engine/score.js';
 import { numberedLine } from './notation.js';
 import { UI_CONFIG } from '../config/ui.js';
+import { t } from '../i18n/i18n.js';
 
 /**
  * @param {HTMLOListElement} ol
@@ -26,7 +27,7 @@ export function renderEngineLines(ol, { fen, lines, highlighted, onPick, onHover
     score.textContent = formatScore(s);
     score.classList.add(sign > 0 ? 'white' : sign < 0 ? 'black' : 'even');
     li.querySelector('.eline-moves').textContent = numberedLine(fen, l.pv, UI_CONFIG.lineMoves);
-    li.title = 'Gioca la prima mossa di questa linea';
+    li.title = t('Gioca la prima mossa di questa linea');
     li.addEventListener('click', () => onPick(i));
     li.addEventListener('keydown', (e) => { if (e.key === 'Enter') onPick(i); });
     li.addEventListener('pointerenter', () => onHover(i));

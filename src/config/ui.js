@@ -34,6 +34,7 @@ export const UI_CONFIG = Object.freeze({
   // Libreria di partite (data/examples/, generata da scripts/build-examples.mjs).
   examples: Object.freeze({
     indexUrl: 'data/examples/index.json',
+    indexEnUrl: 'data/examples/index.en.json', // testi in inglese
     baseUrl: 'data/examples/',
     // Filtri della finestra; 'miniature' viene assegnata in automatico dallo script.
     categories: Object.freeze([
@@ -86,6 +87,7 @@ export const UI_CONFIG = Object.freeze({
   // Lezioni (fase G): contenuti in data/lessons/lessons.json, verificati con npm run check:lessons.
   lessons: Object.freeze({
     dataUrl: 'data/lessons/lessons.json',
+    dataEnUrl: 'data/lessons/lessons.en.json', // testi in inglese
     demoDelayMs: 650, // pausa tra le mosse delle dimostrazioni e delle risposte automatiche
     arrow: Object.freeze({ color: '#2ee6ff', width: 0.16, opacity: 0.85 }), // frecce delle spiegazioni
   }),

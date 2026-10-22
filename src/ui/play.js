@@ -9,9 +9,10 @@ import { playUci } from '../analysis/puzzle.js';
 import { Board } from './board.js';
 import { toItalian } from './notation.js';
 import { piecesOf, checkSquareOf } from './position.js';
+import { t } from '../i18n/i18n.js';
 
 const LEVELS = ENGINE_CONFIG.playLevels;
-const COLOR_NAME = { w: 'Bianco', b: 'Nero' };
+const colorName = (c) => t(c === 'w' ? 'Bianco' : 'Nero');
 const REASON_TEXT = {
   checkmate: 'scacco matto', stalemate: 'stallo', insufficient: 'materiale insufficiente',
   threefold: 'triplice ripetizione', 'fifty-moves': 'regola delle 50 mosse', resign: 'abbandono',
@@ -88,7 +89,7 @@ export class PlayGame {
         el.append(b);
       }
     };
-    seg(this.$('#pl-color'), [{ label: 'Bianco', value: 'w' }, { label: 'Nero', value: 'b' }, { label: 'A caso', value: 'random' }], 'color');
+    seg(this.$('#pl-color'), [{ label: t('Bianco'), value: 'w' }, { label: t('Nero'), value: 'b' }, { label: t('A caso'), value: 'random' }], 'color');
     seg(this.$('#pl-level'), LEVELS.map((l) => ({ label: String(l.level), value: l.level })), 'level');
   }
 
@@ -102,9 +103,9 @@ export class PlayGame {
     }
     const l = LEVELS.find((x) => x.level === this.choice.level);
     this.$('#pl-level-hint').textContent = l.level === LEVELS.length
-      ? `Livello ${l.level}: Stockfish a piena forza, profondità ${l.depth}.`
-      : `Livello ${l.level}: Stockfish indebolito (Skill Level ${l.skill} su 20), profondità ${l.depth}.`
-        + (l.level <= 2 ? ' Sbaglia spesso: adatto per iniziare.' : '');
+      ? t('Livello {level}: Stockfish a piena forza, profondità {depth}.', l)
+      : t('Livello {level}: Stockfish indebolito (Skill Level {skill} su 20), profondità {depth}.', l)
+        + (l.level <= 2 ? ` ${t('Sbaglia spesso: adatto per iniziare.')}` : '');
   }
 
   show() {
@@ -165,7 +166,7 @@ export class PlayGame {
       const move = r.bestMove ?? r.lines[0]?.pv[0];
       if (move) this.apply(move);
     } catch (err) {
-      if (!(err instanceof AnalysisCancelled) && gen === this.gen) this.$('#pl-feedback').textContent = 'Il motore non è disponibile.';
+      if (!(err instanceof AnalysisCancelled) && gen === this.gen) this.$('#pl-feedback').textContent = t('Il motore non è disponibile.');
     } finally {
       if (gen === this.gen) {
         this.thinking = false;
@@ -223,7 +224,7 @@ export class PlayGame {
     const g = this.g;
     if (!g?.moves.length) return;
     const result = g.over?.result ?? '*';
-    const termination = g.over?.reason === 'resign' ? `${COLOR_NAME[g.color]} abbandona` : undefined;
+    const termination = g.over?.reason === 'resign' ? t('{color} abbandona', { color: colorName(g.color) }) : undefined;
     this.deps.toReview(playPgn({ moves: g.moves, color: g.color, level: g.level, date: g.date, result, termination }));
   }
 
@@ -243,19 +244,19 @@ export class PlayGame {
       this.$('#pl-tag-bottom').textContent = '';
       return;
     }
-    const engineName = `Stockfish · livello ${g.level}`;
+    const engineName = `Stockfish · ${t('livello')} ${g.level}`;
     this.$('#pl-tag-top').textContent = engineName;
-    this.$('#pl-tag-bottom').textContent = `Tu (${COLOR_NAME[g.color]})`;
-    this.$('#pl-meta').textContent = `Livello ${g.level} · giochi con il ${COLOR_NAME[g.color]}`;
+    this.$('#pl-tag-bottom').textContent = `${t('Tu')} (${colorName(g.color)})`;
+    this.$('#pl-meta').textContent = t('Livello {level} · giochi con il {color}', { level: g.level, color: colorName(g.color) });
     const card = this.$('#pl-card');
     let status;
     if (g.over) {
       const { result, reason } = g.over;
       const won = (result === '1-0' && g.color === 'w') || (result === '0-1' && g.color === 'b');
-      status = result === '1/2-1/2' ? `Patta (${REASON_TEXT[reason]})` : `${won ? 'Hai vinto' : 'Hai perso'} (${REASON_TEXT[reason]})`;
+      status = `${result === '1/2-1/2' ? t('Patta') : won ? t('Hai vinto') : t('Hai perso')} (${t(REASON_TEXT[reason])})`;
       card.dataset.state = result === '1/2-1/2' ? 'done' : won ? 'solved' : 'wrong';
     } else {
-      status = this.thinking ? 'Stockfish pensa…' : c.inCheck() ? 'Tocca a te: sei sotto scacco' : 'Tocca a te';
+      status = this.thinking ? t('Stockfish pensa…') : c.inCheck() ? t('Tocca a te: sei sotto scacco') : t('Tocca a te');
       card.dataset.state = '';
     }
     this.$('#pl-status').textContent = status;

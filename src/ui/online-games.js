@@ -2,10 +2,12 @@
 // La partita scelta passa dallo stesso percorso di un PGN incollato (startReview in app.js).
 
 import { UI_CONFIG } from '../config/ui.js';
+import { t } from '../i18n/i18n.js';
 import { SOURCES, normalizeUser, recentArchives, chessComPgns, lichessPgns, summarize } from '../analysis/online-games.js';
 
 const CFG = UI_CONFIG.onlineGames;
-const RESULT_TEXT = { w: { '1-0': 'Vinta', '0-1': 'Persa' }, b: { '0-1': 'Vinta', '1-0': 'Persa' } };
+const RESULT_TEXT = { w: { '1-0': 'win', '0-1': 'loss' }, b: { '0-1': 'win', '1-0': 'loss' } };
+const OUTCOME_LABEL = { win: 'Vinta', loss: 'Persa', draw: 'Patta' };
 
 export class OnlineGames {
   /**
@@ -57,20 +59,20 @@ export class OnlineGames {
   async search() {
     const user = normalizeUser(this.q('#on-user').value);
     this.q('#on-list').replaceChildren();
-    if (!user) return this.setError('Scrivi un nome utente valido (lettere, numeri, "_" o "-").');
+    if (!user) return this.setError(t('Scrivi un nome utente valido (lettere, numeri, "_" o "-").'));
     this.setError('');
     this.deps.store.set('onlineUser', user);
     this.deps.store.set('onlineSource', this.source);
     const count = this.q('#on-count');
-    count.textContent = 'Cerco le partite…';
+    count.textContent = t('Cerco le partite…');
     const btn = this.q('#on-form button');
     btn.disabled = true;
     try {
       const pgns = this.source === 'lichess' ? await this.fromLichess(user) : await this.fromChessCom(user);
       this.games = summarize(pgns.slice(0, CFG.max), user);
       count.textContent = this.games.length
-        ? `Ultime ${this.games.length} partite di ${user} su ${SOURCES[this.source].label}. Tocca una partita per la revisione.`
-        : `Nessuna partita trovata per ${user}.`;
+        ? t('Ultime {n} partite di {user} su {site}. Tocca una partita per la revisione.', { n: this.games.length, user, site: SOURCES[this.source].label })
+        : t('Nessuna partita trovata per {user}.', { user });
       this.renderList(user);
     } catch (e) {
       count.textContent = '';
@@ -86,12 +88,12 @@ export class OnlineGames {
     try {
       res = await fetch(url, { headers: { Accept: accept } });
     } catch {
-      throw new Error(`Non riesco a contattare ${SOURCES[this.source].label}: controlla la connessione.`);
+      throw new Error(t('Non riesco a contattare {site}: controlla la connessione.', { site: SOURCES[this.source].label }));
     }
     if (res.status === 404 && missingOk) return null;
-    if (res.status === 404) throw new Error(`Utente non trovato su ${SOURCES[this.source].label}.`);
-    if (res.status === 429) throw new Error('Troppe richieste in poco tempo: riprova tra un minuto.');
-    if (!res.ok) throw new Error(`${SOURCES[this.source].label} ha risposto con un errore (${res.status}). Riprova più tardi.`);
+    if (res.status === 404) throw new Error(t('Utente non trovato su {site}.', { site: SOURCES[this.source].label }));
+    if (res.status === 429) throw new Error(t('Troppe richieste in poco tempo: riprova tra un minuto.'));
+    if (!res.ok) throw new Error(t('{site} ha risposto con un errore ({status}). Riprova più tardi.', { site: SOURCES[this.source].label, status: res.status }));
     return res;
   }
 
@@ -120,14 +122,14 @@ export class OnlineGames {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'lib-item';
-      const outcome = g.color ? (RESULT_TEXT[g.color][g.result] ?? (g.result === '1/2-1/2' ? 'Patta' : '')) : '';
+      const outcome = g.color ? (RESULT_TEXT[g.color][g.result] ?? (g.result === '1/2-1/2' ? 'draw' : '')) : '';
       const line = (cls, text) => Object.assign(document.createElement('span'), { className: cls, textContent: text });
       b.append(
         line('lib-players', `${g.white}${g.whiteElo ? ` (${g.whiteElo})` : ''} – ${g.black}${g.blackElo ? ` (${g.blackElo})` : ''}`),
-        line('lib-meta', [g.result, outcome, g.timeControl, g.date].filter(Boolean).join(' · ')),
+        line('lib-meta', [g.result, outcome && t(OUTCOME_LABEL[outcome]), g.timeControl, g.date].filter(Boolean).join(' · ')),
       );
       if (g.opening) b.append(line('lib-opening', g.opening));
-      if (outcome) b.dataset.outcome = outcome === 'Vinta' ? 'win' : outcome === 'Persa' ? 'loss' : 'draw';
+      if (outcome) b.dataset.outcome = outcome;
       b.addEventListener('click', () => {
         this.dialog.close();
         this.deps.onPick(g.pgn, { color: g.color, user });

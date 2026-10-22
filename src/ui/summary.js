@@ -1,8 +1,9 @@
 // Riepilogo della revisione: giocatori, risultato, apertura, precisione e conteggi per categoria.
 
 import { CLASS_INFO, SUMMARY_ORDER, classIcon } from './classification.js';
+import { t, fmtNum } from '../i18n/i18n.js';
 
-const fmt = (v) => (v == null ? '–' : v.toFixed(1).replace('.', ','));
+const fmt = (v) => (v == null ? '–' : fmtNum(v));
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 /**
@@ -22,29 +23,28 @@ export function renderSummary(el, a, retryCount, save = null) {
     .join('');
   el.innerHTML = `
     <div class="sum-players">
-      <div class="sum-name">${esc(h.White || 'Bianco')}${h.WhiteElo ? ` <small>${esc(h.WhiteElo)}</small>` : ''}</div>
+      <div class="sum-name">${esc(h.White || t('Bianco'))}${h.WhiteElo ? ` <small>${esc(h.WhiteElo)}</small>` : ''}</div>
       <div class="sum-result">${esc(a.result)}</div>
-      <div class="sum-name right">${esc(h.Black || 'Nero')}${h.BlackElo ? ` <small>${esc(h.BlackElo)}</small>` : ''}</div>
+      <div class="sum-name right">${esc(h.Black || t('Nero'))}${h.BlackElo ? ` <small>${esc(h.BlackElo)}</small>` : ''}</div>
     </div>
     <div class="sum-acc">
       <div class="acc-box white"><b>${fmt(w.accuracy)}</b></div>
-      <span>Precisione</span>
+      <span>${t('Precisione')}</span>
       <div class="acc-box black"><b>${fmt(b.accuracy)}</b></div>
     </div>
     ${a.opening ? `<p class="sum-opening">${esc(a.opening.eco)} · ${esc(a.opening.name)}</p>` : ''}
     <table class="sum-table"><tbody>${rows}</tbody></table>
-    <p class="hint">Precisione calcolata come Lichess; media semplice per mossa: ${fmt(w.meanAccuracy)} / ${fmt(b.meanAccuracy)}.
-      Stockfish, profondità ${a.settings.depth}.</p>
+    <p class="hint">${t('Precisione calcolata come Lichess; media semplice per mossa: {w} / {b}. Stockfish, profondità {depth}.', { w: fmt(w.meanAccuracy), b: fmt(b.meanAccuracy), depth: a.settings.depth })}</p>
     ${save && (save.counts.w || save.counts.b) ? `<div class="sum-save">
-      <span>Salva come esercizi gli errori di</span>
+      <span>${t('Salva come esercizi gli errori di')}</span>
       <div class="toolbar two">${['w', 'b'].map((c) => {
-        const name = `${c === 'w' ? 'Bianco' : 'Nero'}${save.me === c ? ' (tu)' : ''}`;
-        const label = save.saved[c] ? `${name}: salvati ✓` : `${name} (${save.counts[c]})`;
+        const name = `${t(c === 'w' ? 'Bianco' : 'Nero')}${save.me === c ? ` ${t('(tu)')}` : ''}`;
+        const label = save.saved[c] ? `${name}: ${t('salvati')} ✓` : `${name} (${save.counts[c]})`;
         return `<button type="button" class="btn${save.me === c && !save.saved[c] ? ' primary' : ''}" data-save="${c}" ${save.counts[c] && !save.saved[c] ? '' : 'disabled'}>${label}</button>`;
       }).join('')}</div></div>` : ''}
     <div class="toolbar two">
-      <button type="button" class="btn" id="btn-retry-all" ${retryCount ? '' : 'disabled'}>Ritenta gli errori (${retryCount})</button>
-      <button type="button" class="btn" id="btn-new-review">Nuova revisione</button>
+      <button type="button" class="btn" id="btn-retry-all" ${retryCount ? '' : 'disabled'}>${t('Ritenta gli errori')} (${retryCount})</button>
+      <button type="button" class="btn" id="btn-new-review">${t('Nuova revisione')}</button>
     </div>
-    <button type="button" class="btn wide" id="btn-share">Condividi la revisione (link)</button>`;
+    <button type="button" class="btn wide" id="btn-share">${t('Condividi la revisione (link)')}</button>`;
 }

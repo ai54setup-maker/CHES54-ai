@@ -14,11 +14,13 @@ import { piecesOf, checkSquareOf, refutation } from './position.js';
 import { reviewQueue, recordResult, isGoodAttempt, LEARNED_BOX } from '../analysis/my-mistakes.js';
 import { judgeMove } from '../analysis/retry.js';
 import { CLASS_INFO } from './classification.js';
+import { t, fmtNum } from '../i18n/i18n.js';
 
 const CFG = UI_CONFIG.puzzles;
-const COLOR_NAME = { w: 'Bianco', b: 'Nero' };
-const THEME_LABEL = Object.fromEntries(CFG.themes.map((t) => [t.id, t.label]));
-const LEVEL_LABEL = Object.fromEntries(CFG.levels.map((l) => [l.id, l.label]));
+// Etichette tradotte al momento dell'uso: la lingua si sceglie dopo il caricamento dei moduli
+const colorName = (c) => t(c === 'w' ? 'Bianco' : 'Nero');
+const themeLabel = (id) => t(CFG.themes.find((x) => x.id === id)?.label ?? id);
+const levelLabel = (id) => t(CFG.levels.find((x) => x.id === id)?.label ?? id);
 const HINT_ICON = '<svg viewBox="0 0 24 24" class="pz-hint-icon"><circle cx="12" cy="12" r="10"/><path d="M12 7v6M12 16.5v.5"/></svg>';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 /** Data locale di oggi, 'AAAA-MM-GG'. */
@@ -29,8 +31,8 @@ const today = () => {
 
 /** Valutazione a parole: i matti con il colore, i centipawn dal punto di vista del Bianco (come nel resto dell'app). */
 const evalText = (score) => (score.mate != null
-  ? `il ${COLOR_NAME[score.mate > 0 ? 'w' : 'b']} dà matto in ${Math.abs(score.mate)}`
-  : `${formatScore(score)} (+ vantaggio Bianco, − vantaggio Nero)`);
+  ? t('il {color} dà matto in {n}', { color: colorName(score.mate > 0 ? 'w' : 'b'), n: Math.abs(score.mate) })
+  : `${formatScore(score)} ${t('(+ vantaggio Bianco, − vantaggio Nero)')}`);
 
 /** Esercizi "I tuoi errori" salvati in localStorage (vedi src/analysis/my-mistakes.js). */
 export function loadMistakes(store) {
@@ -86,7 +88,7 @@ export class PuzzleTrainer {
       return this.renderPanel();
     }
     if (!this.loading) {
-      this.setStatus('Carico i problemi…');
+      this.setStatus(t('Carico i problemi…'));
       this.loading = fetch(CFG.dataUrl)
         .then((r) => {
           if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -96,7 +98,7 @@ export class PuzzleTrainer {
         .catch(() => { this.loading = null; });
     }
     await this.loading;
-    if (!this.data) return this.setStatus('Non riesco a caricare i problemi. Controlla la connessione e riprova.');
+    if (!this.data) return this.setStatus(t('Non riesco a caricare i problemi. Controlla la connessione e riprova.'));
     this.renderStats();
     if (opts.daily) this.loadDaily();
     else this.next();
@@ -133,15 +135,15 @@ export class PuzzleTrainer {
   // ---------- filtri ----------
   buildFilters() {
     const chips = this.$('#pz-themes');
-    for (const t of [{ id: 'all', label: 'Tutti' }, ...CFG.themes]) {
-      const b = Object.assign(document.createElement('button'), { type: 'button', className: 'chip', textContent: t.label });
-      b.dataset.id = t.id;
-      b.onclick = () => this.setFilter('theme', t.id);
+    for (const th of [{ id: 'all', label: 'Tutti' }, ...CFG.themes]) {
+      const b = Object.assign(document.createElement('button'), { type: 'button', className: 'chip', textContent: t(th.label) });
+      b.dataset.id = th.id;
+      b.onclick = () => this.setFilter('theme', th.id);
       chips.append(b);
     }
     const seg = this.$('#pz-levels');
     for (const l of [{ id: 'all', label: 'Tutte' }, ...CFG.levels]) {
-      const b = Object.assign(document.createElement('button'), { type: 'button', textContent: l.label });
+      const b = Object.assign(document.createElement('button'), { type: 'button', textContent: t(l.label) });
       b.setAttribute('role', 'radio');
       b.dataset.id = l.id;
       b.onclick = () => this.setFilter('level', l.id);
@@ -164,7 +166,7 @@ export class PuzzleTrainer {
       b.classList.toggle('active', on);
       b.setAttribute('aria-checked', String(on));
     }
-    if (this.data) this.$('#pz-count').textContent = `${this.matching().length} problemi con questi filtri`;
+    if (this.data) this.$('#pz-count').textContent = t('{n} problemi con questi filtri', { n: this.matching().length });
   }
 
   // ---------- svolgimento ----------
@@ -177,7 +179,7 @@ export class PuzzleTrainer {
     if (!list.length) {
       this.p = null;
       this.board.setPosition([], null, null, false);
-      return this.setStatus('Nessun problema con questi filtri.');
+      return this.setStatus(t('Nessun problema con questi filtri.'));
     }
     const solved = new Set(this.stats.solved);
     const fresh = list.filter((p) => !solved.has(p.id) && p.id !== this.p?.puzzle.id);
@@ -190,7 +192,7 @@ export class PuzzleTrainer {
     const queue = reviewQueue(loadMistakes(this.deps.store));
     const item = queue.find((x) => x.id !== this.p?.item?.id) ?? queue[0];
     if (!item) {
-      this.deps.toast('Niente da ripassare: salva gli errori dal riepilogo di una revisione');
+      this.deps.toast(t('Niente da ripassare: salva gli errori dal riepilogo di una revisione'));
       return;
     }
     const chess = new Chess(item.fen);
@@ -430,94 +432,93 @@ export class PuzzleTrainer {
     if (!p) return;
     if (p.kind === 'mine') return this.renderMinePanel();
     const { puzzle, start } = p;
-    const who = COLOR_NAME[start.color];
-    this.$('#pz-meta').textContent = `${p.daily ? 'Problema del giorno · ' : ''}${THEME_LABEL[puzzle.theme]} · ${LEVEL_LABEL[puzzle.level]} · punteggio ${puzzle.rating}`;
+    const who = colorName(start.color);
+    this.$('#pz-meta').textContent = `${p.daily ? `${t('Problema del giorno')} · ` : ''}${themeLabel(puzzle.theme)} · ${levelLabel(puzzle.level)} · ${t('punteggio')} ${puzzle.rating}`;
     const card = this.$('#pz-card');
     card.dataset.state = p.status === 'solved' ? (p.failed ? 'done' : 'solved') : p.status === 'wrong' ? 'wrong' : flash ?? '';
     const titles = {
-      intro: 'Guarda la mossa dell\'avversario…',
-      play: `Tocca al ${who}: trova la mossa migliore`,
-      reply: 'Giusto! Continua…',
-      wrong: 'Non è la mossa giusta',
-      showing: 'Ecco la soluzione',
-      solved: p.failed ? 'Soluzione completata' : 'Risolto!',
+      intro: t('Guarda la mossa dell\'avversario…'),
+      play: t('Tocca al {color}: trova la mossa migliore', { color: who }),
+      reply: t('Giusto! Continua…'),
+      wrong: t('Non è la mossa giusta'),
+      showing: t('Ecco la soluzione'),
+      solved: p.failed ? t('Soluzione completata') : t('Risolto!'),
     };
     this.$('#pz-title').textContent = titles[p.status];
     const fb = this.$('#pz-feedback');
     fb.replaceChildren();
     const para = (text, cls) => fb.appendChild(Object.assign(document.createElement('p'), { textContent: text, className: cls ?? '' }));
-    if (p.status === 'play' && p.hinted) para('Indizio: muovi il pezzo evidenziato.', 'pz-note');
+    if (p.status === 'play' && p.hinted) para(t('Indizio: muovi il pezzo evidenziato.'), 'pz-note');
     if (p.status === 'wrong') {
-      para(`${p.wrong.san} non risolve il problema.`);
+      para(t('{move} non risolve il problema.', { move: p.wrong.san }));
       if (p.wrong.reply) {
-        para(`Stockfish risponde: ${p.wrong.reply.line} (valutazione ${p.wrong.reply.score}, profondità ${p.wrong.reply.depth}).`, 'pz-note');
+        para(t('Stockfish risponde: {line} (valutazione {score}, profondità {depth}).', p.wrong.reply), 'pz-note');
       } else if (this.deps.engine()) {
-        para('Stockfish cerca la risposta dell\'avversario…', 'pz-note');
+        para(t('Stockfish cerca la risposta dell\'avversario…'), 'pz-note');
       }
     }
     if (p.status === 'solved') {
       const sol = numberedLine(start.fen, start.solution);
-      para(`Soluzione: ${sol}`);
-      para(`Stockfish all'inizio: ${evalText(puzzle.eval)} (profondità ${this.data.verification.depth}).`, 'pz-note');
+      para(`${t('Soluzione')}: ${sol}`);
+      para(t('Stockfish all\'inizio: {eval} (profondità {depth}).', { eval: evalText(puzzle.eval), depth: this.data.verification.depth }), 'pz-note');
     }
     this.$('#pz-hint').hidden = p.status !== 'play' || p.hinted;
     this.$('#pz-solution').hidden = !['play', 'wrong'].includes(p.status);
     this.$('#pz-retry').hidden = p.status !== 'wrong';
-    this.$('#pz-next').textContent = p.status === 'solved' ? 'Prossimo problema' : 'Salta';
+    this.$('#pz-next').textContent = p.status === 'solved' ? t('Prossimo problema') : t('Salta');
     this.$('#pz-next').classList.toggle('primary', p.status === 'solved');
     const src = this.$('#pz-source');
     src.replaceChildren(
-      'Problema ',
+      `${t('Problema')} `,
       Object.assign(document.createElement('a'), { href: `https://lichess.org/training/${puzzle.id}`, textContent: `#${puzzle.id}`, target: '_blank', rel: 'noopener' }),
-      ' dal database di Lichess (CC0), tema indicato da Lichess. Soluzione verificata da Stockfish. ',
-      Object.assign(document.createElement('a'), { href: puzzle.url, textContent: 'Partita originale', target: '_blank', rel: 'noopener' }),
+      ` ${t('dal database di Lichess (CC0), tema indicato da Lichess. Soluzione verificata da Stockfish.')} `,
+      Object.assign(document.createElement('a'), { href: puzzle.url, textContent: t('Partita originale'), target: '_blank', rel: 'noopener' }),
     );
   }
 
   renderMinePanel() {
     const p = this.p;
     const { item } = p;
-    const who = COLOR_NAME[p.start.color];
+    const who = colorName(p.start.color);
     const card = this.$('#pz-card');
     card.dataset.state = p.status === 'solved' ? (p.failed ? 'done' : 'solved') : p.status === 'wrong' ? 'wrong' : '';
     const queue = reviewQueue(loadMistakes(this.deps.store));
-    this.$('#pz-meta').textContent = `I tuoi errori · ${queue.length} da ripassare`;
+    this.$('#pz-meta').textContent = `${t('I tuoi errori')} · ${t('{n} da ripassare', { n: queue.length })}`;
     const titles = {
-      play: `Tocca al ${who}: trova una mossa migliore`,
-      judging: 'Stockfish valuta la mossa…',
-      wrong: 'Non ancora',
-      showing: 'Ecco la mossa migliore',
-      solved: p.failed ? 'Soluzione vista' : 'Risolto!',
+      play: t('Tocca al {color}: trova una mossa migliore', { color: who }),
+      judging: t('Stockfish valuta la mossa…'),
+      wrong: t('Non ancora'),
+      showing: t('Ecco la mossa migliore'),
+      solved: p.failed ? t('Soluzione vista') : t('Risolto!'),
     };
     this.$('#pz-title').textContent = titles[p.status] ?? '';
     const fb = this.$('#pz-feedback');
     fb.replaceChildren();
     const para = (text, cls = '') => fb.appendChild(Object.assign(document.createElement('p'), { textContent: text, className: cls }));
     const moveNo = `${item.moveNumber}${p.start.color === 'w' ? '.' : '…'}`;
-    para(`Nella partita ${item.label} hai giocato ${moveNo} ${toItalian(item.playedSan)}: ${CLASS_INFO[item.classification].label}.`, 'pz-note');
-    if (p.status === 'play' && p.hinted) para('Indizio: muovi il pezzo evidenziato.', 'pz-note');
+    para(t('Nella partita {game} hai giocato {move}: {cls}.', { game: item.label, move: `${moveNo} ${toItalian(item.playedSan)}`, cls: CLASS_INFO[item.classification].label }), 'pz-note');
+    if (p.status === 'play' && p.hinted) para(t('Indizio: muovi il pezzo evidenziato.'), 'pz-note');
     if (p.status === 'wrong') {
-      if (p.wrong.fenBefore && p.wrong.san === toItalian(item.playedSan)) para('È la stessa mossa della partita.');
-      else if (p.judged) para(`${p.wrong.san}: ${CLASS_INFO[p.judged.classification].label} secondo Stockfish (perdita ${p.judged.winLoss.toFixed(1).replace('.', ',')} punti di win%).`);
-      else para(`${p.wrong.san} non è la mossa migliore.`);
-      if (p.wrong.reply) para(`Stockfish risponde: ${p.wrong.reply.line} (valutazione ${p.wrong.reply.score}).`, 'pz-note');
+      if (p.wrong.fenBefore && p.wrong.san === toItalian(item.playedSan)) para(t('È la stessa mossa della partita.'));
+      else if (p.judged) para(t('{move}: {cls} secondo Stockfish (perdita {loss} punti di win%).', { move: p.wrong.san, cls: CLASS_INFO[p.judged.classification].label, loss: fmtNum(p.judged.winLoss) }));
+      else para(t('{move} non è la mossa migliore.', { move: p.wrong.san }));
+      if (p.wrong.reply) para(t('Stockfish risponde: {line} (valutazione {score}).', p.wrong.reply), 'pz-note');
     }
     if (p.status === 'solved') {
-      if (p.judged) para(`Buona mossa: ${CLASS_INFO[p.judged.classification].label} secondo Stockfish.`);
+      if (p.judged) para(t('Buona mossa: {cls} secondo Stockfish.', { cls: CLASS_INFO[p.judged.classification].label }));
       const best = item.before.lines[0];
-      para(`Mossa migliore: ${toItalian(item.bestSan)} (${formatScore(best.score)}) · ${numberedLine(item.fen, best.pv, 6)}`, 'pz-note');
+      para(`${t('Mossa migliore')}: ${toItalian(item.bestSan)} (${formatScore(best.score)}) · ${numberedLine(item.fen, best.pv, 6)}`, 'pz-note');
       if (!p.failed) {
-        para(item.box >= LEARNED_BOX ? 'Imparato! Questo esercizio esce dal ripasso.' : `Risposte giuste di fila: ${item.box} di ${LEARNED_BOX}.`, 'pz-note');
+        para(item.box >= LEARNED_BOX ? t('Imparato! Questo esercizio esce dal ripasso.') : t('Risposte giuste di fila: {n} di {max}.', { n: item.box, max: LEARNED_BOX }), 'pz-note');
       }
     }
     this.$('#pz-hint').hidden = p.status !== 'play' || p.hinted;
     this.$('#pz-solution').hidden = !['play', 'wrong'].includes(p.status);
     this.$('#pz-retry').hidden = p.status !== 'wrong';
     const more = queue.some((x) => x.id !== item.id);
-    this.$('#pz-next').textContent = more ? (p.status === 'solved' ? 'Prossimo errore' : 'Salta') : 'Torna ai problemi';
+    this.$('#pz-next').textContent = more ? (p.status === 'solved' ? t('Prossimo errore') : t('Salta')) : t('Torna ai problemi');
     this.$('#pz-next').classList.toggle('primary', p.status === 'solved');
-    this.$('#pz-source').textContent = `Esercizio dalla tua partita ${item.label}, revisione di Stockfish a profondità ${item.settings?.depth ?? ''}. `
-      + 'Una mossa è giusta se, con le regole della revisione, non è un\'imprecisione né un errore.';
+    this.$('#pz-source').textContent = t('Esercizio dalla tua partita {game}, revisione di Stockfish a profondità {depth}. Una mossa è giusta se, con le regole della revisione, non è un\'imprecisione né un errore.', { game: item.label, depth: item.settings?.depth ?? '' });
   }
 
   renderStats() {
@@ -526,18 +527,18 @@ export class PuzzleTrainer {
     const queue = reviewQueue(all);
     const learned = all.length - queue.length;
     this.$('#pz-mine-sub').textContent = all.length
-      ? `${queue.length} da ripassare${learned ? ` · ${learned} imparati` : ''}`
-      : 'Salvali dal riepilogo di una revisione';
+      ? `${t('{n} da ripassare', { n: queue.length })}${learned ? ` · ${t('{n} imparati', { n: learned })}` : ''}`
+      : t('Salvali dal riepilogo di una revisione');
     this.$('#pz-mine-btn').disabled = !queue.length;
     const day = today();
     const doneToday = s.dailyLast === day;
     const alive = doneToday || s.dailyLast === previousDay(day); // serie ancora valida
     this.$('#pz-daily').classList.toggle('done', doneToday);
-    this.$('#pz-daily-title').textContent = doneToday ? 'Problema del giorno: fatto!' : 'Problema del giorno';
+    this.$('#pz-daily-title').textContent = doneToday ? t('Problema del giorno: fatto!') : t('Problema del giorno');
     this.$('#pz-daily-sub').textContent = alive && s.dailyStreak
-      ? `${s.dailyStreak} ${s.dailyStreak === 1 ? 'giorno' : 'giorni'} di fila`
-      : 'Uno nuovo ogni giorno, uguale per tutti';
-    this.$('#pz-daily-btn').textContent = doneToday ? 'Rivedi' : 'Risolvi';
+      ? t(s.dailyStreak === 1 ? '{n} giorno di fila' : '{n} giorni di fila', { n: s.dailyStreak })
+      : t('Uno nuovo ogni giorno, uguale per tutti');
+    this.$('#pz-daily-btn').textContent = doneToday ? t('Rivedi') : t('Risolvi');
     const set = (id, v) => { this.$(id).textContent = v; };
     set('#pz-streak', s.streak);
     set('#pz-best', s.best);

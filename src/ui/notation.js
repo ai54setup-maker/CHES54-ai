@@ -2,13 +2,14 @@
 // e lettura delle mosse scritte dall'utente.
 
 import { Chess } from '../../lib/chess.js';
+import { getLang } from '../i18n/i18n.js';
 
 const EN_TO_IT = { K: 'R', Q: 'D', R: 'T', B: 'A', N: 'C' };
 const IT_TO_EN = { R: 'K', D: 'Q', T: 'R', A: 'B', C: 'N' };
 
-/** "Nf3" -> "Cf3", "exd8=Q+" -> "exd8=D+" */
+/** Mossa nella notazione della lingua attiva: "Nf3" -> "Cf3", "exd8=Q+" -> "exd8=D+"; in inglese resta "Nf3". */
 export function toItalian(san) {
-  return san.replace(/[KQRBN]/g, (c) => EN_TO_IT[c]);
+  return getLang() === 'en' ? san : san.replace(/[KQRBN]/g, (c) => EN_TO_IT[c]);
 }
 
 /** Converte una lista di mosse UCI (e2e4) in SAN italiana partendo da una posizione. */
@@ -67,10 +68,9 @@ export function parseUserMove(chess, text) {
   // Accetta "=" opzionale nella promozione: e8D -> e8=D
   t = t.replace(/([a-h][18])([DTACQRBN])$/, '$1=$2');
 
-  const candidates = [
-    t.replace(/^([RDTAC])/, (c) => IT_TO_EN[c]).replace(/=([DTAC])/, (_, c) => '=' + IT_TO_EN[c]), // italiano
-    t, // inglese
-  ];
+  const italian = t.replace(/^([RDTAC])/, (c) => IT_TO_EN[c]).replace(/=([DTAC])/, (_, c) => '=' + IT_TO_EN[c]);
+  // "R" è il Re in italiano e la Torre in inglese: prima la notazione della lingua attiva
+  const candidates = getLang() === 'en' ? [t, italian] : [italian, t];
   for (const cand of candidates) {
     const want = strip(cand);
     const m = legal.find((l) => strip(l.san) === want);

@@ -699,6 +699,60 @@ try {
     await b.ev(`document.getElementById('about-close').click()`);
   });
 
+  await step('versione inglese: nessun testo italiano visibile nelle sezioni, notazione inglese', async () => {
+    await b.click('#tab-review');
+    await b.click('#btn-lang');
+    await sleep(300);
+    await b.waitFor(`document.readyState === 'complete' && !!document.querySelector('.tabs .active')`, 10000);
+    assert.equal(await b.ev(`document.documentElement.lang`), 'en');
+    assert.equal(await b.text('.tabs .active'), 'Review');
+    // Parole che in un testo inglese non dovrebbero comparire (nomi propri e di aperture esclusi)
+    const ITALIAN = /\b(della|delle|degli|il|lo|gli|una|uno|che|con|sono|mossa|mosse|partita|partite|Tocca|Revisione|Problemi|Lezioni|Gioca|Allenatore|Livello|Nessun[ao]?|Indietro|Avanti|Soluzione|Indizio|Bianco|Nero|scacchiera|Precisione|profondità|Valutazione|perdita|Annulla|Chiudi)\b/;
+    const visibleItalian = () => b.ev(`(() => {
+      const re = ${ITALIAN};
+      const bad = document.body.innerText.split('\\n').map((l) => l.trim()).filter((l) => l && re.test(l));
+      for (const d of document.querySelectorAll('dialog[open]')) bad.push(...d.innerText.split('\\n').filter((l) => re.test(l)));
+      return bad;
+    })()`);
+    const check = async (where) => assert.deepEqual(await visibleItalian(), [], where);
+    try {
+    await b.waitFor(`!document.getElementById('review-summary').hidden`, 30000);
+    await check('Review');
+    await b.click('#tab-analysis');
+    await sleep(500);
+    await check('Game analysis');
+    await b.click('#tab-play');
+    await sleep(300);
+    await check('Play');
+    await b.click('#tab-lessons');
+    await b.waitFor(`document.querySelectorAll('#ls-groups .ls-item').length > 0`, 10000);
+    await check('Lessons index');
+    await b.click('#ls-groups .ls-item[data-id="fork"]');
+    await b.click('#ls-next');
+    assert.equal(await b.text('#ls-title'), 'Ne7+'); // notazione inglese
+    await check('Lesson');
+    await b.click('#ls-back');
+    await b.click('#tab-puzzles');
+    await b.waitFor(`/to move/.test(document.getElementById('pz-title').textContent)`, 10000);
+    await check('Puzzles');
+    await b.click('#tab-review');
+    await b.ev(`document.getElementById('btn-library')?.click()`);
+    await b.waitFor(`document.querySelectorAll('#dlg-library .lib-item').length > 0`, 10000);
+    assert.match(await b.text('#dlg-library .lib-item'), /moves/);
+    await check('Library');
+    await shot('17-english');
+    await b.click('.lib-close');
+    await b.ev(`document.getElementById('btn-about').click()`);
+    await check('About');
+    await b.ev(`document.getElementById('about-close').click()`);
+    } finally {
+      // Ritorno all'italiano per le prove successive (anche se questa fallisce)
+      await b.ev(`localStorage.setItem('ches54:lang', 'it')`);
+      await b.send('Page.reload');
+      await b.waitFor(`document.readyState === 'complete' && document.documentElement.lang === 'it' && !!document.querySelector('.tabs .active')`, 10000);
+    }
+  });
+
   await step('link diretto a una sezione e tastiera nelle lezioni', async () => {
     await b.send('Page.navigate', { url: `${url}?section=lezioni` });
     await b.waitFor(`document.querySelectorAll('#ls-groups .ls-item').length > 0`, 10000);

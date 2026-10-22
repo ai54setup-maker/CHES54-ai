@@ -5,6 +5,8 @@
 // Qui leggiamo intestazioni, commenti, varianti (anche annidate, che vengono saltate), NAG e
 // risultato; chess.js serve solo per verificare che le mosse siano legali (game-model.js).
 
+import { t } from '../i18n/i18n.js';
+
 /**
  * @typedef {Object} PgnMove
  * @property {string} san        mossa così come scritta (senza !, ?, NAG)
@@ -111,7 +113,7 @@ function parseMovetext(text) {
     if (/\s/.test(ch)) { i++; continue; }
     if (ch === '{') {
       const end = text.indexOf('}', i + 1);
-      if (end < 0) throw new PgnError('Commento non chiuso: manca "}"');
+      if (end < 0) throw new PgnError(t('Commento non chiuso: manca "}"'));
       addComment(text.slice(i + 1, end));
       i = end + 1;
       continue;
@@ -124,7 +126,7 @@ function parseMovetext(text) {
     }
     if (ch === '(') { depth++; i++; continue; }
     if (ch === ')') {
-      if (depth === 0) throw new PgnError('Parentesi ")" senza "(" corrispondente');
+      if (depth === 0) throw new PgnError(t('Parentesi ")" senza "(" corrispondente'));
       depth--;
       i++;
       continue;
@@ -150,10 +152,10 @@ function parseMovetext(text) {
     if (!san) continue;
     if (/^[!?]+$/.test(san)) continue; // annotazione staccata dalla mossa
     if (/^e\.?p\.?$/i.test(san)) continue; // vecchia notazione dell'en passant: "exd6 e.p."
-    if (san === '--' || san === 'Z0') throw new PgnError('Le mosse nulle ("--") non sono supportate');
+    if (san === '--' || san === 'Z0') throw new PgnError(t('Le mosse nulle ("--") non sono supportate'));
     moves.push({ san: cleanSan(san), comment: '', clock: null, nags: [] });
   }
-  if (depth > 0) throw new PgnError('Variante non chiusa: manca ")"');
+  if (depth > 0) throw new PgnError(t('Variante non chiusa: manca ")"'));
   return { moves, result, preComment };
 }
 

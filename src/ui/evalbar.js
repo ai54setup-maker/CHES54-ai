@@ -1,6 +1,7 @@
 // Barra di valutazione verticale. Riceve la valutazione già normalizzata (punto di vista del Bianco).
 
 import { winPercent } from '../analysis/winpct.js';
+import { t } from '../i18n/i18n.js';
 
 /**
  * @param {{ bar: HTMLElement, fill: HTMLElement, label: HTMLElement }} els
@@ -30,5 +31,5 @@ export function renderEvalBar(els, { score, mateWinner, draw, orientation }) {
   els.bar.classList.toggle('flipped', orientation === 'b');
   els.fill.style.height = (orientation === 'w' ? whitePct : 100 - whitePct) + '%';
   els.label.textContent = text;
-  els.bar.setAttribute('aria-label', `Valutazione: ${text || 'in attesa'}`);
+  els.bar.setAttribute('aria-label', `${t('Valutazione')}: ${text || t('in attesa')}`);
 }

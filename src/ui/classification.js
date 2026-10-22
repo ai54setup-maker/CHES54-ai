@@ -1,17 +1,21 @@
-// Nomi in italiano e icone delle categorie delle mosse.
+// Nomi (tradotti con t() quando si leggono) e icone delle categorie delle mosse.
 // Le icone sono disegnate qui (cerchio colorato + simbolo di annotazione scacchistica standard:
 // !!, !, ?!, ?, ??); i colori sono le variabili CSS --cls-*.
 
+import { t } from '../i18n/i18n.js';
+
+const info = (label, glyph) => Object.freeze({ get label() { return t(label); }, glyph });
+
 export const CLASS_INFO = Object.freeze({
-  brilliant: { label: 'Brillante', glyph: '!!' },
-  great: { label: 'Ottima', glyph: '!' },
-  best: { label: 'Migliore', glyph: '★' },
-  excellent: { label: 'Eccellente', glyph: '✓' },
-  good: { label: 'Buona', glyph: '✓' },
-  book: { label: 'Teoria', glyph: null },
-  inaccuracy: { label: 'Imprecisione', glyph: '?!' },
-  mistake: { label: 'Errore', glyph: '?' },
-  blunder: { label: 'Errore grave', glyph: '??' },
+  brilliant: info('Brillante', '!!'),
+  great: info('Ottima', '!'),
+  best: info('Migliore', '★'),
+  excellent: info('Eccellente', '✓'),
+  good: info('Buona', '✓'),
+  book: info('Teoria', null),
+  inaccuracy: info('Imprecisione', '?!'),
+  mistake: info('Errore', '?'),
+  blunder: info('Errore grave', '??'),
 });
 
 // Ordine nel riepilogo

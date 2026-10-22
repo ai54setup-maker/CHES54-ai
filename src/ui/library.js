@@ -3,6 +3,7 @@
 // L'indice si scarica alla prima apertura; i PGN solo quando servono.
 
 import { UI_CONFIG } from '../config/ui.js';
+import { t, getLang } from '../i18n/i18n.js';
 
 const ALL = '';
 /** Testo confrontabile: minuscolo e senza accenti (Réti = reti, Polgár = polgar). */
@@ -47,15 +48,21 @@ export class Library {
     this.setError('');
     this.dialog.showModal();
     if (this.games) return this.renderList();
-    this.q('.lib-count').textContent = 'Caricamento…';
+    this.q('.lib-count').textContent = t('Caricamento…');
     try {
       const res = await fetch(UI_CONFIG.examples.indexUrl);
       if (!res.ok) throw new Error(String(res.status));
-      this.games = (await res.json()).games;
+      const games = (await res.json()).games;
+      // In inglese: evento e "perché è famosa" da index.en.json (le mosse citate sono in notazione inglese)
+      if (getLang() === 'en') {
+        const en = await fetch(UI_CONFIG.examples.indexEnUrl).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+        for (const g of games) Object.assign(g, en?.games?.[g.id] ?? {});
+      }
+      this.games = games;
       this.renderList();
     } catch {
       this.q('.lib-count').textContent = '';
-      this.setError('Libreria non disponibile: serve la connessione la prima volta che la apri.');
+      this.setError(t('Libreria non disponibile: serve la connessione la prima volta che la apri.'));
     }
   }
 
@@ -70,7 +77,7 @@ export class Library {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'chip' + (c.id === this.category ? ' active' : '');
-      b.textContent = c.label;
+      b.textContent = t(c.label);
       b.dataset.category = c.id;
       b.setAttribute('aria-pressed', String(c.id === this.category));
       b.addEventListener('click', () => {
@@ -95,7 +102,7 @@ export class Library {
   renderList() {
     if (!this.games) return;
     const list = this.visible();
-    this.q('.lib-count').textContent = list.length === 1 ? '1 partita' : `${list.length} partite`;
+    this.q('.lib-count').textContent = t(list.length === 1 ? '{n} partita' : '{n} partite', { n: list.length });
     this.q('.lib-list').replaceChildren(...list.map((g) => this.item(g)));
   }
 
@@ -113,7 +120,7 @@ export class Library {
       b.append(el);
     };
     line('lib-players', `${g.white} – ${g.black}`);
-    line('lib-meta', `${g.year} · ${g.event} · ${RESULT_TEXT[g.result] ?? g.result} · ${g.moves} mosse`);
+    line('lib-meta', `${g.year} · ${g.event} · ${RESULT_TEXT[g.result] ?? g.result} · ${t('{n} mosse', { n: g.moves })}`);
     if (g.opening) line('lib-opening', `${g.opening.eco} · ${g.opening.name}`);
     line('lib-famous', g.famous);
     b.addEventListener('click', () => this.pick(g, b));
@@ -134,7 +141,7 @@ export class Library {
       this.renderList();
       this.onPick(text, g);
     } catch {
-      this.setError('Partita non disponibile: controlla la connessione.');
+      this.setError(t('Partita non disponibile: controlla la connessione.'));
     } finally {
       button.disabled = false;
     }

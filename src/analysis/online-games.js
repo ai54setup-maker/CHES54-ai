@@ -2,6 +2,7 @@
 // Qui ci sono solo indirizzi e lettura dei dati; le richieste di rete sono in src/ui/online-games.js.
 
 import { splitPgnGames } from './pgn.js';
+import { t, fmtNum } from '../i18n/i18n.js';
 
 /** Nomi utente ammessi da Lichess e Chess.com: lettere, cifre, "_" e "-". Il controllo evita di manipolare l'URL. */
 const USERNAME = /^[A-Za-z0-9][A-Za-z0-9_-]{1,29}$/;
@@ -56,12 +57,12 @@ export function timeControlLabel(tc) {
   const daily = /^1\/(\d+)$/.exec(tc);
   if (daily) {
     const days = Math.round(Number(daily[1]) / 86400);
-    return `${days} ${days === 1 ? 'giorno' : 'giorni'} a mossa`;
+    return t(days === 1 ? '{n} giorno a mossa' : '{n} giorni a mossa', { n: days });
   }
   const m = /^(\d+)(?:\+(\d+))?$/.exec(tc);
   if (!m) return tc;
   const min = Number(m[1]) / 60;
-  const base = Number.isInteger(min) ? String(min) : min.toFixed(1).replace('.', ',');
+  const base = Number.isInteger(min) ? String(min) : fmtNum(min);
   return m[2] && m[2] !== '0' ? `${base}+${m[2]}` : `${base} min`;
 }
 

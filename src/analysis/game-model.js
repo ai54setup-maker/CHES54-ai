@@ -1,6 +1,7 @@
 // Modello della partita: la lista delle semimosse con le posizioni prima e dopo ciascuna.
 // È solo un dato: non contiene analisi del motore (quella sta in game-analyzer.js).
 
+import { t } from '../i18n/i18n.js';
 import { Chess, DEFAULT_POSITION, validateFen } from '../../lib/chess.js';
 import { parsePgn, PgnError } from './pgn.js';
 
@@ -44,12 +45,12 @@ export function gameFromPgn(pgnText) {
   const { headers } = parsed;
   // Solo scacchi standard: altre varianti (Chess960, Crazyhouse…) hanno regole diverse.
   if (headers.Variant && !SUPPORTED_VARIANTS.includes(headers.Variant.toLowerCase())) {
-    throw new PgnError(`Variante non supportata: ${headers.Variant}. Sono supportati solo gli scacchi standard.`);
+    throw new PgnError(t('Variante non supportata: {variant}. Sono supportati solo gli scacchi standard.', { variant: headers.Variant }));
   }
   let startFen = DEFAULT_POSITION;
   if (headers.FEN) {
     const v = validateFen(headers.FEN);
-    if (!v.ok) throw new PgnError(`FEN iniziale non valida: ${v.error}`);
+    if (!v.ok) throw new PgnError(t('FEN iniziale non valida: {error}', { error: v.error }));
     startFen = headers.FEN;
   }
   const chess = new Chess(startFen);
@@ -60,7 +61,7 @@ export function gameFromPgn(pgnText) {
     if (!ply) {
       const num = chess.moveNumber();
       const dots = chess.turn() === 'w' ? '.' : '...';
-      throw new PgnError(`Mossa non legale: ${num}${dots} ${mv.san}`);
+      throw new PgnError(t('Mossa non legale: {move}', { move: `${num}${dots} ${mv.san}` }));
     }
     plies.push({ ...ply, comment: mv.comment, clock: mv.clock });
   }
@@ -114,7 +115,7 @@ export const uciToMove = (uci) => ({ from: uci.slice(0, 2), to: uci.slice(2, 4),
  */
 export function createGame(startFen = DEFAULT_POSITION) {
   const v = validateFen(startFen);
-  if (!v.ok) throw new PgnError(`FEN non valida: ${v.error}`);
+  if (!v.ok) throw new PgnError(t('FEN non valida: {error}', { error: v.error }));
   return { headers: {}, startFen, plies: [], result: '*', ending: endingOf(new Chess(startFen)) };
 }
 

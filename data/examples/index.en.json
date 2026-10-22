@@ -1,0 +1,26 @@
+{
+  "_note": "English texts for data/examples/index.json (event and 'why it is famous'). Moves cited in English notation; notMoves = cited moves that are not moves of the game (historical references).",
+  "games": {
+    "anderssen-kieseritzky-1851": { "event": "London, casual game", "famous": "\"The Immortal Game\": Anderssen gives up both rooks, a bishop and finally the queen (22.Qf6+) and mates with the minor pieces." },
+    "anderssen-dufresne-1852": { "event": "Berlin, casual game", "famous": "\"The Evergreen Game\": the queen sacrifice 21.Qxd7+ opens the way to a mate by the bishops." },
+    "morphy-opera-1858": { "black": "Duke of Brunswick and Count Isouard", "event": "Paris, at the Opera House", "famous": "\"The Opera Game\": Morphy develops all his pieces, sacrifices the queen with 16.Qb8+ and mates with the rook." },
+    "steinitz-bardeleben-1895": { "event": "Hastings tournament", "famous": "Brilliancy prize at Hastings: after 22.Rxe7+ the white rook gives check after check on the seventh rank, and von Bardeleben leaves the hall without waiting for the mate." },
+    "rotlewi-rubinstein-1907": { "event": "Łódź tournament", "famous": "\"Rubinstein's Immortal\": a chain of sacrifices starting with 22...Rxc3 and ending with 25...Rh3." },
+    "reti-tartakower-1910": { "event": "Vienna, casual game", "famous": "One of the most famous miniatures: Réti sacrifices the queen with 9.Qd8+ and finishes with a double check." },
+    "capablanca-marshall-1918": { "event": "New York tournament", "famous": "Marshall unveils the gambit 8...d5 in the Ruy Lopez, today called the Marshall Attack; Capablanca repels the attack and wins." },
+    "botvinnik-capablanca-1938": { "event": "AVRO tournament", "famous": "The future champion beats the former champion: 30.Ba3 starts a combination in which White also sacrifices the queen." },
+    "byrne-fischer-1956": { "event": "Rosenwald Trophy, New York", "famous": "\"The Game of the Century\": Fischer, aged 13, gives up the queen with 17...Be6 and wins with the minor pieces." },
+    "fischer-spassky-1972-6": { "event": "World Championship match, Reykjavík, game 6", "famous": "Fischer, who almost always opened 1.e4, plays 1.c4 and wins; Spassky himself is said to have applauded.", "notMoves": ["1.e4"] },
+    "karpov-kasparov-1985-16": { "event": "World Championship match, Moscow, game 16", "famous": "The black knight on d3 (16...Nd3) paralyses White for the whole game: Kasparov considered it the finest game of the match that made him champion." },
+    "deepblue-kasparov-1997-6": { "event": "Man vs machine match, New York, game 6", "famous": "With the sacrifice 8.Nxe6 Deep Blue wins in 19 moves and closes the match: the first time a computer beat the world champion in a match." },
+    "kasparov-topalov-1999": { "event": "Wijk aan Zee tournament", "famous": "\"Kasparov's Immortal\": 24.Rxd4 starts a king hunt that drives the black king to a3 and beyond." },
+    "polgar-kasparov-2002": { "event": "Russia vs Rest of the World (rapid), Moscow", "famous": "The strongest female player of all time beats Kasparov, the world number one: her only win against him, in a rapid game." },
+    "carlsen-ernst-2004": { "event": "Wijk aan Zee tournament, group C", "famous": "Carlsen is 13: with the sacrifices 18.Ng6 and 21.Bxh6 he opens up the black king and wins the game that made him known to the world." },
+    "aronian-anand-2013": { "event": "Wijk aan Zee tournament", "famous": "Anand, with Black, sacrifices several pieces and wins in 23 moves: he himself counts it among the best games of his life." },
+    "carlsen-anand-2013-5": { "event": "World Championship match, Chennai, game 5", "famous": "Carlsen's first win in the title match: from a small advantage he reaches an endgame and wins it patiently." },
+    "anand-carlsen-2013-9": { "event": "World Championship match, Chennai, game 9", "famous": "Anand attacks on the kingside but goes wrong at the critical moment: with this win Carlsen moves within a step of the title." },
+    "carlsen-karjakin-2016-10": { "event": "World Championship match, New York, game 10", "famous": "One point down, Carlsen levels the match by winning a long endgame: a typical example of his \"grinding\" style." },
+    "carlsen-karjakin-2016-rapid4": { "event": "World Championship match, New York, rapid tiebreak 4", "famous": "Carlsen keeps the title, finishing the tiebreak with the queen sacrifice 50.Qh6+." },
+    "carlsen-nepomniachtchi-2021-6": { "event": "World Championship match, Dubai, game 6", "famous": "136 moves: the longest game in the history of world championship matches. Carlsen wins it and the match turns." }
+  }
+}

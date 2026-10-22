@@ -10,11 +10,18 @@ Revisione e analisi delle partite di scacchi, direttamente nel browser, con **St
   - il grafico della partita e i momenti chiave;
   - brevi spiegazioni degli errori, ognuna con la variante del motore che la dimostra.
 - **Ritenta la mossa:** sugli errori puoi provare a trovare una mossa migliore, e il motore la giudica.
-- **Analisi partita:** ricostruisci una partita mossa per mossa, con le migliori mosse del motore e l'Allenatore.
+- **Le tue partite da Lichess e Chess.com:** scrivi il nome utente e scegli la partita, senza login.
+- **Analisi partita:** ricostruisci una partita mossa per mossa, con le migliori mosse del motore, l'Allenatore e la
+  teoria delle aperture.
+- **Gioca:** contro Stockfish a 8 livelli, con la revisione completa a fine partita.
+- **I tuoi errori:** gli errori delle tue revisioni diventano esercizi da ripassare.
+- **Condividi:** un link riapre la stessa revisione (la partita sta nel link, non su un server).
+- **I tuoi dati:** nessun account; esporta e importa un file per passare a un altro dispositivo.
 - **Lezioni:** 13 lezioni interattive su tattiche, matti di base, principi di apertura e finali, con esercizi.
 - **Problemi:** 588 problemi per tema e difficoltà, dal database pubblico di Lichess, e un problema del giorno.
 
 Anche gli esercizi delle lezioni e le soluzioni dei problemi sono verificati con Stockfish prima di entrare nell'app.
+L'app è in **italiano e inglese** (in automatico secondo la lingua del browser, con il pulsante IT/EN in alto).
 
 Ogni numero, categoria e spiegazione viene dall'analisi di Stockfish. Le formule sono pubbliche e documentate
 (vedi [Come funziona l'analisi](#come-funziona-lanalisi)). Il motore gira sul tuo dispositivo: non servono server,

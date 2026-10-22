@@ -1,5 +1,7 @@
 // Grafico della valutazione lungo la partita (win% del Bianco), cliccabile per saltare a una mossa.
 
+import { t } from '../i18n/i18n.js';
+
 const W = 1000; // larghezza del sistema di coordinate dell'SVG (si adatta al contenitore)
 const H = 100; //  altezza = 100 punti di win%
 
@@ -15,7 +17,7 @@ export class EvalGraph {
     el.classList.add('graph');
     el.tabIndex = 0;
     el.setAttribute('role', 'img');
-    el.setAttribute('aria-label', 'Grafico della valutazione: tocca per andare a una mossa');
+    el.setAttribute('aria-label', t('Grafico della valutazione: tocca per andare a una mossa'));
     el.addEventListener('pointerdown', (e) => this.pick(e));
     el.addEventListener('pointermove', (e) => { if (e.buttons) this.pick(e); });
   }

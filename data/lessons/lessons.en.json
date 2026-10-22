@@ -1,0 +1,129 @@
+{
+  "_note": "English texts for lessons.json (same lessons and steps, same order). Positions and their Stockfish verification are in lessons.json. Moves in English notation.",
+  "categories": {
+    "tactics": "Tactics",
+    "mates": "Basic mates",
+    "openings": "Opening principles",
+    "endgames": "Basic endgames"
+  },
+  "lessons": {
+    "hanging": {
+      "title": "The hanging piece",
+      "summary": "Count attackers and defenders before capturing.",
+      "steps": [
+        { "title": "What it is", "text": "A piece is \"hanging\" when it is attacked and no piece of its own colour defends it: it can be captured for free. Here the knight on e5 is attacked by the bishop on c3 and no black piece protects it." },
+        { "title": "Count before you capture", "text": "Now the knight is defended by the pawn on f6. If the bishop captures it, the pawn recaptures: a bishop for a knight, no gain. Before capturing, always count who attacks and who defends the square." },
+        { "text": "White to move. Capture the hanging piece.", "success": "Bxe5: the knight was undefended, White wins a piece." },
+        { "text": "White to move. The bishop attacks two black pieces: only one can be taken without losing anything.", "success": "Bxa5! The rook was undefended. The knight on e5, on the other hand, is defended by the pawn on f6." }
+      ]
+    },
+    "fork": {
+      "title": "The fork",
+      "summary": "One piece attacking two targets at the same time.",
+      "steps": [
+        { "title": "What it is", "text": "A fork is an attack on two (or more) pieces at the same time by a single piece. The opponent can save only one of them: the other is lost. The knight is the king of forks: it jumps, so its attacks cannot be blocked by putting a piece in between." },
+        { "title": "Ne7+", "text": "After Ne7+ the knight checks the king on g8 and attacks the queen on c8. Black has to deal with the check: on the next move White captures the queen." },
+        { "text": "White to move. Find the knight fork.", "success": "Nc7+ checks the king and attacks the rook on a8: the king must move and the rook falls." },
+        { "text": "The queen can fork too. White to move: attack two pieces with a single move.", "success": "Qe4+ checks the king on h7 and, along the long diagonal, attacks the rook on a8." }
+      ]
+    },
+    "pin": {
+      "title": "The pin",
+      "summary": "A piece that cannot move without exposing something more valuable.",
+      "steps": [
+        { "title": "What it is", "text": "A piece is pinned when moving it would expose a more valuable piece standing behind it. If the king is behind, the pin is absolute: moving the piece off the line is simply against the rules. Only pieces that move in straight lines can pin: bishop, rook and queen." },
+        { "title": "Re1", "text": "After Re1 the queen on e5 is pinned to the king on e8: it cannot leave the e-file. It can only move along the file, and the best it can do is give itself up for the rook." },
+        { "text": "White to move. Pin the black queen to its king.", "success": "Bb5: the queen on d7 is pinned to the king on e8. If it takes the bishop, the pawn on a4 recaptures." }
+      ]
+    },
+    "skewer": {
+      "title": "The skewer",
+      "summary": "Like the pin, but the more valuable piece is in front.",
+      "steps": [
+        { "title": "What it is", "text": "The skewer is the opposite of the pin: the more valuable attacked piece is in front. When it moves away, the piece behind it is exposed and can be captured. It works especially well with a check, because the king has to move." },
+        { "title": "Rh7+", "text": "Rh7+ checks the king on e7 along the seventh rank. The king must leave the rank and the rook captures the queen on a7." },
+        { "text": "White to move. The bishop can skewer king and queen on the same diagonal.", "success": "Be4+: the king on c6 must leave the diagonal and the bishop captures the queen on a8." }
+      ]
+    },
+    "discovered": {
+      "title": "The discovered attack",
+      "summary": "One piece moves and unleashes another: two threats in one move.",
+      "steps": [
+        { "title": "What it is", "text": "A discovered attack happens when a piece moves and opens the line of another piece (bishop, rook or queen) standing behind it. So a single move makes two threats: one by the piece that moves and one by the piece uncovered." },
+        { "title": "Nc6+", "text": "Nc6+ checks the king on b8 and, at the same time, opens the diagonal of the bishop on b2, which now attacks the queen on g7. Black must answer the check and loses the queen." },
+        { "text": "White to move. The rook on d1 is just waiting for the bishop to move: every bishop move gives check, but only one wins the queen.", "success": "Bb6+! Double check: the uncovered rook on d1 and the bishop give check together. The king must move and the bishop captures the queen on a5." }
+      ]
+    },
+    "back-rank": {
+      "title": "The back-rank mate",
+      "summary": "The king shut in behind its own pawns.",
+      "steps": [
+        { "title": "The king with no escape squares", "text": "After castling the king sits behind its pawns. If the pawns have not moved, the king has no free squares: a rook or the queen arriving on the back rank gives mate." },
+        { "title": "The window", "text": "The simplest defence: push a pawn in front of the king (here h6) to give it an escape square, the \"window\". Now Rd8+ is only a check: the king goes to h7." },
+        { "text": "White to move: mate in one.", "success": "Re8#: the king on g8 has no escape squares." },
+        { "text": "Mate in 2. The rook on c8 guards the back rank: doubled rooks are stronger.", "success": "Rd8+ Rxd8 Rxd8#: the first rook removes the defender, the second one mates." }
+      ]
+    },
+    "queen-mate": {
+      "title": "Mate with queen and king",
+      "summary": "Drive the king to the edge, without stalemating.",
+      "steps": [
+        { "title": "Queen and king together", "text": "Against a lone king, queen and king always mate. The queen pushes the enemy king towards the edge of the board, then your own king comes closer to protect the queen or take away the last squares." },
+        { "title": "Beware of stalemate", "text": "If the enemy king is not in check and has no legal move, it is stalemate: the game is a draw. Here Qc7 takes away every square from the king without giving check." },
+        { "text": "White to move: mate in one (and don't stalemate).", "success": "Mate! The king on b6 controls a7 and b7, the queen gives check and covers the last square." }
+      ]
+    },
+    "two-rooks-mate": {
+      "title": "Mate with two rooks",
+      "summary": "The ladder: the rooks take turns.",
+      "steps": [
+        { "title": "The ladder", "text": "Two rooks can mate on their own. One rook cuts the king off along a rank, the other gives check on the next rank: the king has to step back. Then the rooks swap roles, one rank at a time, all the way to the edge." },
+        { "text": "The rook on a7 cuts the king off from the seventh rank. Mate in one.", "success": "Rb8#: the rook on a7 takes away the seventh rank, the one on b8 gives check on the eighth." }
+      ]
+    },
+    "opening-principles": {
+      "title": "The three opening rules",
+      "summary": "Centre, development, king safety.",
+      "steps": [
+        { "title": "1. The centre", "text": "The four central squares (d4, e4, d5, e5) are the most important: from there pieces control more squares. That is why the first moves often bring a pawn to the centre." },
+        { "title": "2. Development", "text": "Knights and bishops should come out early, towards the centre. A good rule: in the opening every move brings a new piece into play, and you don't move the same piece twice without a reason." },
+        { "title": "3. King safety", "text": "By castling the king takes shelter behind the pawns and the rook moves towards the centre, ready to join the game." }
+      ]
+    },
+    "scholars-mate": {
+      "title": "The Scholar's Mate",
+      "summary": "The trap against f7 and how to defend.",
+      "steps": [
+        { "title": "The weak point f7", "text": "At the start of the game the f7 square is defended only by the king. After 1.e4 e5 2.Bc4 Nc6 3.Qh5 the queen and the bishop attack it together." },
+        { "title": "The trap", "text": "If Black attacks the queen with 3...Nf6?? without thinking about f7, then 4.Qxf7# follows: the queen is protected by the bishop and the king has no way out." },
+        { "text": "Black to move. Defend f7 (and don't forget that the queen also attacks e5).", "success": "Well done: f7 is defended. According to Stockfish the good defences here are g6, Qe7, Qf6 and Nh6." }
+      ]
+    },
+    "opposition": {
+      "title": "King and pawn: the opposition",
+      "summary": "Sometimes the side to move is at a disadvantage.",
+      "steps": [
+        { "title": "What it is", "text": "Two kings on the same file with a single square between them take squares away from each other. The side to move has to give way: the other side is said to \"have the opposition\". Here it is Black to move, so White has the opposition." },
+        { "title": "The king in front of the pawn", "text": "In king and pawn against king endgames, the king of the side with the pawn should go in front of the pawn, not behind it: that way it clears the path and escorts the pawn to promotion." },
+        { "text": "White to move: only one move wins. Take the opposition.", "success": "Ke3! The king goes in front of the pawn and takes the opposition: now Black is to move and has to give way." }
+      ]
+    },
+    "square-rule": {
+      "title": "The rule of the square",
+      "summary": "Can the king catch the pawn racing to promote?",
+      "steps": [
+        { "title": "The square", "text": "Imagine a square whose side is the pawn's path to promotion: here from a4 to a8, so the square a4–e4–e8–a8. If the enemy king can step into the square (on its move), it catches the pawn in time; otherwise the pawn promotes." },
+        { "text": "Black to move. Step into the pawn's square to stop it.", "success": "The king is in the square: it will reach the pawn before it promotes. Ke4 and Ke5 are the only moves that save the game." }
+      ]
+    },
+    "breakthrough": {
+      "title": "The breakthrough",
+      "summary": "Three pawns against three: how to create a passed pawn.",
+      "steps": [
+        { "title": "The passed pawn", "text": "A pawn is \"passed\" when no enemy pawn can stop it: there are no enemy pawns in front of it or on the adjacent files. In endgames a passed pawn far from the kings is often decisive." },
+        { "title": "The idea", "text": "With 1.b6 White sacrifices a pawn to clear the way for another. If 1...cxb6 then 2.a6!: after 2...bxa6 the c-pawn advances and no black pawn can stop it anymore." },
+        { "text": "White to move: only one move wins. The kings are too far away to help.", "success": "1.b6! Whatever Black captures, a white pawn gets through and promotes before the black king arrives." }
+      ]
+    }
+  }
+}

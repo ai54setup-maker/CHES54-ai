@@ -3,6 +3,7 @@
 
 import { formatScore } from '../engine/score.js';
 import { numberedLine, uciLineToSan } from './notation.js';
+import { getLang } from '../i18n/i18n.js';
 
 const NAME = { p: 'il pedone', n: 'il cavallo', b: "l'alfiere", r: 'la torre', q: 'la donna', k: 'il re' };
 const NAME_CAP = { p: 'Il pedone', n: 'Il cavallo', b: "L'alfiere", r: 'La torre', q: 'La donna', k: 'Il re' };
@@ -18,6 +19,7 @@ const list = (items) => (items.length > 1 ? `${items.slice(0, -1).join(', ')} e 
  */
 export function formatExplanation(e) {
   const line = numberedLine(e.line.fen, e.line.pv);
+  if (getLang() === 'en') return { text: explanationEn(e), line };
   switch (e.kind) {
     case 'allowsMate':
       return { text: `Permette all'avversario di dare matto in ${e.mateIn}.`, line };
@@ -41,5 +43,31 @@ export function formatExplanation(e) {
     }
     default:
       return { text: '', line };
+  }
+}
+
+// ---------- English ----------
+const NAME_EN = { p: 'pawn', n: 'knight', b: 'bishop', r: 'rook', q: 'queen', k: 'king' };
+const atEn = (x) => `the ${NAME_EN[x.piece]} on ${x.square}`;
+const pointsEn = (n) => `${n} ${n === 1 ? 'point' : 'points'} of material`;
+const listEn = (items) => (items.length > 1 ? `${items.slice(0, -1).join(', ')} and ${items.at(-1)}` : items[0] ?? '');
+
+function explanationEn(e) {
+  switch (e.kind) {
+    case 'allowsMate': return `Allows the opponent to mate in ${e.mateIn}.`;
+    case 'missesMate': return `There was a forced mate in ${e.mateIn}.`;
+    case 'allowsFork': return `Allows a fork: ${atEn(e.forker)} attacks ${listEn(e.targets.map(atEn))}: ${pointsEn(e.loss)} lost.`;
+    case 'hangs': return `The ${NAME_EN[e.piece.piece]} just moved to ${e.piece.square} is left hanging: ${pointsEn(e.loss)} lost.`;
+    case 'losesMaterial': {
+      const caught = e.captured.length ? ` (the opponent captures ${listEn(e.captured.slice(0, 3).map(atEn))})` : '';
+      return `Loses ${pointsEn(e.loss)}${caught}.`;
+    }
+    case 'missesMaterial': return `The best move won ${pointsEn(e.gain)} more.`;
+    case 'sacrifice': return `Sacrifices ${pointsEn(e.amount)}, and the engine line shows that the sacrifice works.`;
+    case 'onlyMove': {
+      const second = uciLineToSan(e.line.fen, [e.secondUci])[0] ?? e.secondUci;
+      return `Only good move: the engine's second choice, ${second}, is worth ${formatScore(e.secondScore)} against ${formatScore(e.bestScore)}.`;
+    }
+    default: return '';
   }
 }
