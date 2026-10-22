@@ -1,0 +1,14 @@
+# Intestazioni HTTP per Cloudflare Pages (https://developers.cloudflare.com/pages/configuration/headers/).
+# La Content-Security-Policy principale è nel <meta> di index.html; qui ci sono le regole che un <meta> non può dare.
+
+/*
+  X-Frame-Options: DENY
+  Content-Security-Policy: frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()
+  Cross-Origin-Opener-Policy: same-origin
+
+# Il service worker deve essere sempre controllato: è lui che aggiorna l'app sui dispositivi
+/sw.js
+  Cache-Control: no-cache
